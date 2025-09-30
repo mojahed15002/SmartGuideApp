@@ -16,10 +16,7 @@ class SmartGuideApp extends StatelessWidget {
     return MaterialApp(
       title: 'Smart City Guide',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.orange,
-        fontFamily: "Roboto",
-      ),
+      theme: ThemeData(primarySwatch: Colors.orange, fontFamily: "Roboto"),
       home: const WelcomePage(),
     );
   }
@@ -47,8 +44,10 @@ class WelcomePage extends StatelessWidget {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 15,
+                ),
               ),
               onPressed: () {
                 Navigator.push(
@@ -57,7 +56,7 @@ class WelcomePage extends StatelessWidget {
                 );
               },
               child: const Text("ابدأ"),
-            )
+            ),
           ],
         ),
       ),
@@ -113,24 +112,26 @@ class _ChoicePageState extends State<ChoicePage> {
               },
               fieldViewBuilder:
                   (context, controller, focusNode, onEditingComplete) {
-                return TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  onEditingComplete: onEditingComplete,
-                  decoration: const InputDecoration(
-                    hintText: "ابحث عن المنطقة...",
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.search, color: Colors.orange),
-                  ),
-                );
-              },
+                    return TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      onEditingComplete: onEditingComplete,
+                      decoration: const InputDecoration(
+                        hintText: "ابحث عن المنطقة...",
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.search, color: Colors.orange),
+                      ),
+                    );
+                  },
             ),
             const SizedBox(height: 30),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 15,
+                ),
               ),
               onPressed: () async {
                 Position position = await _determinePosition();
@@ -147,14 +148,17 @@ class _ChoicePageState extends State<ChoicePage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 15,
+                ),
               ),
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const GeneralInfoPage()),
+                    builder: (context) => const GeneralInfoPage(),
+                  ),
                 );
               },
               child: const Text("عرض جميع المدن"),
@@ -201,7 +205,17 @@ class AcademyStreetPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const InfoPage(
       title: "شارع الأكاديمية",
-      description: "هذه صفحة خاصة بمعلومات شارع الأكاديمية.",
+      description:
+          '''سُمّي "شارع الأكاديمية" نسبةً إلى أكاديمية النجاح الوطنية (جامعة النجاح الوطنية – الحرم الجديد) التي تقع بمحاذاته.
+
+الطابع العام:
+- شارع حيوي خصوصًا في أوقات الدوام الجامعي.
+- يحتوي على عدد كبير من المطاعم والمقاهي التي تخدم الطلبة.
+- تنتشر فيه المكتبات، مراكز التصوير والطباعة، ومحلات القرطاسية.
+- يوجد أيضًا محلات ملابس وأحذية ومستلزمات متنوعة.
+''',
+      imageUrl:
+          "https://commons.wikimedia.org/wiki/Category:Images#/media/File:Alois_Mentasti.jpg",
     );
   }
 }
@@ -214,6 +228,8 @@ class SofianStreetPage extends StatelessWidget {
     return const InfoPage(
       title: "شارع سفيان",
       description: "هذه صفحة خاصة بمعلومات شارع سفيان.",
+      imageUrl:
+          "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg/1280px-%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg",
     );
   }
 }
@@ -226,6 +242,8 @@ class FaisalStreetPage extends StatelessWidget {
     return const InfoPage(
       title: "شارع فيصل",
       description: "هذه صفحة خاصة بمعلومات شارع فيصل.",
+      imageUrl:
+          "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg/1280px-%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg",
     );
   }
 }
@@ -238,6 +256,8 @@ class MartyrsRoundaboutPage extends StatelessWidget {
     return const InfoPage(
       title: "دوار الشهداء",
       description: "هذه صفحة خاصة بمعلومات دوار الشهداء.",
+      imageUrl:
+          "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg/1280px-%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg",
     );
   }
 }
@@ -258,8 +278,7 @@ class GeneralInfoPage extends StatelessWidget {
         children: cities.map((city) {
           return ListTile(
             title: Text(city),
-            trailing:
-                const Icon(Icons.arrow_forward_ios, color: Colors.orange),
+            trailing: const Icon(Icons.arrow_forward_ios, color: Colors.orange),
             onTap: () {
               Navigator.push(
                 context,
@@ -362,8 +381,7 @@ class CityPlacesPage extends StatelessWidget {
         children: places.map((placeData) {
           return ListTile(
             title: Text(placeData["title"]),
-            trailing:
-                const Icon(Icons.arrow_forward_ios, color: Colors.orange),
+            trailing: const Icon(Icons.arrow_forward_ios, color: Colors.orange),
             onTap: () {
               Navigator.push(
                 context,
@@ -383,8 +401,9 @@ class CityPlacesPage extends StatelessWidget {
 class InfoPage extends StatelessWidget {
   final String title;
   final String description;
+  final String imageUrl;
 
-  const InfoPage({super.key, required this.title, required this.description});
+  const InfoPage({super.key, required this.title, required this.description, required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
@@ -393,9 +412,7 @@ class InfoPage extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
-          children: [
-            Text(description, style: const TextStyle(fontSize: 18)),
-          ],
+          children: [Text(description, style: const TextStyle(fontSize: 18))],
         ),
       ),
     );
@@ -417,10 +434,7 @@ class MapPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("انت هنا")),
       body: fm.FlutterMap(
-        options: fm.MapOptions(
-          initialCenter: userLocation,
-          initialZoom: 16,
-        ),
+        options: fm.MapOptions(initialCenter: userLocation, initialZoom: 16),
         children: [
           fm.TileLayer(
             urlTemplate:
@@ -433,8 +447,11 @@ class MapPage extends StatelessWidget {
                 point: userLocation,
                 width: 80,
                 height: 80,
-                child: const Icon(Icons.location_pin,
-                    color: Colors.red, size: 40),
+                child: const Icon(
+                  Icons.location_pin,
+                  color: Colors.red,
+                  size: 40,
+                ),
               ),
             ],
           ),
