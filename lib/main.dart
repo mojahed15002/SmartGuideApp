@@ -227,9 +227,16 @@ class SofianStreetPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const InfoPage(
       title: "شارع سفيان",
-      description: "هذه صفحة خاصة بمعلومات شارع سفيان.",
+      description: '''
+شارع سفيان يعتبر من الشوارع الحيوية في المدينة ويشتهر بالأنشطة التالية:
+- محلات تجارية متنوعة تشمل الملابس والأحذية.
+- مقاهي ومطاعم تقدم أطباق محلية وعالمية.
+- مراكز خدمات مثل صيدليات ومكاتب بريد.
+- حركة مرور نشطة خصوصًا في ساعات الذروة.
+- يسهل الوصول منه إلى المرافق التعليمية والصحية القريبة.
+''',
       imageUrl:
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg/1280px-%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg",
+          "https://upload.wikimedia.org/wikipedia/commons/3/3e/%D8%B4%D8%A7%D8%B1%D8%B9_%D8%B3%D9%81%D9%8A%D8%A7%D9%86_%D9%81%D9%8A_%D9%86%D8%A7%D8%A8%D9%84%D8%B3_-_%D9%88%D8%B3%D8%B7_%D8%A7%D9%84%D9%85%D8%AF%D9%8A%D9%86%D8%A9.jpg",
     );
   }
 }
@@ -241,7 +248,14 @@ class FaisalStreetPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const InfoPage(
       title: "شارع فيصل",
-      description: "هذه صفحة خاصة بمعلومات شارع فيصل.",
+      description: '''
+شارع فيصل هو أحد الشوارع الرئيسية في مدينة نابلس ويتميز بالتالي:
+- يربط بين مناطق المدينة الحيوية ويسهل الوصول إلى الأسواق والمراكز التجارية.
+- يحتوي على محلات تجارية متنوعة، من الملابس إلى الإلكترونيات.
+- وجود مقاهي ومطاعم شعبية وعالمية تناسب جميع الأذواق.
+- حركة مرور معتدلة نسبيًا مع مواقف سيارات متوفرة بجانب الشارع.
+- قريب من المدارس والمرافق الحكومية والخدمية، مما يجعله شارعًا مهمًا لسكان نابلس.
+''',
       imageUrl:
           "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg/1280px-%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg",
     );
@@ -255,7 +269,14 @@ class MartyrsRoundaboutPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const InfoPage(
       title: "دوار الشهداء",
-      description: "هذه صفحة خاصة بمعلومات دوار الشهداء.",
+      description: '''
+دوار الشهداء يُعتبر من المعالم المركزية في مدينة نابلس ويتميز بالتالي:
+- يعد نقطة التقاء رئيسية للطرق في وسط المدينة، مما يسهل التنقل بين المناطق المختلفة.
+- محاط بعدد من المحلات التجارية والمقاهي والمطاعم.
+- يوجد بالقرب منه مكاتب حكومية ومرافق عامة مهمة.
+- يعتبر مكانًا للتجمعات والمناسبات المحلية أحيانًا.
+- الحركة المرورية فيه نشطة خلال النهار، مع وجود إشارات مرور لتنظيم السير.
+''',
       imageUrl:
           "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg/1280px-%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg",
     );
