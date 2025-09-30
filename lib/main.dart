@@ -411,8 +411,15 @@ class InfoPage extends StatelessWidget {
       appBar: AppBar(title: Text(title)),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [Text(description, style: const TextStyle(fontSize: 18))],
+        child: ListView(
+          children: [
+            Text(description, style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 16),
+            Image.network(imageUrl, height: 200, fit: BoxFit.cover),
+            const SizedBox(height: 16),
+            Text(description, style: const TextStyle(fontSize: 18)),
+
+          ],
         ),
       ),
     );
