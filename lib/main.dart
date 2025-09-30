@@ -236,7 +236,7 @@ class SofianStreetPage extends StatelessWidget {
 - يسهل الوصول منه إلى المرافق التعليمية والصحية القريبة.
 ''',
       imageUrl:
-          "https://upload.wikimedia.org/wikipedia/commons/3/3e/%D8%B4%D8%A7%D8%B1%D8%B9_%D8%B3%D9%81%D9%8A%D8%A7%D9%86_%D9%81%D9%8A_%D9%86%D8%A7%D8%A8%D9%84%D8%B3_-_%D9%88%D8%B3%D8%B7_%D8%A7%D9%84%D9%85%D8%AF%D9%8A%D9%86%D8%A9.jpg",
+          "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg/1280px-%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg",
     );
   }
 }
@@ -432,8 +432,15 @@ class InfoPage extends StatelessWidget {
       appBar: AppBar(title: Text(title)),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [Text(description, style: const TextStyle(fontSize: 18))],
+        child: ListView(
+          children: [
+            Text(description, style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 16),
+            Image.network(imageUrl, height: 200, fit: BoxFit.cover),
+            const SizedBox(height: 16),
+            Text(description, style: const TextStyle(fontSize: 18)),
+
+          ],
         ),
       ),
     );
@@ -538,7 +545,7 @@ class PlaceDetailsPage extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
+     ),
+);
+}
 }
