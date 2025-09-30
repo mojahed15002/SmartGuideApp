@@ -215,7 +215,7 @@ class AcademyStreetPage extends StatelessWidget {
 - يوجد أيضًا محلات ملابس وأحذية ومستلزمات متنوعة.
 ''',
       imageUrl:
-          "https://commons.wikimedia.org/wiki/Category:Images#/media/File:Alois_Mentasti.jpg",
+          "https://upload.wikimedia.org/wikipedia/commons/b/ba/Najah_001.jpg",
     );
   }
 }
@@ -236,7 +236,7 @@ class SofianStreetPage extends StatelessWidget {
 - يسهل الوصول منه إلى المرافق التعليمية والصحية القريبة.
 ''',
       imageUrl:
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg/1280px-%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg",
+          "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/%D8%B4%D8%A7%D8%B1%D8%B9_%D8%B3%D9%81%D9%8A%D8%A7%D9%86_%D9%81%D9%8A_%D9%86%D8%A7%D8%A8%D9%84%D8%B3_-_%D9%88%D8%B3%D8%B7_%D8%A7%D9%84%D9%85%D8%AF%D9%8A%D9%86%D8%A9.jpg/2560px-%D8%B4%D8%A7%D8%B1%D8%B9_%D8%B3%D9%81%D9%8A%D8%A7%D9%86_%D9%81%D9%8A_%D9%86%D8%A7%D8%A8%D9%84%D8%B3_-_%D9%88%D8%B3%D8%B7_%D8%A7%D9%84%D9%85%D8%AF%D9%8A%D9%86%D8%A9.jpg",
     );
   }
 }
@@ -257,7 +257,7 @@ class FaisalStreetPage extends StatelessWidget {
 - قريب من المدارس والمرافق الحكومية والخدمية، مما يجعله شارعًا مهمًا لسكان نابلس.
 ''',
       imageUrl:
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg/1280px-%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg",
+          "",
     );
   }
 }
@@ -278,7 +278,7 @@ class MartyrsRoundaboutPage extends StatelessWidget {
 - الحركة المرورية فيه نشطة خلال النهار، مع وجود إشارات مرور لتنظيم السير.
 ''',
       imageUrl:
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg/1280px-%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg",
+          "https://upload.wikimedia.org/wikipedia/commons/8/89/%D9%85%D9%86%D8%B7%D9%82%D8%A9_%D9%88%D8%B3%D8%B7_%D8%A7%D9%84%D8%A8%D9%84%D8%AF%D8%8C_%D9%85%D9%86%D8%B7%D9%82%D8%A9_%D8%AF%D9%88%D8%A7%D8%B1_%D8%A7%D9%84%D8%B4%D9%87%D8%AF%D8%A7%D8%A1%D8%8C_%D8%A8%D9%86%D8%A7%D8%A8%D9%84%D8%B3_%D9%81%D9%8A_%D9%81%D9%84%D8%B3%D8%B7%D9%8A%D9%86.jpg",
     );
   }
 }
