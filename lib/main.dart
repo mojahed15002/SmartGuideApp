@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
@@ -37,7 +38,7 @@ class WelcomePage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              "مرحباً بك 👋",
+              " مرحباً بك في مرشدك السياحي الخاص👋",
               style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
@@ -55,7 +56,7 @@ class WelcomePage extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const ChoicePage()),
                 );
               },
-              child: const Text("ابدأ"),
+              child: const Text("انطلق😎"),
             ),
           ],
         ),
@@ -112,17 +113,17 @@ class _ChoicePageState extends State<ChoicePage> {
               },
               fieldViewBuilder:
                   (context, controller, focusNode, onEditingComplete) {
-                    return TextField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      onEditingComplete: onEditingComplete,
-                      decoration: const InputDecoration(
-                        hintText: "ابحث عن المنطقة...",
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.search, color: Colors.orange),
-                      ),
-                    );
-                  },
+                return TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  onEditingComplete: onEditingComplete,
+                  decoration: const InputDecoration(
+                    hintText: "ابحث عن المنطقة...",
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.search, color: Colors.orange),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 30),
             ElevatedButton(
@@ -142,7 +143,7 @@ class _ChoicePageState extends State<ChoicePage> {
                   ),
                 );
               },
-              child: const Text("أين أنا؟"),
+              child: const Text("أين أنا؟ 📍"),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -161,7 +162,7 @@ class _ChoicePageState extends State<ChoicePage> {
                   ),
                 );
               },
-              child: const Text("عرض جميع المدن"),
+              child: const Text("عرض جميع المدن 🏙️"),
             ),
           ],
         ),
@@ -214,8 +215,7 @@ class AcademyStreetPage extends StatelessWidget {
 - تنتشر فيه المكتبات، مراكز التصوير والطباعة، ومحلات القرطاسية.
 - يوجد أيضًا محلات ملابس وأحذية ومستلزمات متنوعة.
 ''',
-      imageUrl:
-          "https://upload.wikimedia.org/wikipedia/commons/b/ba/Najah_001.jpg",
+      imageUrl: "https://upload.wikimedia.org/wikipedia/commons/b/ba/Najah_001.jpg",
     );
   }
 }
@@ -256,8 +256,7 @@ class FaisalStreetPage extends StatelessWidget {
 - حركة مرور معتدلة نسبيًا مع مواقف سيارات متوفرة بجانب الشارع.
 - قريب من المدارس والمرافق الحكومية والخدمية، مما يجعله شارعًا مهمًا لسكان نابلس.
 ''',
-      imageUrl:
-          "",
+      imageUrl: "",
     );
   }
 }
@@ -316,7 +315,7 @@ class GeneralInfoPage extends StatelessWidget {
 }
 
 //
-// أماكن داخل المدينة (صفحات مستقلة لكل مكان)
+// أماكن داخل المدينة
 //
 class CityPlacesPage extends StatelessWidget {
   final String cityName;
@@ -330,8 +329,7 @@ class CityPlacesPage extends StatelessWidget {
         "page": const PlaceDetailsPage(
           title: "البلدة القديمة",
           cityName: "نابلس",
-          imageUrl:
-              "https://www.aljazeera.net/wp-content/uploads/2023/04/12-3.jpg",
+          imageUrl: "https://www.aljazeera.net/wp-content/uploads/2023/04/12-3.jpg",
           url: "https://example.com/oldcity",
         ),
       },
@@ -402,7 +400,8 @@ class CityPlacesPage extends StatelessWidget {
         children: places.map((placeData) {
           return ListTile(
             title: Text(placeData["title"]),
-            trailing: const Icon(Icons.arrow_forward_ios, color: Colors.orange),
+            trailing:
+                const Icon(Icons.arrow_forward_ios, color: Colors.orange),
             onTap: () {
               Navigator.push(
                 context,
@@ -417,14 +416,66 @@ class CityPlacesPage extends StatelessWidget {
 }
 
 //
-// صفحة المعلومات العامة
+// صفحة المعلومات العامة (Responsive Image)
 //
 class InfoPage extends StatelessWidget {
   final String title;
   final String description;
   final String imageUrl;
 
-  const InfoPage({super.key, required this.title, required this.description, required this.imageUrl});
+  const InfoPage({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.imageUrl,
+  });
+
+  Widget _imageWidget(BuildContext context, BoxConstraints constraints) {
+    // الارتفاع الافتراضي حسب المنصة
+    final double maxHeight = kIsWeb ? 360 : 220;
+
+    // Placeholder لو الرابط فاضي أو فشل التحميل
+    final Widget placeholder = Container(
+      height: maxHeight,
+      width: double.infinity,
+      color: Colors.grey[200],
+      child: Center(
+        child: Icon(Icons.image, size: 64, color: Colors.grey[500]),
+      ),
+    );
+
+    if (imageUrl.trim().isEmpty) return placeholder;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: constraints.maxWidth,
+        maxHeight: maxHeight,
+      ),
+      child: Image.network(
+        imageUrl,
+        width: double.infinity,
+        height: maxHeight,
+        fit: kIsWeb ? BoxFit.contain : BoxFit.cover,
+        // لو فشل تحميل الصورة، نعرض placeholder بدل الخطأ
+        errorBuilder: (context, error, stackTrace) => placeholder,
+        // أثناء التحميل نعرض مؤشر
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return SizedBox(
+            height: maxHeight,
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        (loadingProgress.expectedTotalBytes ?? 1)
+                    : null,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -434,12 +485,16 @@ class InfoPage extends StatelessWidget {
         padding: const EdgeInsets.all(20.0),
         child: ListView(
           children: [
+            // عنوان أو وصف مختصر
             Text(description, style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 16),
-            Image.network(imageUrl, height: 200, fit: BoxFit.cover),
+            // الصورة المتجاوبة
+            LayoutBuilder(builder: (context, constraints) {
+              return _imageWidget(context, constraints);
+            }),
             const SizedBox(height: 16),
+            // محتوى إضافي (نفس الوصف مرة ثانية إن رغبت)
             Text(description, style: const TextStyle(fontSize: 18)),
-
           ],
         ),
       ),
@@ -490,7 +545,7 @@ class MapPage extends StatelessWidget {
 }
 
 //
-// صفحة تفاصيل عامة للأماكن
+// صفحة تفاصيل عامة للأماكن (Responsive Image)
 //
 class PlaceDetailsPage extends StatelessWidget {
   final String title;
@@ -513,6 +568,45 @@ class PlaceDetailsPage extends StatelessWidget {
     }
   }
 
+  Widget _imageWidget(BuildContext context, BoxConstraints constraints) {
+    final double maxHeight = kIsWeb ? 360 : 220;
+    final Widget placeholder = Container(
+      height: maxHeight,
+      width: double.infinity,
+      color: Colors.grey[200],
+      child: Center(
+        child: Icon(Icons.image, size: 64, color: Colors.grey[500]),
+      ),
+    );
+
+    if (imageUrl.trim().isEmpty) return placeholder;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: constraints.maxWidth, maxHeight: maxHeight),
+      child: Image.network(
+        imageUrl,
+        width: double.infinity,
+        height: maxHeight,
+        fit: kIsWeb ? BoxFit.contain : BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => placeholder,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return SizedBox(
+            height: maxHeight,
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        (loadingProgress.expectedTotalBytes ?? 1)
+                    : null,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -526,7 +620,9 @@ class PlaceDetailsPage extends StatelessWidget {
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            Image.network(imageUrl, height: 200, fit: BoxFit.cover),
+            LayoutBuilder(builder: (context, constraints) {
+              return _imageWidget(context, constraints);
+            }),
             const SizedBox(height: 16),
             Text(
               "هذا وصف افتراضي لـ $title في $cityName. يمكنك تعديله لاحقًا.",
@@ -545,7 +641,7 @@ class PlaceDetailsPage extends StatelessWidget {
             ),
           ],
         ),
-     ),
-);
-}
+      ),
+    );
+  }
 }
