@@ -4,6 +4,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:latlong2/latlong.dart' as latlng;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 void main() {
   runApp(const SmartGuideApp());
@@ -39,7 +41,7 @@ class WelcomePage extends StatelessWidget {
           children: [
             const Text(
               " مرحباً بك في مرشدك السياحي الخاص👋",
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -206,16 +208,11 @@ class AcademyStreetPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const InfoPage(
       title: "شارع الأكاديمية",
-      description:
-          '''سُمّي "شارع الأكاديمية" نسبةً إلى أكاديمية النجاح الوطنية (جامعة النجاح الوطنية – الحرم الجديد) التي تقع بمحاذاته.
-
-الطابع العام:
-- شارع حيوي خصوصًا في أوقات الدوام الجامعي.
-- يحتوي على عدد كبير من المطاعم والمقاهي التي تخدم الطلبة.
-- تنتشر فيه المكتبات، مراكز التصوير والطباعة، ومحلات القرطاسية.
-- يوجد أيضًا محلات ملابس وأحذية ومستلزمات متنوعة.
-''',
-      imageUrl: "https://upload.wikimedia.org/wikipedia/commons/b/ba/Najah_001.jpg",
+      description: '''سُمّي "شارع الأكاديمية" نسبةً إلى أكاديمية النجاح الوطنية (جامعة النجاح الوطنية – الحرم الجديد) التي تقع بمحاذاته. الطابع العام: - شارع حيوي خصوصًا في أوقات الدوام الجامعي. - يحتوي على عدد كبير من المطاعم والمقاهي التي تخدم الطلبة. - تنتشر فيه المكتبات، مراكز التصوير والطباعة، ومحلات القرطاسية. - يوجد أيضًا محلات ملابس وأحذية ومستلزمات متنوعة. ''',
+      images: [
+        "assets/images/academy.jpg",
+        "assets/images/academy2.jpg"
+      ],
     );
   }
 }
@@ -227,16 +224,8 @@ class SofianStreetPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const InfoPage(
       title: "شارع سفيان",
-      description: '''
-شارع سفيان يعتبر من الشوارع الحيوية في المدينة ويشتهر بالأنشطة التالية:
-- محلات تجارية متنوعة تشمل الملابس والأحذية.
-- مقاهي ومطاعم تقدم أطباق محلية وعالمية.
-- مراكز خدمات مثل صيدليات ومكاتب بريد.
-- حركة مرور نشطة خصوصًا في ساعات الذروة.
-- يسهل الوصول منه إلى المرافق التعليمية والصحية القريبة.
-''',
-      imageUrl:
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/%D8%B4%D8%A7%D8%B1%D8%B9_%D8%B3%D9%81%D9%8A%D8%A7%D9%86_%D9%81%D9%8A_%D9%86%D8%A7%D8%A8%D9%84%D8%B3_-_%D9%88%D8%B3%D8%B7_%D8%A7%D9%84%D9%85%D8%AF%D9%8A%D9%86%D8%A9.jpg/2560px-%D8%B4%D8%A7%D8%B1%D8%B9_%D8%B3%D9%81%D9%8A%D8%A7%D9%86_%D9%81%D9%8A_%D9%86%D8%A7%D8%A8%D9%84%D8%B3_-_%D9%88%D8%B3%D8%B7_%D8%A7%D9%84%D9%85%D8%AF%D9%8A%D9%86%D8%A9.jpg",
+      description: "شارع سفيان يعتبر من الشوارع الحيوية في المدينة ويشتهر بالأنشطة التالية: - محلات تجارية متنوعة تشمل الملابس والأحذية. - مقاهي ومطاعم تقدم أطباق محلية وعالمية. - مراكز خدمات مثل صيدليات ومكاتب بريد. - حركة مرور نشطة خصوصًا في ساعات الذروة. - يسهل الوصول منه إلى المرافق التعليمية والصحية القريبة.",
+      images: ["assets/images/sofian.jpg", "assets/images/sofian2.jpg"],
     );
   }
 }
@@ -248,15 +237,8 @@ class FaisalStreetPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const InfoPage(
       title: "شارع فيصل",
-      description: '''
-شارع فيصل هو أحد الشوارع الرئيسية في مدينة نابلس ويتميز بالتالي:
-- يربط بين مناطق المدينة الحيوية ويسهل الوصول إلى الأسواق والمراكز التجارية.
-- يحتوي على محلات تجارية متنوعة، من الملابس إلى الإلكترونيات.
-- وجود مقاهي ومطاعم شعبية وعالمية تناسب جميع الأذواق.
-- حركة مرور معتدلة نسبيًا مع مواقف سيارات متوفرة بجانب الشارع.
-- قريب من المدارس والمرافق الحكومية والخدمية، مما يجعله شارعًا مهمًا لسكان نابلس.
-''',
-      imageUrl: "",
+      description: "شارع فيصل هو أحد الشوارع الرئيسية في مدينة نابلس ويتميز بالتالي: - يربط بين مناطق المدينة الحيوية ويسهل الوصول إلى الأسواق والمراكز التجارية. - يحتوي على محلات تجارية متنوعة، من الملابس إلى الإلكترونيات. - وجود مقاهي ومطاعم شعبية وعالمية تناسب جميع الأذواق. - حركة مرور معتدلة نسبيًا مع مواقف سيارات متوفرة بجانب الشارع. - قريب من المدارس والمرافق الحكومية والخدمية، مما يجعله شارعًا مهمًا لسكان نابلس.",
+      images: ["assets/images/faisal.jpg", "assets/images/faisal2.jpg"],
     );
   }
 }
@@ -268,16 +250,8 @@ class MartyrsRoundaboutPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const InfoPage(
       title: "دوار الشهداء",
-      description: '''
-دوار الشهداء يُعتبر من المعالم المركزية في مدينة نابلس ويتميز بالتالي:
-- يعد نقطة التقاء رئيسية للطرق في وسط المدينة، مما يسهل التنقل بين المناطق المختلفة.
-- محاط بعدد من المحلات التجارية والمقاهي والمطاعم.
-- يوجد بالقرب منه مكاتب حكومية ومرافق عامة مهمة.
-- يعتبر مكانًا للتجمعات والمناسبات المحلية أحيانًا.
-- الحركة المرورية فيه نشطة خلال النهار، مع وجود إشارات مرور لتنظيم السير.
-''',
-      imageUrl:
-          "https://upload.wikimedia.org/wikipedia/commons/8/89/%D9%85%D9%86%D8%B7%D9%82%D8%A9_%D9%88%D8%B3%D8%B7_%D8%A7%D9%84%D8%A8%D9%84%D8%AF%D8%8C_%D9%85%D9%86%D8%B7%D9%82%D8%A9_%D8%AF%D9%88%D8%A7%D8%B1_%D8%A7%D9%84%D8%B4%D9%87%D8%AF%D8%A7%D8%A1%D8%8C_%D8%A8%D9%86%D8%A7%D8%A8%D9%84%D8%B3_%D9%81%D9%8A_%D9%81%D9%84%D8%B3%D8%B7%D9%8A%D9%86.jpg",
+      description: "دوار الشهداء يُعتبر من المعالم المركزية في مدينة نابلس ويتميز بالتالي: - يعد نقطة التقاء رئيسية للطرق في وسط المدينة، مما يسهل التنقل بين المناطق المختلفة. - محاط بعدد من المحلات التجارية والمقاهي والمطاعم. - يوجد بالقرب منه مكاتب حكومية ومرافق عامة مهمة. - يعتبر مكانًا للتجمعات والمناسبات المحلية أحيانًا. - الحركة المرورية فيه نشطة خلال النهار، مع وجود إشارات مرور لتنظيم السير.",
+      images: ["assets/images/martyrs.jpg", "assets/images/martyrs2.jpg", "assets/images/martyrs3.jpg"],
     );
   }
 }
@@ -326,20 +300,19 @@ class CityPlacesPage extends StatelessWidget {
     "نابلس": [
       {
         "title": "البلدة القديمة",
-        "page": const PlaceDetailsPage(
+        "page": PlaceDetailsPage(
           title: "البلدة القديمة",
           cityName: "نابلس",
-          imageUrl: "https://www.aljazeera.net/wp-content/uploads/2023/04/12-3.jpg",
+          images: ["assets/images/oldcity.jpg", "assets/images/oldcity2.jpg"],
           url: "https://example.com/oldcity",
         ),
       },
       {
         "title": "جبل جرزيم",
-        "page": const PlaceDetailsPage(
+        "page": PlaceDetailsPage(
           title: "جبل جرزيم",
           cityName: "نابلس",
-          imageUrl:
-              "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg/1280px-%D7%A8%D7%9B%D7%A1_%D7%94%D7%A8_%D7%92%D7%A8%D7%99%D7%96%D7%99%D7%9D.jpg",
+          images: ["assets/images/gerizim.jpg", "assets/images/gerizim2.jpg"],
           url: "https://example.com/gerizim",
         ),
       },
@@ -347,21 +320,19 @@ class CityPlacesPage extends StatelessWidget {
     "رام الله": [
       {
         "title": "دوار المنارة",
-        "page": const PlaceDetailsPage(
+        "page": PlaceDetailsPage(
           title: "دوار المنارة",
           cityName: "رام الله",
-          imageUrl:
-              "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Al-Manara2009.JPG/1280px-Al-Manara2009.JPG",
+          images: ["assets/images/manara.jpg", "assets/images/manara2.jpg"],
           url: "https://example.com/manara",
         ),
       },
       {
         "title": "متحف ياسر عرفات",
-        "page": const PlaceDetailsPage(
+        "page": PlaceDetailsPage(
           title: "متحف ياسر عرفات",
           cityName: "رام الله",
-          imageUrl:
-              "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Yasser_Arafat_Museum002.jpg/1280px-Yasser_Arafat_Museum002.jpg",
+          images: ["assets/images/arafat.jpg", "assets/images/arafat2.jpg", "assets/images/arafat3.jpg"],
           url: "https://example.com/arafat",
         ),
       },
@@ -369,21 +340,19 @@ class CityPlacesPage extends StatelessWidget {
     "جنين": [
       {
         "title": "كنيسة برقين",
-        "page": const PlaceDetailsPage(
+        "page": PlaceDetailsPage(
           title: "كنيسة برقين",
           cityName: "جنين",
-          imageUrl:
-              "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Burqin_Church-1.jpg/800px-Burqin_Church-1.jpg",
+          images: ["assets/images/burqin.jpg", "assets/images/burqin2.jpg"],
           url: "https://example.com/burqin",
         ),
       },
       {
         "title": "سهل مرج ابن عامر",
-        "page": const PlaceDetailsPage(
+        "page": PlaceDetailsPage(
           title: "سهل مرج ابن عامر",
           cityName: "جنين",
-          imageUrl:
-              "https://upload.wikimedia.org/wikipedia/commons/b/ba/PikiWiki_Israel_14301_Gilboa_Mountain.JPG",
+          images: ["assets/images/marj.jpg", "assets/images/marj2.jpg"],
           url: "https://example.com/marj",
         ),
       },
@@ -416,66 +385,19 @@ class CityPlacesPage extends StatelessWidget {
 }
 
 //
-// صفحة المعلومات العامة (Responsive Image)
+// صفحة المعلومات العامة (Carousel)
 //
 class InfoPage extends StatelessWidget {
   final String title;
   final String description;
-  final String imageUrl;
+  final List<String> images;
 
   const InfoPage({
     super.key,
     required this.title,
     required this.description,
-    required this.imageUrl,
+    required this.images,
   });
-
-  Widget _imageWidget(BuildContext context, BoxConstraints constraints) {
-    // الارتفاع الافتراضي حسب المنصة
-    final double maxHeight = kIsWeb ? 360 : 220;
-
-    // Placeholder لو الرابط فاضي أو فشل التحميل
-    final Widget placeholder = Container(
-      height: maxHeight,
-      width: double.infinity,
-      color: Colors.grey[200],
-      child: Center(
-        child: Icon(Icons.image, size: 64, color: Colors.grey[500]),
-      ),
-    );
-
-    if (imageUrl.trim().isEmpty) return placeholder;
-
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: constraints.maxWidth,
-        maxHeight: maxHeight,
-      ),
-      child: Image.network(
-        imageUrl,
-        width: double.infinity,
-        height: maxHeight,
-        fit: kIsWeb ? BoxFit.contain : BoxFit.cover,
-        // لو فشل تحميل الصورة، نعرض placeholder بدل الخطأ
-        errorBuilder: (context, error, stackTrace) => placeholder,
-        // أثناء التحميل نعرض مؤشر
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return SizedBox(
-            height: maxHeight,
-            child: Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                        (loadingProgress.expectedTotalBytes ?? 1)
-                    : null,
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -485,15 +407,24 @@ class InfoPage extends StatelessWidget {
         padding: const EdgeInsets.all(20.0),
         child: ListView(
           children: [
-            // عنوان أو وصف مختصر
             Text(description, style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 16),
-            // الصورة المتجاوبة
-            LayoutBuilder(builder: (context, constraints) {
-              return _imageWidget(context, constraints);
-            }),
+            CarouselSlider(
+              options: CarouselOptions(
+                height: kIsWeb ? 360 : 220,
+                enlargeCenterPage: true,
+                autoPlay: true,
+                viewportFraction: 0.9,
+              ),
+              items: images.map((imgPath) {
+                return Image.asset(
+                  imgPath,
+                  width: double.infinity,
+                  fit: kIsWeb ? BoxFit.contain : BoxFit.cover,
+                );
+              }).toList(),
+            ),
             const SizedBox(height: 16),
-            // محتوى إضافي (نفس الوصف مرة ثانية إن رغبت)
             Text(description, style: const TextStyle(fontSize: 18)),
           ],
         ),
@@ -545,19 +476,19 @@ class MapPage extends StatelessWidget {
 }
 
 //
-// صفحة تفاصيل عامة للأماكن (Responsive Image)
+// صفحة تفاصيل الأماكن (Carousel)
 //
 class PlaceDetailsPage extends StatelessWidget {
   final String title;
   final String cityName;
-  final String imageUrl;
+  final List<String> images;
   final String url;
 
   const PlaceDetailsPage({
     super.key,
     required this.title,
     required this.cityName,
-    required this.imageUrl,
+    required this.images,
     required this.url,
   });
 
@@ -566,45 +497,6 @@ class PlaceDetailsPage extends StatelessWidget {
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       throw Exception("تعذر فتح الرابط: $url");
     }
-  }
-
-  Widget _imageWidget(BuildContext context, BoxConstraints constraints) {
-    final double maxHeight = kIsWeb ? 360 : 220;
-    final Widget placeholder = Container(
-      height: maxHeight,
-      width: double.infinity,
-      color: Colors.grey[200],
-      child: Center(
-        child: Icon(Icons.image, size: 64, color: Colors.grey[500]),
-      ),
-    );
-
-    if (imageUrl.trim().isEmpty) return placeholder;
-
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: constraints.maxWidth, maxHeight: maxHeight),
-      child: Image.network(
-        imageUrl,
-        width: double.infinity,
-        height: maxHeight,
-        fit: kIsWeb ? BoxFit.contain : BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => placeholder,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return SizedBox(
-            height: maxHeight,
-            child: Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                        (loadingProgress.expectedTotalBytes ?? 1)
-                    : null,
-              ),
-            ),
-          );
-        },
-      ),
-    );
   }
 
   @override
@@ -620,9 +512,21 @@ class PlaceDetailsPage extends StatelessWidget {
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            LayoutBuilder(builder: (context, constraints) {
-              return _imageWidget(context, constraints);
-            }),
+            CarouselSlider(
+              options: CarouselOptions(
+                height: kIsWeb ? 360 : 220,
+                enlargeCenterPage: true,
+                autoPlay: true,
+                viewportFraction: 0.9,
+              ),
+              items: images.map((imgPath) {
+                return Image.asset(
+                  imgPath,
+                  width: double.infinity,
+                  fit: kIsWeb ? BoxFit.contain : BoxFit.cover,
+                );
+              }).toList(),
+            ),
             const SizedBox(height: 16),
             Text(
               "هذا وصف افتراضي لـ $title في $cityName. يمكنك تعديله لاحقًا.",
