@@ -6,7 +6,6 @@ import 'package:latlong2/latlong.dart' as latlng;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-
 void main() {
   runApp(const SmartGuideApp());
 }
@@ -139,6 +138,7 @@ class _ChoicePageState extends State<ChoicePage> {
               onPressed: () async {
                 Position position = await _determinePosition();
                 Navigator.push(
+                  // ignore: use_build_context_synchronously
                   context,
                   MaterialPageRoute(
                     builder: (context) => MapPage(position: position),
@@ -387,7 +387,7 @@ class CityPlacesPage extends StatelessWidget {
 //
 // صفحة المعلومات العامة (Carousel)
 //
-class InfoPage extends StatelessWidget {
+class InfoPage extends StatefulWidget {
   final String title;
   final String description;
   final List<String> images;
@@ -400,32 +400,68 @@ class InfoPage extends StatelessWidget {
   });
 
   @override
+  State<InfoPage> createState() => _InfoPageState();
+}
+
+class _InfoPageState extends State<InfoPage> {
+  int _activeIndex = 0;
+
+  @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(title: Text(widget.title)),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: ListView(
           children: [
-            Text(description, style: const TextStyle(fontSize: 18)),
+            Text(widget.description, style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 16),
-            CarouselSlider(
-              options: CarouselOptions(
-                height: kIsWeb ? 360 : 220,
-                enlargeCenterPage: true,
-                autoPlay: true,
-                viewportFraction: 0.9,
-              ),
-              items: images.map((imgPath) {
-                return Image.asset(
-                  imgPath,
-                  width: double.infinity,
-                  fit: kIsWeb ? BoxFit.contain : BoxFit.cover,
+
+            // Carousel Slider مع السحب + ضبط حجم تلقائي
+            CarouselSlider.builder(
+              itemCount: widget.images.length,
+              itemBuilder: (context, index, realIndex) {
+                final imgPath = widget.images[index];
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: AspectRatio(
+                    aspectRatio: kIsWeb ? 16 / 9 : 4 / 3,
+                    child: Image.asset(
+                      imgPath,
+                      fit: BoxFit.cover,
+                      width: screenWidth,
+                    ),
+                  ),
                 );
-              }).toList(),
+              },
+              options: CarouselOptions(
+                height: kIsWeb ? 400 : 250,
+                enlargeCenterPage: true,
+                enableInfiniteScroll: true,
+                viewportFraction: 0.9,
+                onPageChanged: (index, reason) {
+                  setState(() => _activeIndex = index);
+                },
+              ),
             ),
-            const SizedBox(height: 16),
-            Text(description, style: const TextStyle(fontSize: 18)),
+
+            const SizedBox(height: 12),
+
+            // Dots Indicator
+            Center(
+              child: AnimatedSmoothIndicator(
+                activeIndex: _activeIndex,
+                count: widget.images.length,
+                effect: ExpandingDotsEffect(
+                  dotHeight: 10,
+                  dotWidth: 10,
+                  activeDotColor: Colors.orange,
+                  dotColor: Colors.grey.shade400,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -433,9 +469,8 @@ class InfoPage extends StatelessWidget {
   }
 }
 
-//
-// صفحة الخريطة
-//
+/// صفحة الخريطة
+///
 class MapPage extends StatelessWidget {
   final Position position;
 
@@ -478,7 +513,7 @@ class MapPage extends StatelessWidget {
 //
 // صفحة تفاصيل الأماكن (Carousel)
 //
-class PlaceDetailsPage extends StatelessWidget {
+class PlaceDetailsPage extends StatefulWidget {
   final String title;
   final String cityName;
   final List<String> images;
@@ -492,6 +527,13 @@ class PlaceDetailsPage extends StatelessWidget {
     required this.url,
   });
 
+  @override
+  State<PlaceDetailsPage> createState() => _PlaceDetailsPageState();
+}
+
+class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
+  int _activeIndex = 0;
+
   Future<void> _launchURL(String url) async {
     final uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -501,42 +543,76 @@ class PlaceDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
-      appBar: AppBar(title: Text("تفاصيل $title")),
+      appBar: AppBar(title: Text("تفاصيل ${widget.title}")),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: ListView(
           children: [
             Text(
-              "$title - $cityName",
+              "${widget.title} - ${widget.cityName}",
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            CarouselSlider(
-              options: CarouselOptions(
-                height: kIsWeb ? 360 : 220,
-                enlargeCenterPage: true,
-                autoPlay: true,
-                viewportFraction: 0.9,
-              ),
-              items: images.map((imgPath) {
-                return Image.asset(
-                  imgPath,
-                  width: double.infinity,
-                  fit: kIsWeb ? BoxFit.contain : BoxFit.cover,
+
+            // Carousel Slider مع ضبط حجم تلقائي
+            CarouselSlider.builder(
+              itemCount: widget.images.length,
+              itemBuilder: (context, index, realIndex) {
+                final imgPath = widget.images[index];
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: AspectRatio(
+                    aspectRatio: kIsWeb ? 16 / 9 : 4 / 3,
+                    child: Image.asset(
+                      imgPath,
+                      fit: BoxFit.cover,
+                      width: screenWidth,
+                    ),
+                  ),
                 );
-              }).toList(),
+              },
+              options: CarouselOptions(
+                height: kIsWeb ? 400 : 250,
+                enlargeCenterPage: true,
+                enableInfiniteScroll: true,
+                viewportFraction: 0.9,
+                onPageChanged: (index, reason) {
+                  setState(() => _activeIndex = index);
+                },
+              ),
             ),
+
+            const SizedBox(height: 12),
+
+            // Dots Indicator
+            Center(
+              child: AnimatedSmoothIndicator(
+                activeIndex: _activeIndex,
+                count: widget.images.length,
+                effect: ExpandingDotsEffect(
+                  dotHeight: 10,
+                  dotWidth: 10,
+                  activeDotColor: Colors.orange,
+                  dotColor: Colors.grey.shade400,
+                ),
+              ),
+            ),
+
             const SizedBox(height: 16),
             Text(
-              "هذا وصف افتراضي لـ $title في $cityName. يمكنك تعديله لاحقًا.",
+              "هذا وصف افتراضي لـ ${widget.title} في ${widget.cityName}. يمكنك تعديله لاحقًا.",
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 16),
+
+            // الرابط
             InkWell(
-              onTap: () => _launchURL(url),
+              onTap: () => _launchURL(widget.url),
               child: Text(
-                url,
+                widget.url,
                 style: const TextStyle(
                   color: Colors.blue,
                   decoration: TextDecoration.underline,
