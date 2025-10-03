@@ -283,6 +283,7 @@ class _AcademyStreetPageState extends State<AcademyStreetPage> {
                 MaterialPageRoute(
                   builder: (_) => MapPage(
                     position: position,
+                    destination: latlng.LatLng(32.226938, 35.222279),
                     themeNotifier: widget.themeNotifier,
                   ),
                 ),
@@ -477,6 +478,7 @@ class _PalestineStreetPageState extends State<PalestineStreetPage> {
                 MaterialPageRoute(
                   builder: (_) => MapPage(
                     position: position,
+                    destination: latlng.LatLng(32.221378, 35.259687),
                     themeNotifier: widget.themeNotifier,
                   ),
                 ),
