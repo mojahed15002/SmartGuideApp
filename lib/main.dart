@@ -530,8 +530,7 @@ class GeneralInfoPage extends StatelessWidget {
   }
 }
 
-//
-// أماكن داخل المدينة
+// أماكن داخل كل مدينة
 //
 class CityPlacesPage extends StatelessWidget {
   final ThemeNotifier themeNotifier;
@@ -545,11 +544,12 @@ class CityPlacesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔹 الماب صار جوّا build
+    // 🔹 الماب موجود جوّا build
     final Map<String, List<Map<String, dynamic>>> cityPlacesPages = {
       "نابلس": [
         {
           "title": "البلدة القديمة",
+          "images": ["assets/images/oldcity.jpg", "assets/images/oldcity2.jpg"],
           "page": PlaceDetailsPage(
             title: "البلدة القديمة",
             cityName: "نابلس",
@@ -560,6 +560,7 @@ class CityPlacesPage extends StatelessWidget {
         },
         {
           "title": "جبل جرزيم",
+          "images": ["assets/images/gerizim.jpg", "assets/images/gerizim2.jpg"],
           "page": PlaceDetailsPage(
             title: "جبل جرزيم",
             cityName: "نابلس",
@@ -572,6 +573,7 @@ class CityPlacesPage extends StatelessWidget {
       "رام الله": [
         {
           "title": "دوار المنارة",
+          "images": ["assets/images/manara.jpg", "assets/images/manara2.jpg"],
           "page": PlaceDetailsPage(
             title: "دوار المنارة",
             cityName: "رام الله",
@@ -582,6 +584,11 @@ class CityPlacesPage extends StatelessWidget {
         },
         {
           "title": "متحف ياسر عرفات",
+          "images": [
+            "assets/images/arafat.jpg",
+            "assets/images/arafat2.jpg",
+            "assets/images/arafat3.jpg"
+          ],
           "page": PlaceDetailsPage(
             title: "متحف ياسر عرفات",
             cityName: "رام الله",
@@ -598,6 +605,7 @@ class CityPlacesPage extends StatelessWidget {
       "جنين": [
         {
           "title": "كنيسة برقين",
+          "images": ["assets/images/burqin.jpg", "assets/images/burqin2.jpg"],
           "page": PlaceDetailsPage(
             title: "كنيسة برقين",
             cityName: "جنين",
@@ -608,6 +616,7 @@ class CityPlacesPage extends StatelessWidget {
         },
         {
           "title": "سهل مرج ابن عامر",
+          "images": ["assets/images/marj.jpg", "assets/images/marj2.jpg"],
           "page": PlaceDetailsPage(
             title: "سهل مرج ابن عامر",
             cityName: "جنين",
@@ -628,25 +637,149 @@ class CityPlacesPage extends StatelessWidget {
           ThemeToggleButton(themeNotifier: themeNotifier), // ✅ زر الوضع الليلي
         ],
       ),
-      body: ListView(
-        children: places.map((placeData) {
-          return ListTile(
-            title: Text(placeData["title"]),
-            trailing: const Icon(Icons.arrow_forward_ios, color: Colors.orange),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => placeData["page"]),
-              );
-            },
-          );
-        }).toList(),
+      body: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: places.length <= 3
+            // ✅ عرض كقائمة (كروت بعرض الشاشة)
+            ? ListView.builder(
+                itemCount: places.length,
+                itemBuilder: (context, index) {
+                  final placeData = places[index];
+                  final String title = placeData["title"];
+                  final List<String> images = placeData["images"];
+
+                  return TweenAnimationBuilder(
+                    duration: Duration(milliseconds: 400 + (index * 200)),
+                    tween: Tween<double>(begin: 0, end: 1),
+                    builder: (context, value, child) {
+                      return Opacity(
+                        opacity: value,
+                        child: Transform.scale(scale: value, child: child),
+                      );
+                    },
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => placeData["page"]),
+                        );
+                      },
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 4,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Hero(
+                              tag: "${cityName}_${title}_image",
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(16),
+                                ),
+                                child: Image.asset(
+                                  images.first,
+                                  fit: BoxFit.cover,
+                                  height: 200,
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Text(
+                                title,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              )
+            // ✅ عرض كـ Grid
+            : GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, // عمودين
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 3 / 4, // نسبة العرض للارتفاع
+                ),
+                itemCount: places.length,
+                itemBuilder: (context, index) {
+                  final placeData = places[index];
+                  final String title = placeData["title"];
+                  final List<String> images = placeData["images"];
+
+                  return TweenAnimationBuilder(
+                    duration: Duration(milliseconds: 300 + (index * 150)),
+                    tween: Tween<double>(begin: 0, end: 1),
+                    builder: (context, value, child) {
+                      return Opacity(
+                        opacity: value,
+                        child: Transform.scale(scale: value, child: child),
+                      );
+                    },
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => placeData["page"]),
+                        );
+                      },
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 4,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: Hero(
+                                tag: "${cityName}_${title}_image",
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(16),
+                                  ),
+                                  child: Image.asset(
+                                    images.first, // 👈 أول صورة فقط للعرض
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
 }
 
-//
+
 // صفحة المعلومات العامة (Carousel)
 //
 class InfoPage extends StatefulWidget {
@@ -1045,14 +1178,17 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
                       ),
                     );
                   },
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: AspectRatio(
-                      aspectRatio: kIsWeb ? 16 / 9 : 4 / 3,
-                      child: Image.asset(
-                        imgPath,
-                        fit: BoxFit.cover,
-                        width: screenWidth,
+                  child: Hero(
+                    tag: "${widget.cityName}_${widget.title}", // 👈 نفس الـ tag من صفحة الكروت
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: AspectRatio(
+                        aspectRatio: kIsWeb ? 16 / 9 : 4 / 3,
+                        child: Image.asset(
+                          imgPath,
+                          fit: BoxFit.cover,
+                          width: screenWidth,
+                        ),
                       ),
                     ),
                   ),
@@ -1131,6 +1267,9 @@ class FullScreenGallery extends StatelessWidget {
             pageController: PageController(initialPage: initialIndex),
             builder: (context, index) {
               return PhotoViewGalleryPageOptions(
+                heroAttributes: PhotoViewHeroAttributes(
+                  tag: "gallery_${images[index]}", // 👈 tag فريد للصورة
+                ),
                 imageProvider: AssetImage(images[index]),
                 minScale: PhotoViewComputedScale.contained,
                 maxScale: PhotoViewComputedScale.covered * 3,
