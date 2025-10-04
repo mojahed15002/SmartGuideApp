@@ -80,8 +80,8 @@ class WelcomePage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              " مرحباً بك في مرشدك السياحي الخاص👋",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              "مرحباً بك في مرشدك السياحي الخاص👋",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 40),
 
@@ -121,7 +121,7 @@ class ChoicePage extends StatefulWidget {
 class _ChoicePageState extends State<ChoicePage> {
   @override
   Widget build(BuildContext context) {
-    // 🔹 نقلنا تعريف الماب لداخل build
+    //  نقلنا تعريف الماب لداخل build
     final Map<String, Widget Function()> placePages = {
       "شارع الأكاديمية": () => AcademyStreetPage(themeNotifier: widget.themeNotifier),
       "شارع سفيان": () => SofianStreetPage(themeNotifier: widget.themeNotifier),
@@ -168,7 +168,7 @@ class _ChoicePageState extends State<ChoicePage> {
                   focusNode: focusNode,
                   onEditingComplete: onEditingComplete,
                   decoration: const InputDecoration(
-                    hintText: "ابحث عن المنطقة...",
+                    hintText: "ابحث عن منطقة أو شارع...",
                     border: OutlineInputBorder(),
                     suffixIcon: Icon(Icons.search, color: Colors.orange),
                   ),
@@ -248,8 +248,7 @@ class _ChoicePageState extends State<ChoicePage> {
   }
 }
 
-///
-/// صفحات الأماكن الفردية
+/// صفحات الشوارع
 class AcademyStreetPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   const AcademyStreetPage({super.key, required this.themeNotifier});
@@ -566,6 +565,28 @@ class CityPlacesPage extends StatelessWidget {
             cityName: "نابلس",
             images: ["assets/images/gerizim.jpg", "assets/images/gerizim2.jpg"],
             url: "https://example.com/gerizim",
+            themeNotifier: themeNotifier,
+          ),
+        },
+         {
+          "title": "سبسطية",
+          "images": ["assets/images/sabastiya.jpg", "assets/images/sabastiya2.jpg"],
+          "page": PlaceDetailsPage(
+            title: "سبسطية",
+            cityName: "نابلس",
+            images: ["assets/images/sabastiya.jpg", "assets/images/sabastiya2.jpg", "assets/images/sabastiya3.jpg", "assets/images/sabastiya4.jpg", "assets/images/sabastiya5.jpg"],
+            url: "https://example.com/sabastiya",
+            themeNotifier: themeNotifier,
+          ),
+        },
+        {
+          "title": "كنيسة بئر يعقوب",
+          "images": ["assets/images/bir_yakub.jpg", "assets/images/bir_yakub2.jpg"],
+          "page": PlaceDetailsPage(
+            title: "كنيسة بئر يعقوب",
+            cityName: "نابلس",
+            images: ["assets/images/bir_yakub.jpg", "assets/images/bir_yakub2.jpg", "assets/images/bir_yakub3.jpg"],
+            url: "https://example.com/bir_yakub",
             themeNotifier: themeNotifier,
           ),
         },
