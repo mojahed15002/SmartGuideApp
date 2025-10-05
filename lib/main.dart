@@ -284,6 +284,8 @@ class _AcademyStreetPageState extends State<AcademyStreetPage> {
                     position: position,
                     destination: latlng.LatLng(32.226938, 35.222279),
                     themeNotifier: widget.themeNotifier,
+                      enableTap: false, // 🚫 تعطيل النقر على الخريطة + إخفاء التلميح
+                      enableLiveTracking: true, // ✅ تتبع حي للموقع
                   ),
                 ),
               );
@@ -332,6 +334,8 @@ class _SofianStreetPageState extends State<SofianStreetPage> {
                     position: position,
                     destination: latlng.LatLng(32.222376, 35.260532),
                     themeNotifier: widget.themeNotifier,
+                     enableTap: false, // 🚫 تعطيل النقر على الخريطة + إخفاء التلميح
+                     enableLiveTracking: true, // ✅ تتبع حي للموقع
                   ),
                 ),
               );
@@ -381,6 +385,8 @@ class _FaisalStreetPageState extends State<FaisalStreetPage> {
                     position: position,
                     destination: latlng.LatLng(32.222243, 35.262778),
                     themeNotifier: widget.themeNotifier,
+                     enableTap: false, // 🚫 تعطيل النقر على الخريطة + إخفاء التلميح
+                     enableLiveTracking: true, // ✅ تتبع حي للموقع
                   ),
                 ),
               );
@@ -430,6 +436,8 @@ class _MartyrsRoundaboutPageState extends State<MartyrsRoundaboutPage> {
                     position: position,
                     destination: latlng.LatLng(32.221119, 35.260817),
                     themeNotifier: widget.themeNotifier,
+                     enableTap: false, // 🚫 تعطيل النقر على الخريطة + إخفاء التلميح
+                     enableLiveTracking: true, // ✅ تتبع حي للموقع
                   ),
                 ),
               );
@@ -479,6 +487,8 @@ class _PalestineStreetPageState extends State<PalestineStreetPage> {
                     position: position,
                     destination: latlng.LatLng(32.221378, 35.259687),
                     themeNotifier: widget.themeNotifier,
+                     enableTap: false, // 🚫 تعطيل النقر على الخريطة + إخفاء التلميح
+                     enableLiveTracking: true, // ✅ تتبع حي للموقع
                   ),
                 ),
               );
@@ -907,26 +917,36 @@ class _InfoPageState extends State<InfoPage> {
 
 
 
-/// صفحة الخريطة
+/// صفحة الخريطة (محدثة مع ميزات التحكم الكامل)
 class MapPage extends StatefulWidget {
   /// الموقع الحالي للمستخدم
   final Position position;
   final ThemeNotifier themeNotifier;
+
   /// الوجهة (اختيارية)
   final latlng.LatLng? destination;
 
-  const MapPage({
-    super.key,
-    required this.position,
-    required this.themeNotifier,
-    this.destination,
-  });
+  /// هل يُسمح بالنقر على الخريطة؟
+  final bool enableTap;
+
+final bool enableLiveTracking; // ✅ ميزة التتبع الحي
+
+const MapPage({
+  super.key,
+  required this.position,
+  required this.themeNotifier,
+  this.destination,
+  this.enableTap = true,
+  this.enableLiveTracking = false, // الافتراضي: معطل
+});
 
   @override
   State<MapPage> createState() => _MapPageState();
 }
 
 class _MapPageState extends State<MapPage> {
+  final fm.MapController _mapController = fm.MapController(); // 💡 للتحكم بالخريطة
+
   List<latlng.LatLng> routePoints = [];
   bool _loading = true;
   String? _error;
@@ -942,14 +962,36 @@ class _MapPageState extends State<MapPage> {
   /// ستايل الخريطة
   String _currentStyle = "streets";
 
+  /// الوجهة التي يحددها المستخدم بالنقر (تُستخدم بدل widget.destination إذا ضُبطت)
+  latlng.LatLng? _destination;
+
+  /// نتائج ملخص المسار
+  double? _summaryDistanceMeters;
+  double? _summaryDurationSeconds;
+
   @override
   void initState() {
     super.initState();
-    if (widget.destination != null) {
-      _getRoute(widget.destination!);
+    _destination = widget.destination;
+    if (_destination != null) {
+      _getRoute(_destination!);
     } else {
       _loading = false;
     }
+    // ✅ تفعيل تتبع حي للموقع
+  if (widget.enableLiveTracking) {
+    Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.best),
+    ).listen((Position pos) {
+      final newPos = latlng.LatLng(pos.latitude, pos.longitude);
+      setState(() {
+        widget.position.latitude == pos.latitude;
+        widget.position.longitude == pos.longitude;
+      });
+      // تحريك الكاميرا على الموقع الجديد
+      _mapController.move(newPos, _mapController.camera.zoom);
+    });
+  }
   }
 
   Future<void> _getRoute(latlng.LatLng destination) async {
@@ -957,6 +999,8 @@ class _MapPageState extends State<MapPage> {
       _loading = true;
       _error = null;
       routePoints = [];
+      _summaryDistanceMeters = null;
+      _summaryDurationSeconds = null;
     });
 
     const apiKey =
@@ -969,25 +1013,46 @@ class _MapPageState extends State<MapPage> {
       "https://api.openrouteservice.org/v2/directions/$_selectedMode?start=$start&end=$end",
     );
 
-    final response = await http.get(url, headers: {
-      'Authorization': apiKey,
-      'Accept': 'application/json, application/geo+json'
-    });
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final coords = data["features"][0]["geometry"]["coordinates"] as List;
-
-      setState(() {
-        routePoints = coords
-            .map((c) => latlng.LatLng(
-                (c[1] as num).toDouble(), (c[0] as num).toDouble()))
-            .toList();
-        _loading = false;
+    try {
+      final response = await http.get(url, headers: {
+        'Authorization': apiKey,
+        'Accept': 'application/json, application/geo+json'
       });
-    } else {
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        final coords = data["features"][0]["geometry"]["coordinates"] as List;
+        final points = coords
+            .map((c) =>
+                latlng.LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()))
+            .toList();
+
+        double? distance;
+        double? duration;
+        try {
+          final summary = data["features"][0]["properties"]["summary"];
+          if (summary != null) {
+            distance = (summary["distance"] as num).toDouble();
+            duration = (summary["duration"] as num).toDouble();
+          }
+        } catch (_) {}
+
+        setState(() {
+          routePoints = points;
+          _summaryDistanceMeters = distance;
+          _summaryDurationSeconds = duration;
+          _loading = false;
+        });
+      } else {
+        setState(() {
+          _error = "خطأ من خادم ORS: ${response.statusCode}";
+          _loading = false;
+        });
+      }
+    } catch (e) {
       setState(() {
-        _error = "ORS error: ${response.statusCode}";
+        _error = "خطأ في الاتصال: $e";
         _loading = false;
       });
     }
@@ -999,10 +1064,31 @@ class _MapPageState extends State<MapPage> {
         return "https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=EvrUD11e3k8dXq0KBsyK";
       case "hybrid":
         return "https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=EvrUD11e3k8dXq0KBsyK";
-      case "streets":
       default:
         return "https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=EvrUD11e3k8dXq0KBsyK";
     }
+  }
+
+  String _formatDistance(double meters) {
+    if (meters >= 1000) {
+      final km = meters / 1000;
+      return "${km.toStringAsFixed(2)} كم";
+    } else {
+      return "${meters.toStringAsFixed(0)} م";
+    }
+  }
+
+  String _formatDuration(double seconds) {
+    final int s = seconds.round();
+    final hours = s ~/ 3600;
+    final minutes = (s % 3600) ~/ 60;
+    final secs = s % 60;
+    // ignore: unnecessary_brace_in_string_interps
+    if (hours > 0) return "${hours} س ${minutes} د";
+    // ignore: unnecessary_brace_in_string_interps
+    if (minutes > 0) return "${minutes} د ${secs} ث";
+    // ignore: unnecessary_brace_in_string_interps
+    return "${secs} ث";
   }
 
   @override
@@ -1037,6 +1123,23 @@ class _MapPageState extends State<MapPage> {
           )
         ],
       ),
+
+      // ✅ زر يعيد تمركز الخريطة فعليًا (يُخفي تلقائيًا إذا الصفحة غير تفاعلية)
+      floatingActionButton: widget.enableTap
+          ? FloatingActionButton.extended(
+              backgroundColor: Colors.orange,
+              icon: const Icon(Icons.my_location),
+              label: const Text("مركّز إلى موقعي"),
+              onPressed: () {
+                final userLocation = latlng.LatLng(
+                  widget.position.latitude,
+                  widget.position.longitude,
+                );
+                _mapController.move(userLocation, 16.0);
+              },
+            )
+          : null,
+
       body: Column(
         children: [
           /// Dropdown لاختيار وسيلة النقل
@@ -1051,29 +1154,82 @@ class _MapPageState extends State<MapPage> {
                       ))
                   .toList(),
               onChanged: (value) {
-                if (value != null && widget.destination != null) {
+                if (value != null && _destination != null) {
                   setState(() {
                     _selectedMode = value;
                   });
-                  _getRoute(widget.destination!);
+                  _getRoute(_destination!);
+                } else {
+                  setState(() {
+                    _selectedMode = value ?? _selectedMode;
+                  });
                 }
               },
             ),
           ),
+
+          /// عرض الملخص (المسافة/الزمن)
+          if (_summaryDistanceMeters != null || _summaryDurationSeconds != null)
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+              child: Card(
+                color: Theme.of(context).cardColor,
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, color: Colors.orange),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          "المسافة: ${_summaryDistanceMeters != null ? _formatDistance(_summaryDistanceMeters!) : 'غير متوفر'}  •  الوقت: ${_summaryDurationSeconds != null ? _formatDuration(_summaryDurationSeconds!) : 'غير متوفر'}",
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          setState(() {
+                            _summaryDistanceMeters = null;
+                            _summaryDurationSeconds = null;
+                            routePoints = [];
+                            _destination = null;
+                          });
+                        },
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
           /// الخريطة
           Expanded(
             child: Stack(
               children: [
                 fm.FlutterMap(
+                  mapController: _mapController,
                   options: fm.MapOptions(
-                    initialCenter: userLocation,
-                    initialZoom: 14,
+                    // ignore: deprecated_member_use
+                    center: userLocation,
+                    // ignore: deprecated_member_use
+                    zoom: 14,
+                    onTap: widget.enableTap
+                        ? (tapPosition, point) {
+                            setState(() {
+                              _destination = point;
+                              _error = null;
+                            });
+                            _getRoute(point);
+                          }
+                        : null, // ❌ تعطيل النقر إذا enableTap = false
                   ),
                   children: [
                     fm.TileLayer(
                       urlTemplate: _getUrlTemplate(),
-                      userAgentPackageName: 'com.example.flutter_application_1',
+                      userAgentPackageName:
+                          'com.example.smartguideapp', // عدل لو مشروعك له اسم آخر
                     ),
                     fm.MarkerLayer(
                       markers: [
@@ -1084,9 +1240,9 @@ class _MapPageState extends State<MapPage> {
                           child: const Icon(Icons.person_pin_circle,
                               color: Colors.blue, size: 40),
                         ),
-                        if (widget.destination != null)
+                        if (_destination != null)
                           fm.Marker(
-                            point: widget.destination!,
+                            point: _destination!,
                             width: 60,
                             height: 60,
                             child: const Icon(Icons.location_pin,
@@ -1121,6 +1277,21 @@ class _MapPageState extends State<MapPage> {
                       ),
                     ),
                   ),
+
+                // ✅ التلميح يظهر فقط عندما enableTap = true
+                if (widget.enableTap)
+                  Positioned(
+                    bottom: 12,
+                    left: 12,
+                    right: 12,
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: const Text(
+                            "اضغط أي مكان في الخريطة لتعيين وجهة. اختر وسيلة النقل لإعادة حساب المسار."),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -1129,6 +1300,7 @@ class _MapPageState extends State<MapPage> {
     );
   }
 }
+
 
 /// صفحة تفاصيل الأماكن (Carousel)
 class PlaceDetailsPage extends StatefulWidget {
@@ -1313,4 +1485,3 @@ class FullScreenGallery extends StatelessWidget {
     );
   }
 }
-
