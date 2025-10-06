@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "338735247031",
+    "project_id": "smart-city-guide-4b29b",
+    "storage_bucket": "smart-city-guide-4b29b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:338735247031:android:daaea0ae7921950a9e2732",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "338735247031-j7ujvm7soa95ou9lblv8knni4t6bg56l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.flutter_application_1",
+            "certificate_hash": "6c87f03a7e4492ec100a97405a4ff64aa9a1176e"
+          }
+        },
+        {
+          "client_id": "338735247031-41sl1ksildsn70n2l6fvpq20b2qnjb1n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5aYnggkKnFNUqBL8cskM2LowBi6s-Vsg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "338735247031-41sl1ksildsn70n2l6fvpq20b2qnjb1n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "338735247031-1vdfm20i0e8c0pnscr9bhj8ae2kllp20.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flutterApplication1"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

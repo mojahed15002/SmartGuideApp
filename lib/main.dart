@@ -7,103 +7,35 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'theme_toggle_button.dart';
+import 'theme_notifier.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'login_page.dart';
+import 'welcome_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-void main() {
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(MyAppWrapper());
 }
 
-// ThemeNotifier لإدارة الوضع الليلي / النهاري
-class ThemeNotifier extends ValueNotifier<ThemeMode> {
-  ThemeNotifier() : super(ThemeMode.light);
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
-  void toggleTheme() {
-    value = value == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
-  }
-}
-
-// Wrapper لتطبيق MaterialApp مع ValueListenableBuilder
-class MyAppWrapper extends StatelessWidget {
-  final ThemeNotifier themeNotifier = ThemeNotifier();
-
-  MyAppWrapper({super.key});
-
-  @override
+    @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: themeNotifier,
-      builder: (context, themeMode, _) {
-        return MaterialApp(
-          title: 'Smart City Guide',
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            primarySwatch: Colors.orange,
-            fontFamily: "Roboto",
-            brightness: Brightness.light,
-          ),
-          darkTheme: ThemeData(
-            primarySwatch: Colors.orange,
-            fontFamily: "Roboto",
-            brightness: Brightness.dark,
-          ),
-          themeMode: themeMode,
-          home: WelcomePage(themeNotifier: themeNotifier),
-        );
-      },
-    );
-  }
-}
-
-//
-// صفحة 1: الترحيب
-//
-class WelcomePage extends StatelessWidget {
-  final ThemeNotifier themeNotifier;
-
-  const WelcomePage({super.key, required this.themeNotifier});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        actions: [
-          ThemeToggleButton(themeNotifier: themeNotifier), // 🔥 زر التبديل الجديد
-        ],
-      ),
-
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              "مرحباً بك في مرشدك السياحي الخاص👋",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 40),
-
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 15,
-                ),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ChoicePage(themeNotifier: themeNotifier)),
-                );
-              },
-              child: const Text("انطلق😎"),
-            ),
-          ],
-        ),
-      ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Smart City Guide',
+      home: LoginPage(themeNotifier: ThemeNotifier()),
     );
   }
 }
@@ -247,6 +179,42 @@ class _ChoicePageState extends State<ChoicePage> {
     return await Geolocator.getCurrentPosition();
   }
 }
+
+
+
+// Wrapper لتطبيق MaterialApp مع ValueListenableBuilder
+class MyAppWrapper extends StatelessWidget {
+  final ThemeNotifier themeNotifier = ThemeNotifier();
+
+  MyAppWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (context, themeMode, _) {
+        return MaterialApp(
+          title: 'Smart City Guide',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            primarySwatch: Colors.orange,
+            fontFamily: "Roboto",
+            brightness: Brightness.light,
+          ),
+          darkTheme: ThemeData(
+            primarySwatch: Colors.orange,
+            fontFamily: "Roboto",
+            brightness: Brightness.dark,
+          ),
+          themeMode: themeMode,
+          home: WelcomePage(themeNotifier: themeNotifier),
+        );
+      },
+    );
+  }
+}
+
+
 
 /// صفحات الشوارع
 class AcademyStreetPage extends StatefulWidget {
@@ -553,51 +521,33 @@ class CityPlacesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔹 الماب موجود جوّا build
+    // 🔹 الماب موجود جوّا build (مع إضافات heroTag لكل مكان)
     final Map<String, List<Map<String, dynamic>>> cityPlacesPages = {
       "نابلس": [
         {
           "title": "البلدة القديمة",
           "images": ["assets/images/oldcity.jpg", "assets/images/oldcity2.jpg"],
+          "hero": "nablus_oldcity",
           "page": PlaceDetailsPage(
             title: "البلدة القديمة",
             cityName: "نابلس",
             images: ["assets/images/oldcity.jpg", "assets/images/oldcity2.jpg"],
             url: "https://example.com/oldcity",
             themeNotifier: themeNotifier,
+            heroTag: "nablus_oldcity",
           ),
         },
         {
           "title": "جبل جرزيم",
           "images": ["assets/images/gerizim.jpg", "assets/images/gerizim2.jpg"],
+          "hero": "nablus_gerizim",
           "page": PlaceDetailsPage(
             title: "جبل جرزيم",
             cityName: "نابلس",
             images: ["assets/images/gerizim.jpg", "assets/images/gerizim2.jpg"],
             url: "https://example.com/gerizim",
             themeNotifier: themeNotifier,
-          ),
-        },
-         {
-          "title": "سبسطية",
-          "images": ["assets/images/sabastiya.jpg", "assets/images/sabastiya2.jpg"],
-          "page": PlaceDetailsPage(
-            title: "سبسطية",
-            cityName: "نابلس",
-            images: ["assets/images/sabastiya.jpg", "assets/images/sabastiya2.jpg", "assets/images/sabastiya3.jpg", "assets/images/sabastiya4.jpg", "assets/images/sabastiya5.jpg"],
-            url: "https://example.com/sabastiya",
-            themeNotifier: themeNotifier,
-          ),
-        },
-        {
-          "title": "كنيسة بئر يعقوب",
-          "images": ["assets/images/bir_yakub.jpg", "assets/images/bir_yakub2.jpg"],
-          "page": PlaceDetailsPage(
-            title: "كنيسة بئر يعقوب",
-            cityName: "نابلس",
-            images: ["assets/images/bir_yakub.jpg", "assets/images/bir_yakub2.jpg", "assets/images/bir_yakub3.jpg"],
-            url: "https://example.com/bir_yakub",
-            themeNotifier: themeNotifier,
+            heroTag: "nablus_gerizim",
           ),
         },
       ],
@@ -605,12 +555,14 @@ class CityPlacesPage extends StatelessWidget {
         {
           "title": "دوار المنارة",
           "images": ["assets/images/manara.jpg", "assets/images/manara2.jpg"],
+          "hero": "ramallah_manara",
           "page": PlaceDetailsPage(
             title: "دوار المنارة",
             cityName: "رام الله",
             images: ["assets/images/manara.jpg", "assets/images/manara2.jpg"],
             url: "https://example.com/manara",
             themeNotifier: themeNotifier,
+            heroTag: "ramallah_manara",
           ),
         },
         {
@@ -620,6 +572,7 @@ class CityPlacesPage extends StatelessWidget {
             "assets/images/arafat2.jpg",
             "assets/images/arafat3.jpg"
           ],
+          "hero": "ramallah_arafat",
           "page": PlaceDetailsPage(
             title: "متحف ياسر عرفات",
             cityName: "رام الله",
@@ -630,6 +583,7 @@ class CityPlacesPage extends StatelessWidget {
             ],
             url: "https://example.com/arafat",
             themeNotifier: themeNotifier,
+            heroTag: "ramallah_arafat",
           ),
         },
       ],
@@ -637,23 +591,27 @@ class CityPlacesPage extends StatelessWidget {
         {
           "title": "كنيسة برقين",
           "images": ["assets/images/burqin.jpg", "assets/images/burqin2.jpg"],
+          "hero": "jenin_burqin",
           "page": PlaceDetailsPage(
             title: "كنيسة برقين",
             cityName: "جنين",
             images: ["assets/images/burqin.jpg", "assets/images/burqin2.jpg"],
             url: "https://example.com/burqin",
             themeNotifier: themeNotifier,
+            heroTag: "jenin_burqin",
           ),
         },
         {
           "title": "سهل مرج ابن عامر",
           "images": ["assets/images/marj.jpg", "assets/images/marj2.jpg"],
+          "hero": "jenin_marj",
           "page": PlaceDetailsPage(
             title: "سهل مرج ابن عامر",
             cityName: "جنين",
             images: ["assets/images/marj.jpg", "assets/images/marj2.jpg"],
             url: "https://example.com/marj",
             themeNotifier: themeNotifier,
+            heroTag: "jenin_marj",
           ),
         },
       ],
@@ -677,15 +635,21 @@ class CityPlacesPage extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final placeData = places[index];
                   final String title = placeData["title"];
-                  final List<String> images = placeData["images"];
+                  final List<String> images = List<String>.from(placeData["images"]);
+                  final String heroTag = placeData["hero"] ?? "${cityName}_$title";
 
-                  return TweenAnimationBuilder(
-                    duration: Duration(milliseconds: 400 + (index * 200)),
-                    tween: Tween<double>(begin: 0, end: 1),
+                  // staggered animation for each item
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: Duration(milliseconds: 300 + index * 120),
+                    curve: Curves.easeOut,
                     builder: (context, value, child) {
                       return Opacity(
                         opacity: value,
-                        child: Transform.scale(scale: value, child: child),
+                        child: Transform.translate(
+                          offset: Offset(0, 20 * (1 - value)),
+                          child: child,
+                        ),
                       );
                     },
                     child: GestureDetector(
@@ -704,16 +668,17 @@ class CityPlacesPage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Hero(
-                              tag: "${cityName}_${title}_image",
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(16),
-                                ),
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(16),
+                              ),
+                              child: Hero(
+                                tag: heroTag,
                                 child: Image.asset(
                                   images.first,
                                   fit: BoxFit.cover,
                                   height: 200,
+                                  width: double.infinity,
                                 ),
                               ),
                             ),
@@ -747,15 +712,20 @@ class CityPlacesPage extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final placeData = places[index];
                   final String title = placeData["title"];
-                  final List<String> images = placeData["images"];
+                  final List<String> images = List<String>.from(placeData["images"]);
+                  final String heroTag = placeData["hero"] ?? "${cityName}_$title";
 
-                  return TweenAnimationBuilder(
-                    duration: Duration(milliseconds: 300 + (index * 150)),
-                    tween: Tween<double>(begin: 0, end: 1),
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: Duration(milliseconds: 300 + index * 100),
+                    curve: Curves.easeOut,
                     builder: (context, value, child) {
                       return Opacity(
                         opacity: value,
-                        child: Transform.scale(scale: value, child: child),
+                        child: Transform.translate(
+                          offset: Offset(0, 20 * (1 - value)),
+                          child: child,
+                        ),
                       );
                     },
                     child: GestureDetector(
@@ -774,12 +744,12 @@ class CityPlacesPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Expanded(
-                              child: Hero(
-                                tag: "${cityName}_${title}_image",
-                                child: ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(16),
-                                  ),
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(16),
+                                ),
+                                child: Hero(
+                                  tag: heroTag,
                                   child: Image.asset(
                                     images.first, // 👈 أول صورة فقط للعرض
                                     fit: BoxFit.cover,
@@ -1309,6 +1279,7 @@ class PlaceDetailsPage extends StatefulWidget {
   final List<String> images;
   final String url;
   final ThemeNotifier themeNotifier;
+  final String heroTag; // جديد: تاج الـ Hero
 
   const PlaceDetailsPage({
     super.key,
@@ -1317,6 +1288,7 @@ class PlaceDetailsPage extends StatefulWidget {
     required this.images,
     required this.url,
     required this.themeNotifier,
+    required this.heroTag,
   });
 
   @override
@@ -1359,6 +1331,21 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
               itemCount: widget.images.length,
               itemBuilder: (context, index, realIndex) {
                 final imgPath = widget.images[index];
+
+                // الصورة داخل الـ Hero عندما تكون الصورة الأولى (أو يمكنك تعديل الشرط إن أردت)
+                Widget imageWidget = Image.asset(
+                  imgPath,
+                  fit: BoxFit.cover,
+                  width: screenWidth,
+                );
+
+                if (index == 0) {
+                  imageWidget = Hero(
+                    tag: widget.heroTag,
+                    child: imageWidget,
+                  );
+                }
+
                 return GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -1371,18 +1358,11 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
                       ),
                     );
                   },
-                  child: Hero(
-                    tag: "${widget.cityName}_${widget.title}", // 👈 نفس الـ tag من صفحة الكروت
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: AspectRatio(
-                        aspectRatio: kIsWeb ? 16 / 9 : 4 / 3,
-                        child: Image.asset(
-                          imgPath,
-                          fit: BoxFit.cover,
-                          width: screenWidth,
-                        ),
-                      ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: AspectRatio(
+                      aspectRatio: kIsWeb ? 16 / 9 : 4 / 3,
+                      child: imageWidget,
                     ),
                   ),
                 );
@@ -1482,6 +1462,48 @@ class FullScreenGallery extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class MyAppWrapperBackup1 extends StatelessWidget {
+  final ThemeNotifier themeNotifier = ThemeNotifier();
+
+  MyAppWrapperBackup1({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (context, themeMode, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Smart City Guide',
+          theme: ThemeData(
+            primarySwatch: Colors.orange,
+            fontFamily: "Roboto",
+            brightness: Brightness.light,
+          ),
+          darkTheme: ThemeData(
+            primarySwatch: Colors.orange,
+            fontFamily: "Roboto",
+            brightness: Brightness.dark,
+          ),
+          themeMode: themeMode,
+          home: StreamBuilder<User?>(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(body: Center(child: CircularProgressIndicator()));
+              }
+              if (snapshot.hasData) {
+                return WelcomePage(themeNotifier: themeNotifier);
+              }
+              return LoginPage(themeNotifier: themeNotifier);
+            },
+          ),
+        );
+      },
     );
   }
 }

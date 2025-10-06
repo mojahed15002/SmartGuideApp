@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../main.dart'; // عشان تقدر تستخدم ThemeNotifier من عندك
+import 'theme_notifier.dart'; // عشان تقدر تستخدم ThemeNotifier من عندك
 
 class ThemeToggleButton extends StatelessWidget {
   final ThemeNotifier themeNotifier;
