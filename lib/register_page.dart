@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'theme_notifier.dart';
 import 'theme_toggle_button.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 class RegisterPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -15,8 +17,10 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _birthController = TextEditingController();
   final _passwordController = TextEditingController();
   final _phoneController = TextEditingController();
+
   DateTime? _dob;
   bool _loading = false;
   bool _obscure = true;
@@ -25,26 +29,52 @@ class _RegisterPageState extends State<RegisterPage> {
   void dispose() {
     _usernameController.dispose();
     _emailController.dispose();
+    _birthController.dispose();
     _passwordController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickDob() async {
-    final now = DateTime.now();
-    final initial = DateTime(now.year - 20, now.month, now.day);
-    final first = DateTime(now.year - 100);
-    final last = DateTime(now.year - 10); // نفترض عمر المستخدم لا يقل عن 10 سنوات
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: first,
-      lastDate: last,
-      locale: const Locale('ar'), // يظهر عربي إن دعم الجهاز
-    );
-    if (picked != null && mounted) setState(() => _dob = picked);
-  }
+  /// نافذة اختيار تاريخ الميلاد
+ Future<void> _pickDob() async {
+  final now = DateTime.now();
+  final initial = DateTime(now.year - 20, now.month, now.day);
+  final first = DateTime(now.year - 100);
+  final last = DateTime(now.year - 10);
 
+  final picked = await showDatePicker(
+    context: context,
+    initialDate: initial,
+    firstDate: first,
+    lastDate: last,
+    builder: (context, child) {
+      // نضيف الـ Localizations محليًا لتفادي خطأ No MaterialLocalizations
+      return Localizations(
+        locale: const Locale('ar'),
+        delegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        // 👇 بدل TextDirection.rtl استخدم اتجاه السياق (يحل الخطأ)
+        child: Directionality(
+          textDirection: Directionality.of(context),
+          child: child ?? const SizedBox.shrink(),
+        ),
+      );
+    },
+  );
+
+  if (picked != null && mounted) {
+    setState(() {
+      _dob = picked;
+      _birthController.text = DateFormat('yyyy-MM-dd').format(picked);
+    });
+  }
+}
+
+
+  /// التحقق من الحقول قبل التسجيل
   String? _validateInputs() {
     final u = _usernameController.text.trim();
     final email = _emailController.text.trim();
@@ -60,6 +90,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return null;
   }
 
+  /// عملية إنشاء الحساب وتخزين البيانات في Firebase
   Future<void> _register() async {
     final err = _validateInputs();
     if (err != null) {
@@ -74,21 +105,23 @@ class _RegisterPageState extends State<RegisterPage> {
       final username = _usernameController.text.trim();
       final phone = _phoneController.text.trim();
 
-      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: pass);
+      final cred = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: pass);
       final uid = cred.user?.uid;
       if (uid == null) throw Exception('فشل الحصول على uid للمستخدم الجديد');
 
-      // خزّن بيانات إضافية في Firestore
+      // حفظ البيانات في Firestore
       final usersRef = FirebaseFirestore.instance.collection('users').doc(uid);
+      final dobIso = _dob?.toIso8601String();
+
       await usersRef.set({
         'username': username,
         'email': email,
         'phone': phone,
-        'dob': _dob!.toIso8601String(),
+        'dob': dobIso,
         'createdAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      // بعد الإنشاء نرجع (أو توجه حسب تصميمك)
       if (!mounted) return;
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
@@ -102,13 +135,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg, textAlign: TextAlign.center)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg, textAlign: TextAlign.center)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-   // final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("إنشاء حساب جديد"),
@@ -119,13 +152,20 @@ class _RegisterPageState extends State<RegisterPage> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Card(
             elevation: 8,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text("إنشاء حساب", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text(
+                    "إنشاء حساب",
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 12),
 
                   // username
@@ -160,8 +200,11 @@ class _RegisterPageState extends State<RegisterPage> {
                       prefixIcon: const Icon(Icons.lock),
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
-                        onPressed: () => setState(() => _obscure = !_obscure),
-                        icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
+                        onPressed: () =>
+                            setState(() => _obscure = !_obscure),
+                        icon: Icon(_obscure
+                            ? Icons.visibility
+                            : Icons.visibility_off),
                       ),
                     ),
                   ),
@@ -180,23 +223,28 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   const SizedBox(height: 10),
 
-                  // dob
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _pickDob,
-                          child: Text(_dob == null ? 'اختر تاريخ الميلاد' : 'تاريخ الميلاد: ${_dob!.toLocal().toString().split(' ')[0]}'),
-                        ),
-                      )
-                    ],
+                  // dob (تاريخ الميلاد)
+                  TextField(
+                    controller: _birthController,
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      labelText: 'تاريخ الميلاد',
+                      border: OutlineInputBorder(),
+                      suffixIcon: Icon(Icons.calendar_today),
+                    ),
+                    onTap: _pickDob,
                   ),
+
                   const SizedBox(height: 16),
 
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
                     onPressed: _loading ? null : _register,
-                    child: _loading ? const CircularProgressIndicator() : const Text("إنشاء حساب"),
+                    child: _loading
+                        ? const CircularProgressIndicator()
+                        : const Text("إنشاء حساب"),
                   ),
                 ],
               ),

@@ -17,6 +17,7 @@ import 'firebase_options.dart';
 import 'login_page.dart';
 import 'welcome_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 
 void main() async {
@@ -36,6 +37,18 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Smart City Guide',
       home: LoginPage(themeNotifier: ThemeNotifier()),
+      localizationsDelegates: const [
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+],
+supportedLocales: const [
+  Locale('ar'),
+  Locale('en'),
+],
+// اختياري إذا بدك تثبّت العربية دائماً:
+ locale: Locale('ar'),
+
     );
   }
 }
