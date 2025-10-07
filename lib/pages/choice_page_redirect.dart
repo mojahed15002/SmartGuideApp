@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'main.dart'; // لأن ChoicePage موجودة في main
+import 'choice_page.dart';
 
 class ChoicePageRedirect extends StatelessWidget {
   final dynamic themeNotifier;

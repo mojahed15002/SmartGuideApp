@@ -3,7 +3,6 @@ import 'theme_notifier.dart'; // عشان تقدر تستخدم ThemeNotifier م
 
 class ThemeToggleButton extends StatelessWidget {
   final ThemeNotifier themeNotifier;
-
   const ThemeToggleButton({super.key, required this.themeNotifier});
 
   @override
@@ -15,7 +14,6 @@ class ThemeToggleButton extends StatelessWidget {
 
         return TextButton.icon(
           onPressed: () {
-            themeNotifier.toggleTheme();
           },
           icon: Icon(
             isDark ? Icons.dark_mode : Icons.light_mode,

@@ -6,4 +6,6 @@ class ThemeNotifier extends ValueNotifier<ThemeMode> {
   void toggleTheme() {
     value = value == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
   }
+
+  bool get isDarkMode => value == ThemeMode.dark;
 }

@@ -1,31 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'theme_notifier.dart';
-import 'choice_page_redirect.dart';
-
+import 'pages/choice_page_redirect.dart';
+import '../sign_in_panel.dart';
 class ChoicePageStub extends StatelessWidget {
   final ThemeNotifier themeNotifier;
   const ChoicePageStub({super.key, required this.themeNotifier});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final cards = [
-_HubCard(
-  title: 'استكشف الأماكن',
-  icon: Icons.travel_explore,
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChoicePageRedirect(themeNotifier: themeNotifier),
+      _HubCard(
+        title: 'استكشف الأماكن',
+        icon: Icons.travel_explore,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChoicePageRedirect(themeNotifier: themeNotifier),
+            ),
+          );
+        },
       ),
-    );
-  },
-),
-
-
       _HubCard(
         title: 'القريبة مني',
         icon: Icons.my_location,
@@ -46,7 +42,15 @@ _HubCard(
         icon: Icons.logout,
         onTap: () async {
           await FirebaseAuth.instance.signOut();
-          if (context.mounted) Navigator.popUntil(context, (r) => r.isFirst);
+         if (context.mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SignInPanel(themeNotifier: themeNotifier),
+        ),
+        (route) => false, // 🔥 هذا يمنع الرجوع للخلف بعد تسجيل الخروج
+      );
+    }
         },
       ),
     ];
@@ -55,18 +59,17 @@ _HubCard(
       appBar: AppBar(
         title: const Text('المرشد السياحي الذكي'),
         actions: [
-          IconButton(
-            tooltip: 'تبديل الثيم',
-            onPressed: () => themeNotifier.toggleTheme(),
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-          ),
         ],
       ),
       body: GridView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: cards.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 1.1),
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.1,
+        ),
         itemBuilder: (_, i) => cards[i],
       ),
     );

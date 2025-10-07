@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'theme_notifier.dart';
-import 'theme_toggle_button.dart';
+import '../theme_notifier.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -50,7 +49,7 @@ class _RegisterPageState extends State<RegisterPage> {
     builder: (context, child) {
       // نضيف الـ Localizations محليًا لتفادي خطأ No MaterialLocalizations
       return Localizations(
-        locale: const Locale('ar'),
+        locale: const Locale('en'),
         delegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
@@ -73,8 +72,7 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 }
 
-
-  /// التحقق من الحقول قبل التسجيل
+/// التحقق من الحقول قبل التسجيل
   String? _validateInputs() {
     final u = _usernameController.text.trim();
     final email = _emailController.text.trim();
@@ -145,7 +143,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("إنشاء حساب جديد"),
-        actions: [ThemeToggleButton(themeNotifier: widget.themeNotifier)],
+        actions: [],
       ),
       body: Center(
         child: SingleChildScrollView(
