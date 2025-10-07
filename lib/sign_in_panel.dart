@@ -9,7 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SignInPanel extends StatefulWidget {
   final ThemeNotifier themeNotifier;
-  const SignInPanel({Key? key, required this.themeNotifier}) : super(key: key);
+  const SignInPanel({super.key, required this.themeNotifier});
 
   @override
   State<SignInPanel> createState() => _SignInPanelState();

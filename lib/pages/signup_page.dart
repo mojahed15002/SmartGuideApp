@@ -7,7 +7,7 @@ import '../sign_in_panel.dart';
 class SignUpPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
 
-  const SignUpPage({Key? key, required this.themeNotifier}) : super(key: key);
+  const SignUpPage({super.key, required this.themeNotifier});
 
   @override
   State<SignUpPage> createState() => _SignUpPageState();
@@ -184,7 +184,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         Expanded(
                           flex: 2,
                           child: DropdownButtonFormField<String>(
-                            value: selectedCode,
+                            initialValue: selectedCode,
                             decoration: const InputDecoration(
                               labelText: 'الدولة',
                               border: OutlineInputBorder(),
