@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'theme_notifier.dart'; // عشان تقدر تستخدم ThemeNotifier من عندك
+import 'theme_notifier.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ThemeToggleButton extends StatelessWidget {
   final ThemeNotifier themeNotifier;
@@ -13,17 +15,39 @@ class ThemeToggleButton extends StatelessWidget {
         final isDark = themeMode == ThemeMode.dark;
 
         return TextButton.icon(
-          onPressed: () {
-          },
-          icon: Icon(
-            isDark ? Icons.dark_mode : Icons.light_mode,
-            color: Colors.orange,
-          ),
-          label: Text(
-            isDark ? "إيقاف" : "تفعيل",
-            style: const TextStyle(color: Colors.orange, fontSize: 16),
-          ),
-        );
+  onPressed: () async {
+    // ✅ تغيير الثيم محليًا
+    themeNotifier.value =
+        themeNotifier.value == ThemeMode.dark
+            ? ThemeMode.light
+            : ThemeMode.dark;
+
+    // ✅ تحديث الثيم في Firebase للمستخدمين المسجلين فقط (ليس الضيوف)
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && !user.isAnonymous) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({
+          'theme': themeNotifier.value == ThemeMode.dark ? 'dark' : 'light',
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      } catch (e) {
+        print('فشل تحديث الثيم في Firebase: $e');
+      }
+    }
+  },
+  icon: Icon(
+    isDark ? Icons.dark_mode : Icons.light_mode,
+    color: Colors.orange,
+  ),
+  label: Text(
+    isDark ? "إيقاف" : "تفعيل",
+    style: const TextStyle(color: Colors.orange, fontSize: 16),
+  ),
+);
+
       },
     );
   }

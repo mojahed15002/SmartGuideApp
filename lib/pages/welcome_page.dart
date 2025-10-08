@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme_notifier.dart';
 import '../choice_page_stub.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class WelcomePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
-  final String? userName; // ✅ تأكدنا أن userName معرف هنا
+  final String? userName; 
 
   const WelcomePage({
     super.key,
@@ -19,11 +20,37 @@ class WelcomePage extends StatefulWidget {
 
 class _WelcomePageState extends State<WelcomePage> {
   User? user;
+Future<void> _loadUserTheme() async {
+  try {
+    if (user != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .get();
+
+      if (userDoc.exists) {
+        final data = userDoc.data();
+        if (data != null && data.containsKey('theme')) {
+          final savedTheme = data['theme'];
+          if (savedTheme == 'dark' && !widget.themeNotifier.isDarkMode) {
+            widget.themeNotifier.setTheme(true);
+          } else if (savedTheme == 'light' && widget.themeNotifier.isDarkMode) {
+            widget.themeNotifier.setTheme(false);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    print("⚠️ خطأ أثناء تحميل الثيم من Firestore: $e");
+  }
+}
 
   @override
   void initState() {
+    
     super.initState();
     user = FirebaseAuth.instance.currentUser;
+    _loadUserTheme();
   }
 
   @override
@@ -33,25 +60,55 @@ class _WelcomePageState extends State<WelcomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('مرحباً بك'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              isDark ? Icons.light_mode : Icons.dark_mode,
-            ),
-            onPressed: () {
-              widget.themeNotifier.toggleTheme();
+       actions: [
+  // زر التبديل بين النمطين
+  IconButton(
+    icon: Icon(
+      widget.themeNotifier.isDarkMode
+          ? Icons.wb_sunny
+          : Icons.nightlight_round,
+      color: widget.themeNotifier.isDarkMode
+          ? Colors.orange
+          : Colors.deepOrange,
+    ),
+   onPressed: () async {
+  // تبديل الثيم محلياً
+  widget.themeNotifier.toggleTheme();
+
+  // تحديث الحالة الجديدة في Firestore
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set(
+            {
+              'isDarkMode': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
             },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              if (mounted) {
-                Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
-              }
-            },
-          ),
-        ],
+            SetOptions(merge: true),
+          );
+    } catch (e) {
+      print("خطأ أثناء تحديث الثيم في Firestore: $e");
+    }
+  }
+},
+
+  ),
+
+  const SizedBox(height: 20),
+
+  IconButton(
+    icon: const Icon(Icons.logout),
+    onPressed: () async {
+      await FirebaseAuth.instance.signOut();
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
+      }
+    },
+  ),
+],
+
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -63,7 +120,7 @@ class _WelcomePageState extends State<WelcomePage> {
                   size: 100, color: Colors.orange.shade600),
               const SizedBox(height: 20),
               Text(
-                'مرحباً ${widget.userName ?? user?.displayName ?? user?.email ?? "بالزائر"} 👋', // ✅ تم إصلاحها هنا
+                'مرحباً ${widget.userName ?? user?.displayName ?? user?.email ?? "بالزائر"} 👋',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,

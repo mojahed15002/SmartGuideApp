@@ -8,4 +8,8 @@ class ThemeNotifier extends ValueNotifier<ThemeMode> {
   }
 
   bool get isDarkMode => value == ThemeMode.dark;
+
+  void setTheme(bool isDark) {
+    value = isDark ? ThemeMode.dark : ThemeMode.light;
+  }
 }
