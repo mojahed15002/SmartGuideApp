@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../theme_notifier.dart';
 import '../choice_page_stub.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+//test
 class WelcomePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   final String? userName; 
