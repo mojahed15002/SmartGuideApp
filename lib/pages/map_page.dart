@@ -389,19 +389,24 @@ class _MapPageState extends State<MapPage> {
                       ),
                     ),
                   ),
+ 
                 if (widget.enableTap)
                   Positioned(
-                    bottom: 12,
-                    left: 12,
-                    right: 12,
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: const Text(
-                            "اضغط أي مكان في الخريطة لتعيين وجهة. اختر وسيلة النقل لإعادة حساب المسار."),
-                      ),
+                   bottom: 20,
+                   right: 20,
+                   child: Card(
+                    elevation: 4,
+                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                     color: Colors.white.withOpacity(0.9),
+                     child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      child: Text(
+                      "اضغط أي مكان في الخريطة لتعيين وجهة. اختر وسيلة النقل لإعادة حساب المسار.",
+                       style: const TextStyle(fontSize: 14, color: Colors.black87),
+                       ),
                     ),
-                  ),
+                   ),
+                 ),
               ],
             ),
           ),

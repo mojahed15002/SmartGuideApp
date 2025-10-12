@@ -3,7 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../theme_notifier.dart';
 import '../choice_page_stub.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-//test
+import '../sign_in_panel.dart';
+
 class WelcomePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   final String? userName; 
@@ -20,6 +21,8 @@ class WelcomePage extends StatefulWidget {
 
 class _WelcomePageState extends State<WelcomePage> {
   User? user;
+  String? userName; // 🔹 لحفظ اسم المستخدم من Firestore
+
 Future<void> _loadUserTheme() async {
   try {
     if (user != null) {
@@ -29,17 +32,25 @@ Future<void> _loadUserTheme() async {
           .get();
 
       if (userDoc.exists) {
-        final data = userDoc.data();
-        if (data != null && data.containsKey('theme')) {
-          final savedTheme = data['theme'];
-          if (savedTheme == 'dark' && !widget.themeNotifier.isDarkMode) {
-            widget.themeNotifier.setTheme(true);
-          } else if (savedTheme == 'light' && widget.themeNotifier.isDarkMode) {
-            widget.themeNotifier.setTheme(false);
+          final data = userDoc.data();
+          if (data != null) {
+            // 🔹 نحفظ الاسم في المتغير المحلي
+            setState(() {
+              userName = data['name']; // تأكد أن اسم الحقل في Firestore هو "name"
+            });
+
+            // 🔹 تحميل الثيم
+            if (data.containsKey('theme')) {
+              final savedTheme = data['theme'];
+              if (savedTheme == 'dark' && !widget.themeNotifier.isDarkMode) {
+                widget.themeNotifier.setTheme(true);
+              } else if (savedTheme == 'light' && widget.themeNotifier.isDarkMode) {
+                widget.themeNotifier.setTheme(false);
+              }
+            }
           }
         }
       }
-    }
   } catch (e) {
     print("⚠️ خطأ أثناء تحميل الثيم من Firestore: $e");
   }
@@ -84,7 +95,7 @@ Future<void> _loadUserTheme() async {
           .doc(user.uid)
           .set(
             {
-              'isDarkMode': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
+              'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
             },
             SetOptions(merge: true),
           );
@@ -99,14 +110,21 @@ Future<void> _loadUserTheme() async {
   const SizedBox(height: 20),
 
   IconButton(
-    icon: const Icon(Icons.logout),
-    onPressed: () async {
-      await FirebaseAuth.instance.signOut();
-      if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
-      }
-    },
-  ),
+  icon: const Icon(Icons.logout),
+  onPressed: () async {
+    await FirebaseAuth.instance.signOut();
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SignInPanel(themeNotifier: widget.themeNotifier),
+        ),
+        (route) => false,
+      );
+    }
+  },
+),
+
 ],
 
       ),
@@ -120,7 +138,7 @@ Future<void> _loadUserTheme() async {
                   size: 100, color: Colors.orange.shade600),
               const SizedBox(height: 20),
               Text(
-                'مرحباً ${widget.userName ?? user?.displayName ?? user?.email ?? "بالزائر"} 👋',
+                'مرحباً ${userName ?? widget.userName ?? user?.displayName ?? "بالزائر"} 👋',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
