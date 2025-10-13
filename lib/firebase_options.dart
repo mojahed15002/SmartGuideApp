@@ -64,6 +64,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '338735247031',
     projectId: 'smart-city-guide-4b29b',
     storageBucket: 'smart-city-guide-4b29b.firebasestorage.app',
+    androidClientId: '338735247031-j7ujvm7soa95ou9lblv8knni4t6bg56l.apps.googleusercontent.com',
+    iosClientId: '338735247031-1vdfm20i0e8c0pnscr9bhj8ae2kllp20.apps.googleusercontent.com',
     iosBundleId: 'com.example.flutterApplication1',
   );
 
@@ -73,6 +75,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '338735247031',
     projectId: 'smart-city-guide-4b29b',
     storageBucket: 'smart-city-guide-4b29b.firebasestorage.app',
+    androidClientId: '338735247031-j7ujvm7soa95ou9lblv8knni4t6bg56l.apps.googleusercontent.com',
+    iosClientId: '338735247031-1vdfm20i0e8c0pnscr9bhj8ae2kllp20.apps.googleusercontent.com',
     iosBundleId: 'com.example.flutterApplication1',
   );
 
@@ -85,4 +89,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'smart-city-guide-4b29b.firebasestorage.app',
     measurementId: 'G-VPYSNEQX5C',
   );
+
 }

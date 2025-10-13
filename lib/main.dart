@@ -6,13 +6,17 @@ import 'sign_in_panel.dart';
 import 'pages/welcome_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+final ThemeNotifier themeNotifier = ThemeNotifier();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(MyAppWrapper());
+
+  runApp(MyAppWrapper(themeNotifier: themeNotifier));
 }
 
 class MyApp extends StatelessWidget {
@@ -23,7 +27,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Smart City Guide',
-      home: SignInPanel(themeNotifier: ThemeNotifier()),
+ home: SignInPanel(themeNotifier: ThemeNotifier()),
+
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -41,9 +46,9 @@ class MyApp extends StatelessWidget {
 
 /// الصفحة الرئيسية التي تتحكم بتبديل الثيم والتنقل بين تسجيل الدخول والترحيب
 class MyAppWrapper extends StatelessWidget {
-  final ThemeNotifier themeNotifier = ThemeNotifier();
+  final ThemeNotifier themeNotifier;
 
-  MyAppWrapper({super.key});
+  const MyAppWrapper({super.key, required this.themeNotifier});
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +92,18 @@ class MyAppWrapper extends StatelessWidget {
               }
               if (snapshot.hasData) {
                 // ✅ المستخدم مسجّل دخول بالفعل
+                final user = snapshot.data!;
+                // قراءة الثيم من Firestore مرة واحدة عند تسجيل الدخول
+                FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .get()
+                    .then((doc) {
+                  if (doc.exists && doc.data()?['theme'] != null) {
+                    final savedTheme = doc['theme'];
+                    themeNotifier.setTheme(savedTheme == 'dark');
+                  }
+                });
                 return WelcomePage(themeNotifier: themeNotifier);
               }
               // ✅ المستخدم غير مسجّل → عرض صفحة تسجيل الدخول

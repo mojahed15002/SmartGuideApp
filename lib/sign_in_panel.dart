@@ -6,6 +6,7 @@ import 'pages/signup_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignInPanel extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -50,7 +51,7 @@ class _SignInPanelState extends State<SignInPanel> {
   final user = FirebaseAuth.instance.currentUser;
   if (user != null) {
     await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-      'isDarkMode': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
+      'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
     });
   }
 },
@@ -134,176 +135,229 @@ class _SignInPanelState extends State<SignInPanel> {
                         const SizedBox(height: 10),
 
                         // زر تسجيل الدخول
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              try {
-                                final credential = await FirebaseAuth.instance
-                                    .signInWithEmailAndPassword(
-                                  email: _emailController.text.trim(),
-                                  password: _passwordController.text.trim(),
-                                );
+SizedBox(
+  width: double.infinity,
+  height: 48,
+  child: ElevatedButton(
+    onPressed: () async {
+      try {
+        final credential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
 
-                                final user = credential.user;
-                                if (user != null) {
-                                  await FirebaseFirestore.instance
-                                      .collection('users')
-                                      .doc(user.uid)
-                                      .set({
-                                    'email': user.email,
-                                    'isDarkMode': widget.themeNotifier.isDarkMode
-                                        ? 'dark'
-                                        : 'light',
-                                    'favorites': [],
-                                    'updatedAt': FieldValue.serverTimestamp(),
-                                  }, SetOptions(merge: true));
+        final user = credential.user;
+        if (user != null) {
+          final userDoc = FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid);
 
-                                  // قراءة الثيم المحفوظ
-                                  final userDoc = await FirebaseFirestore
-                                      .instance
-                                      .collection('users')
-                                      .doc(user.uid)
-                                      .get();
+          final snapshot = await userDoc.get();
 
-                                  if (userDoc.exists) {
-                                    final data = userDoc.data();
-                                    if (data != null &&
-                                        data.containsKey('theme')) {
-                                      final savedTheme = data['theme'];
-                                      if (savedTheme == 'dark' &&
-                                          !widget.themeNotifier.isDarkMode) {
-                                        widget.themeNotifier.setTheme(true);
-                                      } else if (savedTheme == 'light' &&
-                                          widget.themeNotifier.isDarkMode) {
-                                        widget.themeNotifier.setTheme(false);
-                                      }
-                                    }
-                                  }
-                                }
+          if (!snapshot.exists) {
+            // المستخدم جديد → أنشئ الوثيقة لأول مرة
+            await userDoc.set({
+              'email': user.email,
+              'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
+              'favorites': [],
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+          } else {
+            // المستخدم موجود → حدث فقط الثيم والإيميل بدون لمس favorites
+            await userDoc.set({
+              'email': user.email,
+              'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+          }
 
-                                if (mounted) {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => WelcomePage(
-                                        themeNotifier: widget.themeNotifier,
-                                        userName:
-                                            credential.user?.email ?? "المستخدم",
-                                      ),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                        "حدث خطأ أثناء تسجيل الدخول: $e"),
-                                    backgroundColor: Colors.redAccent,
-                                  ),
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            child: const Text(
-                              "تسجيل الدخول",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
+          // ✅ قراءة المفضلات من Firestore بعد تسجيل الدخول
+          final favSnapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+
+          List<dynamic> favorites = [];
+          if (favSnapshot.exists) {
+            final data = favSnapshot.data();
+            if (data != null && data.containsKey('favorites')) {
+              favorites = List<String>.from(data['favorites']);
+
+              // 🧠 تخزين المفضلات محليًا لعرضها بصفحة Favorites
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setStringList('favorites_list', favorites.cast<String>());
+            }
+          }
+
+          // قراءة الثيم المحفوظ
+          final userDocData = await userDoc.get();
+
+          if (userDocData.exists) {
+            final data = userDocData.data();
+            if (data != null && data.containsKey('theme')) {
+              final savedTheme = data['theme'];
+              if (savedTheme == 'dark' &&
+                  !widget.themeNotifier.isDarkMode) {
+                widget.themeNotifier.setTheme(true);
+              } else if (savedTheme == 'light' &&
+                  widget.themeNotifier.isDarkMode) {
+                widget.themeNotifier.setTheme(false);
+              }
+            }
+          }
+        }
+
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => WelcomePage(
+                themeNotifier: widget.themeNotifier,
+                userName: credential.user?.email ?? "المستخدم",
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("حدث خطأ أثناء تسجيل الدخول: $e"),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: primaryColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30),
+      ),
+    ),
+    child: const Text(
+      "تسجيل الدخول",
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  ),
+),
+const SizedBox(height: 20),
+
 
                         // زر تسجيل الدخول بواسطة Google
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            try {
-                              if (Theme.of(context).platform ==
-                                      TargetPlatform.android ||
-                                  Theme.of(context).platform ==
-                                      TargetPlatform.iOS) {
-                                final GoogleSignInAccount? googleUser =
-                                    await GoogleSignIn().signIn();
-                                if (googleUser == null) return;
-                                final GoogleSignInAuthentication googleAuth =
-                                    await googleUser.authentication;
-                                final credential =
-                                    GoogleAuthProvider.credential(
-                                  accessToken: googleAuth.accessToken,
-                                  idToken: googleAuth.idToken,
-                                );
-                                await FirebaseAuth.instance
-                                    .signInWithCredential(credential);
-                              } else {
-                                await FirebaseAuth.instance
-                                    .signInWithPopup(GoogleAuthProvider());
-                              }
+OutlinedButton.icon(
+  onPressed: () async {
+    try {
+      if (Theme.of(context).platform == TargetPlatform.android ||
+          Theme.of(context).platform == TargetPlatform.iOS) {
+        final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+        if (googleUser == null) return;
 
-                              final user = FirebaseAuth.instance.currentUser;
-                              if (user != null) {
-                                await FirebaseFirestore.instance
-                                    .collection('users')
-                                    .doc(user.uid)
-                                    .set({
-                                  'name': user.displayName ?? 'مستخدم جوجل',
-                                  'email': user.email,
-                                  'photoUrl': user.photoURL,
-                                  'createdAt': FieldValue.serverTimestamp(),
-                                  'theme':
-                                      widget.themeNotifier.isDarkMode
-                                          ? 'dark'
-                                          : 'light',
-                                  'favorites': [],
-                                }, SetOptions(merge: true));
-                              }
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
 
-                              if (mounted) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => WelcomePage(
-                                      themeNotifier: widget.themeNotifier,
-                                      userName: FirebaseAuth
-                                              .instance.currentUser
-                                              ?.displayName ??
-                                          'مستخدم جوجل',
-                                    ),
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text(
-                                        'فشل تسجيل الدخول بحساب Google: $e')),
-                              );
-                            }
-                          },
-                          icon: Icon(Icons.g_mobiledata, color: primaryColor),
-                          label: Text(
-                            "تسجيل الدخول بواسطة Google",
-                            style: TextStyle(color: primaryColor),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: primaryColor),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 10),
-                          ),
-                        ),
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
 
-                        const SizedBox(height: 10),
+        await FirebaseAuth.instance.signInWithCredential(credential);
+      } else {
+        await FirebaseAuth.instance.signInWithPopup(GoogleAuthProvider());
+      }
+
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        final userDoc =
+            FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+        final snapshot = await userDoc.get();
+
+        if (!snapshot.exists) {
+          // 🟢 المستخدم جديد → أنشئ الوثيقة لأول مرة
+          await userDoc.set({
+            'name': user.displayName ?? 'مستخدم جوجل',
+            'email': user.email,
+            'photoUrl': user.photoURL,
+            'createdAt': FieldValue.serverTimestamp(),
+            'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
+            'favorites': [],
+          });
+        } else {
+          // 🟡 المستخدم موجود → حدث فقط الحقول الأخرى بدون لمس favorites
+          await userDoc.set({
+            'name': user.displayName ?? 'مستخدم جوجل',
+            'email': user.email,
+            'photoUrl': user.photoURL,
+            'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        }
+
+        // ✅ قراءة المفضلات من Firestore بعد تسجيل الدخول
+        final favSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        List<String> favorites = [];
+        if (favSnapshot.exists) {
+          final data = favSnapshot.data();
+          if (data != null && data.containsKey('favorites')) {
+            favorites = List<String>.from(data['favorites']);
+          }
+        }
+
+        // ✅ حفظ المفضلات محليًا حتى تظهر في صفحة المفضلة
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList('favorites_list', favorites);
+
+        // يمكنك اختبارها:
+        // print('Favorites Loaded & Saved: $favorites');
+      }
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => WelcomePage(
+              themeNotifier: widget.themeNotifier,
+              userName: FirebaseAuth.instance.currentUser?.displayName ??
+                  'مستخدم جوجل',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('فشل تسجيل الدخول بحساب Google: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  },
+  icon: Icon(Icons.g_mobiledata, color: primaryColor),
+  label: Text(
+    "تسجيل الدخول بواسطة Google",
+    style: TextStyle(color: primaryColor),
+  ),
+  style: OutlinedButton.styleFrom(
+    side: BorderSide(color: primaryColor),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(30),
+    ),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+  ),
+),
+
+const SizedBox(height: 10),
+
+
 
                         // زر الدخول كضيف
                         OutlinedButton.icon(

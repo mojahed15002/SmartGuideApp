@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'theme_notifier.dart';
 import 'pages/choice_page_redirect.dart';
 import '../sign_in_panel.dart';
+import 'pages/favorites_page.dart';
+
 class ChoicePageStub extends StatelessWidget {
   final ThemeNotifier themeNotifier;
   const ChoicePageStub({super.key, required this.themeNotifier});
@@ -30,7 +32,14 @@ class ChoicePageStub extends StatelessWidget {
       _HubCard(
         title: 'المفضلة',
         icon: Icons.favorite,
-        onTap: () => Navigator.pushNamed(context, '/favorites'),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => FavoritesPage(themeNotifier: themeNotifier),
+            ),
+          );
+        },
       ),
       _HubCard(
         title: 'الإعدادات',
