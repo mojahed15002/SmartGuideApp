@@ -23,14 +23,13 @@ class _MartyrsRoundaboutPageState extends State<MartyrsRoundaboutPage> {
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
-          // ✅ تحديد ما إذا كانت الشاشة عريضة أم ضيقة
           final bool isWide = constraints.maxWidth > 700;
 
-          // ✅ محتوى المعلومات والصور
+          // ✅ محتوى الصفحة (العنوان + الوصف + الصور)
           final infoContent = Expanded(
             flex: isWide ? 3 : 5,
             child: InfoPage(
-              title: "دوار الشهداء",
+              title: "دوّار الشهداء",
               description:
                   "دوّار الشهداء يُعد من أهم المعالم في مدينة نابلس، "
                   "ويقع في قلب المدينة القديمة. تحيط به العديد من المحلات والمطاعم "
@@ -43,50 +42,54 @@ class _MartyrsRoundaboutPageState extends State<MartyrsRoundaboutPage> {
             ),
           );
 
-          // ✅ الزر الذي ينقل المستخدم إلى صفحة الخريطة
-          final routeButton = Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Align(
-              alignment: Alignment.center,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0,
-                    vertical: 14.0,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () async {
-                  final position = await Geolocator.getCurrentPosition();
-                  if (!mounted) return;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MapPage(
-                        position: position,
-                        destination: latlng.LatLng(32.221119, 35.260817),
-                        themeNotifier: widget.themeNotifier,
-                        enableTap: false, // 🚫 تعطيل النقر على الخريطة
-                        enableLiveTracking: true, // ✅ تتبع حي للموقع
-                      ),
+          // ✅ زر "كيف أصل إلى هنا؟" بتصميم متجاوب
+          final routeButton = SafeArea(
+            minimum: const EdgeInsets.only(bottom: 16.0),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isWide ? 24.0 : 20.0,
+                      vertical: isWide ? 18.0 : 14.0,
                     ),
-                  );
-                },
-                icon: const Icon(Icons.directions, color: Colors.white),
-                label: const Text(
-                  "كيف أصل إلى هنا؟",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () async {
+                    final position = await Geolocator.getCurrentPosition();
+                    if (!mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MapPage(
+                          position: position,
+                          destination: latlng.LatLng(32.221119, 35.260817),
+                          themeNotifier: widget.themeNotifier,
+                          enableTap: false, // 🚫 تعطيل النقر على الخريطة
+                          enableLiveTracking: true, // ✅ تتبع الموقع الحي
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.directions, color: Colors.white),
+                  label: const Text(
+                    "كيف أصل إلى هنا؟",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
                 ),
               ),
             ),
           );
 
-          // ✅ التخطيط الديناميكي حسب حجم الشاشة
+          // ✅ التوزيع الديناميكي حسب نوع الشاشة
           if (isWide) {
-            // 💻 شاشة عريضة (مثل التابلت)
+            // 💻 الوضع الأفقي (شاشة عريضة)
             return Row(
               children: [
                 infoContent,
@@ -100,11 +103,21 @@ class _MartyrsRoundaboutPageState extends State<MartyrsRoundaboutPage> {
               ],
             );
           } else {
-            // 📱 شاشة الهاتف (عمودية)
-            return Column(
+            // 📱 الوضع العمودي (الهاتف)
+            return Stack(
               children: [
-                infoContent,
-                routeButton,
+                Column(
+                  children: [
+                    infoContent,
+                    const SizedBox(height: 80), // مساحة تحت المحتوى
+                  ],
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: routeButton,
+                ),
               ],
             );
           }

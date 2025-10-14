@@ -23,10 +23,9 @@ class _FaisalStreetPageState extends State<FaisalStreetPage> {
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
-          // ✅ تحديد نوع الشاشة (عريضة أو ضيقة)
           final bool isWide = constraints.maxWidth > 700;
 
-          // ✅ محتوى الصفحة (المعلومات + الصور)
+          // ✅ محتوى الصفحة (العنوان + الوصف + الصور)
           final infoContent = Expanded(
             flex: isWide ? 3 : 5,
             child: InfoPage(
@@ -43,50 +42,54 @@ class _FaisalStreetPageState extends State<FaisalStreetPage> {
             ),
           );
 
-          // ✅ زر الانتقال إلى الخريطة
-          final routeButton = Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Align(
-              alignment: Alignment.center,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0,
-                    vertical: 14.0,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () async {
-                  final position = await Geolocator.getCurrentPosition();
-                  if (!mounted) return;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MapPage(
-                        position: position,
-                        destination: latlng.LatLng(32.222243, 35.262778),
-                        themeNotifier: widget.themeNotifier,
-                        enableTap: false, // 🚫 تعطيل النقر على الخريطة
-                        enableLiveTracking: true, // ✅ تتبع حي للموقع
-                      ),
+          // ✅ زر الانتقال إلى الخريطة (مع SafeArea لتجنب تغطيته)
+          final routeButton = SafeArea(
+            minimum: const EdgeInsets.only(bottom: 16.0),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isWide ? 24.0 : 20.0,
+                      vertical: isWide ? 18.0 : 14.0,
                     ),
-                  );
-                },
-                icon: const Icon(Icons.directions, color: Colors.white),
-                label: const Text(
-                  "كيف أصل إلى هنا؟",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () async {
+                    final position = await Geolocator.getCurrentPosition();
+                    if (!mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MapPage(
+                          position: position,
+                          destination: latlng.LatLng(32.222243, 35.262778),
+                          themeNotifier: widget.themeNotifier,
+                          enableTap: false, // 🚫 تعطيل النقر
+                          enableLiveTracking: true, // ✅ تتبع حي
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.directions, color: Colors.white),
+                  label: const Text(
+                    "كيف أصل إلى هنا؟",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
                 ),
               ),
             ),
           );
 
-          // ✅ التخطيط الديناميكي حسب نوع الشاشة
+          // ✅ توزيع ديناميكي حسب نوع الشاشة
           if (isWide) {
-            // 💻 الوضع الأفقي (تابلت أو شاشة كبيرة)
+            // 💻 الوضع الأفقي (تابلت أو شاشة عريضة)
             return Row(
               children: [
                 infoContent,
@@ -100,11 +103,21 @@ class _FaisalStreetPageState extends State<FaisalStreetPage> {
               ],
             );
           } else {
-            // 📱 الوضع العمودي (الهاتف)
-            return Column(
+            // 📱 الوضع العمودي (هاتف)
+            return Stack(
               children: [
-                infoContent,
-                routeButton,
+                Column(
+                  children: [
+                    infoContent,
+                    const SizedBox(height: 80), // مساحة إضافية تحت المحتوى
+                  ],
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: routeButton,
+                ),
               ],
             );
           }

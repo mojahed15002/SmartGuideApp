@@ -4,6 +4,7 @@ import 'theme_notifier.dart';
 import 'pages/choice_page_redirect.dart';
 import '../sign_in_panel.dart';
 import 'pages/favorites_page.dart';
+import 'pages/logs_page.dart';
 
 class ChoicePageStub extends StatelessWidget {
   final ThemeNotifier themeNotifier;
@@ -41,6 +42,19 @@ class ChoicePageStub extends StatelessWidget {
           );
         },
       ),
+      _HubCard(
+  title: 'السجلات',
+  icon: Icons.history,
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LogsPage(themeNotifier: themeNotifier),
+      ),
+    );
+  },
+),
+
       _HubCard(
         title: 'الإعدادات',
         icon: Icons.settings,

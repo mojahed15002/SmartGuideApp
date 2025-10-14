@@ -10,18 +10,13 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+
 class MapPage extends StatefulWidget {
-  /// الموقع الحالي للمستخدم
   final Position position;
   final ThemeNotifier themeNotifier;
-
-  /// الوجهة (اختيارية)
   final latlng.LatLng? destination;
-
-  /// هل يُسمح بالنقر على الخريطة؟
   final bool enableTap;
-
-  final bool enableLiveTracking; // ✅ ميزة التتبع الحي
+  final bool enableLiveTracking;
 
   const MapPage({
     super.key,
@@ -29,37 +24,38 @@ class MapPage extends StatefulWidget {
     required this.themeNotifier,
     this.destination,
     this.enableTap = true,
-    this.enableLiveTracking = false, // الافتراضي: معطل
+    this.enableLiveTracking = false,
   });
 
   @override
   State<MapPage> createState() => _MapPageState();
 }
 
-class _MapPageState extends State<MapPage> {
-  
-  final fm.MapController _mapController = fm.MapController(); // 💡 للتحكم بالخريطة
+class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
+  final fm.MapController _mapController = fm.MapController();
 
   List<latlng.LatLng> routePoints = [];
   bool _loading = true;
   StreamSubscription<Position>? _positionStream;
   String? _error;
 
-  /// وسيلة النقل المختارة
-  String _selectedMode = "driving-car"; // الافتراضي سيارة
+  bool _showTip = true;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  bool _isTracking = false; // ✅ حالة التتبع الحي الحالية
+
+
+  String _selectedMode = "driving-car";
   final Map<String, String> transportModes = {
     "🚶 مشي": "foot-walking",
     "🚗 سيارة": "driving-car",
     "🚴 دراجة": "cycling-regular",
   };
 
-  /// ستايل الخريطة
   String _currentStyle = "streets";
-
-  /// الوجهة التي يحددها المستخدم بالنقر (تُستخدم بدل widget.destination إذا ضُبطت)
   latlng.LatLng? _destination;
 
-  /// نتائج ملخص المسار
   double? _summaryDistanceMeters;
   double? _summaryDurationSeconds;
 
@@ -74,25 +70,60 @@ class _MapPageState extends State<MapPage> {
       _loading = false;
     }
 
-    // ✅ استدعاء دالة الموقع بأمان
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut);
+
+    Future.delayed(const Duration(seconds: 10), () {
+      if (mounted) {
+        _fadeController.forward().then((_) {
+          setState(() => _showTip = false);
+        });
+      }
+    });
+
     _initLocation();
 
-    // ✅ تفعيل تتبع حي للموقع
-   if (widget.enableLiveTracking) {
-  _positionStream = Geolocator.getPositionStream(
-    locationSettings: const LocationSettings(accuracy: LocationAccuracy.best),
-  ).listen((Position pos) {
-    final newPos = latlng.LatLng(pos.latitude, pos.longitude);
-    if (mounted) {
-      _mapController.move(newPos, _mapController.camera.zoom);
+    if (widget.enableLiveTracking) {
+      _startLiveTracking();
     }
-  });
-}
-}
+  }
+
+  void _startLiveTracking() {
+    _positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.best),
+    ).listen((Position pos) {
+      final newPos = latlng.LatLng(pos.latitude, pos.longitude);
+      if (mounted) {
+        _mapController.move(newPos, _mapController.camera.zoom);
+      }
+    });
+    setState(() => _isTracking = true);
+  }
+
+  void _stopLiveTracking() {
+    _positionStream?.cancel();
+    setState(() => _isTracking = false);
+  }
+
+  void _toggleLiveTracking() {
+    if (_isTracking) {
+      _stopLiveTracking();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("🔴 تم إيقاف التتبع الحي")),
+      );
+    } else {
+      _startLiveTracking();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("🟢 تم تفعيل التتبع الحي")),
+      );
+    }
+  }
 
   Future<void> _initLocation() async {
     try {
-      // طلب إذن الموقع
       LocationPermission permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
@@ -100,14 +131,11 @@ class _MapPageState extends State<MapPage> {
         return;
       }
 
-      // الحصول على الموقع الحالي بدقة عالية
       final pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.bestForNavigation,
       );
-
       final userLocation = latlng.LatLng(pos.latitude, pos.longitude);
 
-      // ✅ تحريك الخريطة بعد تحميل الواجهة
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _mapController.move(userLocation, 16.0);
       });
@@ -143,11 +171,9 @@ class _MapPageState extends State<MapPage> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-
         final coords = data["features"][0]["geometry"]["coordinates"] as List;
         final points = coords
-            .map((c) =>
-                latlng.LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()))
+            .map((c) => latlng.LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()))
             .toList();
 
         double? distance;
@@ -180,14 +206,11 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  /// ✅ تم تعديل هذه الدالة لاستخدام OpenStreetMap + Esri Satellite
   String _getUrlTemplate() {
     switch (_currentStyle) {
       case "satellite":
-        // 🔹 خريطة واقعية من Esri (صور الأقمار الصناعية المجانية)
         return "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
       default:
-        // 🔹 خريطة شوارع من OpenStreetMap
         return "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
     }
   }
@@ -213,44 +236,40 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-    final userLocation =
-        latlng.LatLng(widget.position.latitude, widget.position.longitude);
+    final userLocation = latlng.LatLng(widget.position.latitude, widget.position.longitude);
 
     return Scaffold(
       appBar: AppBar(
         title: Text("الخريطة (${_currentStyle.toUpperCase()})"),
         actions: [
           PopupMenuButton<String>(
-            onSelected: (value) {
-              setState(() {
-                _currentStyle = value;
-              });
-            },
+            onSelected: (value) => setState(() => _currentStyle = value),
             itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: "streets",
-                child: Text("شوارع افتراضية مع عناوين"),
-              ),
-              PopupMenuItem(
-                value: "satellite",
-                child: Text("صورة فضائية (تضاريس واقعية)"),
-              ),
+              PopupMenuItem(value: "streets", child: Text("شوارع افتراضية مع عناوين")),
+              PopupMenuItem(value: "satellite", child: Text("صورة فضائية (تضاريس واقعية)")),
             ],
           )
         ],
       ),
       floatingActionButton: widget.enableTap
-          ? FloatingActionButton.extended(
-              backgroundColor: Colors.orange,
-              icon: const Icon(Icons.my_location),
-              label: const Text("مركّز إلى موقعي"),
-              onPressed: () {
-                final userLocation = latlng.LatLng(
-                  widget.position.latitude,
-                  widget.position.longitude,
-                );
-                _mapController.move(userLocation, 16.0);
-              },
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                FloatingActionButton.extended(
+                  heroTag: "centerBtn",
+                  backgroundColor: Colors.orange,
+                  icon: const Icon(Icons.my_location),
+                  label: const Text("مركّز إلى موقعي"),
+                  onPressed: () {
+                    final userLocation = latlng.LatLng(
+                      widget.position.latitude,
+                      widget.position.longitude,
+                    );
+                    _mapController.move(userLocation, 16.0);
+                  },
+                ),
+              ],
             )
           : null,
       body: Column(
@@ -260,29 +279,21 @@ class _MapPageState extends State<MapPage> {
             child: DropdownButton<String>(
               value: _selectedMode,
               items: transportModes.entries
-                  .map((entry) => DropdownMenuItem(
-                        value: entry.value,
-                        child: Text(entry.key),
-                      ))
+                  .map((entry) => DropdownMenuItem(value: entry.value, child: Text(entry.key)))
                   .toList(),
               onChanged: (value) {
                 if (value != null && _destination != null) {
-                  setState(() {
-                    _selectedMode = value;
-                  });
+                  setState(() => _selectedMode = value);
                   _getRoute(_destination!);
                 } else {
-                  setState(() {
-                    _selectedMode = value ?? _selectedMode;
-                  });
+                  setState(() => _selectedMode = value ?? _selectedMode);
                 }
               },
             ),
           ),
           if (_summaryDistanceMeters != null || _summaryDurationSeconds != null)
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
               child: Card(
                 color: Theme.of(context).cardColor,
                 child: Padding(
@@ -319,25 +330,20 @@ class _MapPageState extends State<MapPage> {
                 fm.FlutterMap(
                   mapController: _mapController,
                   options: fm.MapOptions(
-  center: userLocation,
-  zoom: 14,
-  maxZoom: _currentStyle == "satellite" ? 18 : 22,
-  onPositionChanged: (position, hasGesture) {
-    if (_currentStyle == "satellite" && position.zoom != null && position.zoom! > 18) {
-      _mapController.move(position.center!, 18);
-    }
-  },
-  onTap: widget.enableTap
-      ? (tapPosition, point) {
-          setState(() {
-            _destination = point;
-            _error = null;
-          });
-          _getRoute(point);
-        }
-      : null,
-),
-
+                    center: userLocation,
+                    zoom: 14,
+                    maxZoom: _currentStyle == "satellite" ? 18 : 22,
+                    onTap: widget.enableTap
+                        ? (tapPosition, point) {
+                            setState(() {
+                              _destination = point;
+                              _error = null;
+                               _showTip = false; // ✅ يخفي المستطيل فور الضغط على الخريطة
+                            });
+                            _getRoute(point);
+                          }
+                        : null,
+                  ),
                   children: [
                     fm.TileLayer(
                       urlTemplate: _getUrlTemplate(),
@@ -374,39 +380,66 @@ class _MapPageState extends State<MapPage> {
                       ),
                   ],
                 ),
-                if (_loading)
-                  const Center(child: CircularProgressIndicator()),
-                if (_error != null)
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    right: 16,
-                    child: Card(
-                      color: Colors.red.shade100,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(_error!),
-                      ),
-                    ),
-                  ),
- 
-                if (widget.enableTap)
-                  Positioned(
-                   bottom: 20,
-                   right: 20,
-                   child: Card(
-                    elevation: 4,
-                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                     color: Colors.white.withOpacity(0.9),
-                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      child: Text(
-                      "اضغط أي مكان في الخريطة لتعيين وجهة. اختر وسيلة النقل لإعادة حساب المسار.",
-                       style: const TextStyle(fontSize: 14, color: Colors.black87),
-                       ),
-                    ),
-                   ),
-                 ),
+                // زر التتبع الحي أعلى يسار الخريطة
+Positioned(
+  top: 16,
+  left: 16,
+  child: FloatingActionButton(
+    heroTag: "liveTrackTop",
+    backgroundColor: _isTracking ? Colors.green : Colors.grey,
+    onPressed: _toggleLiveTracking,
+    tooltip: _isTracking ? "إيقاف التتبع الحي" : "تفعيل التتبع الحي",
+    child: Icon(_isTracking ? Icons.gps_fixed : Icons.gps_off),
+  ),
+),
+
+if (_loading) const Center(child: CircularProgressIndicator()),
+
+if (_error != null)
+  Positioned(
+    top: 80,
+    left: 16,
+    right: 16,
+    child: Card(
+      color: Colors.red.shade100,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(_error!),
+      ),
+    ),
+  ),
+
+if (_showTip && widget.enableTap)
+  Positioned(
+    top: 16,
+    right: 80,
+    child: FadeTransition(
+      opacity: ReverseAnimation(_fadeAnimation),
+      child: Card(
+        elevation: 6,
+        color: Colors.white.withOpacity(0.95),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min, // ✅ أهم سطر: يخلي العرض على قد المحتوى فقط
+            children: const [
+              Icon(Icons.touch_app, color: Colors.orange),
+              SizedBox(width: 6),
+              Text(
+                "اضغط أي مكان في الخريطة لتعيين وجهة. اختر وسيلة النقل لإعادة حساب المسار.",
+                style: TextStyle(fontSize: 13.5, color: Colors.black87),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  ),
+
+
               ],
             ),
           ),
@@ -414,10 +447,11 @@ class _MapPageState extends State<MapPage> {
       ),
     );
   }
-  @override
-void dispose() {
-  _positionStream?.cancel(); // ✅ إلغاء التتبع لتجنب الفريز
-  super.dispose();
-}
 
+  @override
+  void dispose() {
+    _positionStream?.cancel();
+    _fadeController.dispose();
+    super.dispose();
+  }
 }

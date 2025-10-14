@@ -23,7 +23,6 @@ class _AcademyStreetPageState extends State<AcademyStreetPage> {
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
-          // ✅ إذا كانت الشاشة عريضة (تابلت أو أفقية)
           final bool isWide = constraints.maxWidth > 700;
 
           // ✅ محتوى الصفحة (المعلومات + الصور)
@@ -43,45 +42,51 @@ class _AcademyStreetPageState extends State<AcademyStreetPage> {
             ),
           );
 
-          // ✅ الزر الذي ينقل المستخدم إلى الخريطة
-          final routeButton = Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Align(
-              alignment: Alignment.center,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 14.0),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () async {
-                  final position = await Geolocator.getCurrentPosition();
-                  if (!mounted) return;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MapPage(
-                        position: position,
-                        destination: latlng.LatLng(32.226938, 35.222279),
-                        themeNotifier: widget.themeNotifier,
-                        enableTap: false, // 🚫 تعطيل النقر
-                        enableLiveTracking: true, // ✅ تتبع حي
-                      ),
+          // ✅ الزر (مع استخدام SafeArea للحماية من الحواف السفلية)
+          final routeButton = SafeArea(
+            minimum: const EdgeInsets.only(bottom: 16.0), // مسافة من الحافة السفلية
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isWide ? 24.0 : 20.0,
+                      vertical: isWide ? 18.0 : 14.0,
                     ),
-                  );
-                },
-                icon: const Icon(Icons.directions, color: Colors.white),
-                label: const Text(
-                  "كيف أصل إلى هنا؟",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () async {
+                    final position = await Geolocator.getCurrentPosition();
+                    if (!mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MapPage(
+                          position: position,
+                          destination: latlng.LatLng(32.226938, 35.222279),
+                          themeNotifier: widget.themeNotifier,
+                          enableTap: false,
+                          enableLiveTracking: true,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.directions, color: Colors.white),
+                  label: const Text(
+                    "كيف أصل إلى هنا؟",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
                 ),
               ),
             ),
           );
 
-          // ✅ تخطيط ديناميكي حسب المساحة
+          // ✅ تخطيط ديناميكي حسب حجم الشاشة
           if (isWide) {
             // 📱 عرضي (صف جانبي)
             return Row(
@@ -97,11 +102,21 @@ class _AcademyStreetPageState extends State<AcademyStreetPage> {
               ],
             );
           } else {
-            // 📱 عمودي (تخطيط عادي)
-            return Column(
+            // 📱 عمودي (زر ثابت بأسفل الشاشة لكن مع مسافة آمنة)
+            return Stack(
               children: [
-                infoContent,
-                routeButton,
+                Column(
+                  children: [
+                    infoContent,
+                    const SizedBox(height: 80), // مساحة تحت للمحتوى
+                  ],
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: routeButton,
+                ),
               ],
             );
           }

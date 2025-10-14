@@ -23,10 +23,9 @@ class _SofianStreetPageState extends State<SofianStreetPage> {
     return Scaffold(
       body: LayoutBuilder(
         builder: (context, constraints) {
-          // ✅ التكيّف حسب عرض الشاشة
           final bool isWide = constraints.maxWidth > 700;
 
-          // ✅ محتوى الصفحة: العنوان + الوصف + الصور
+          // ✅ محتوى الصفحة
           final infoContent = Expanded(
             flex: isWide ? 3 : 5,
             child: InfoPage(
@@ -43,47 +42,54 @@ class _SofianStreetPageState extends State<SofianStreetPage> {
             ),
           );
 
-          // ✅ الزر الذي يفتح صفحة الخريطة
-          final routeButton = Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Align(
-              alignment: Alignment.center,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 14.0),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () async {
-                  final position = await Geolocator.getCurrentPosition();
-                  if (!mounted) return;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MapPage(
-                        position: position,
-                        destination: latlng.LatLng(32.222376, 35.260532),
-                        themeNotifier: widget.themeNotifier,
-                        enableTap: false, // 🚫 تعطيل النقر على الخريطة
-                        enableLiveTracking: true, // ✅ تتبع الموقع لحظيًا
-                      ),
+          // ✅ الزر (مع SafeArea لتجنّب تغطيته من أزرار النظام)
+          final routeButton = SafeArea(
+            minimum: const EdgeInsets.only(bottom: 16.0),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isWide ? 24.0 : 20.0,
+                      vertical: isWide ? 18.0 : 14.0,
                     ),
-                  );
-                },
-                icon: const Icon(Icons.directions, color: Colors.white),
-                label: const Text(
-                  "كيف أصل إلى هنا؟",
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () async {
+                    final position = await Geolocator.getCurrentPosition();
+                    if (!mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MapPage(
+                          position: position,
+                          destination: latlng.LatLng(32.222376, 35.260532),
+                          themeNotifier: widget.themeNotifier,
+                          enableTap: false, // 🚫 تعطيل النقر على الخريطة
+                          enableLiveTracking: true, // ✅ تتبع حي
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.directions, color: Colors.white),
+                  label: const Text(
+                    "كيف أصل إلى هنا؟",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
                 ),
               ),
             ),
           );
 
-          // ✅ توزيع ديناميكي للتخطيط
+          // ✅ توزيع ديناميكي حسب حجم الشاشة
           if (isWide) {
-            // 💻 الوضع الأفقي (مثل التابلت)
+            // 💻 الوضع الأفقي (تابلت أو شاشة واسعة)
             return Row(
               children: [
                 infoContent,
@@ -97,11 +103,21 @@ class _SofianStreetPageState extends State<SofianStreetPage> {
               ],
             );
           } else {
-            // 📱 الوضع العمودي (الموبايل)
-            return Column(
+            // 📱 الوضع العمودي (موبايل)
+            return Stack(
               children: [
-                infoContent,
-                routeButton,
+                Column(
+                  children: [
+                    infoContent,
+                    const SizedBox(height: 80), // مساحة تحت للمحتوى
+                  ],
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: routeButton,
+                ),
               ],
             );
           }
