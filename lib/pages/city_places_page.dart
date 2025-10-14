@@ -3,7 +3,6 @@ library;
 import 'package:flutter/material.dart';
 import '../theme_notifier.dart';
 import 'place_details_page.dart';
-import '../place_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../places_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
