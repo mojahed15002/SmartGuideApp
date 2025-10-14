@@ -3,7 +3,7 @@ library;
 import 'package:flutter/material.dart';
 import '../theme_notifier.dart';
 import 'place_details_page.dart';
-import '/../place_card.dart';
+import '../place_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../places_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -59,11 +59,15 @@ Future<void> _toggleFavorite(String placeId) async {
   final prefs = await SharedPreferences.getInstance();
   final user = FirebaseAuth.instance.currentUser;
 
+  bool isAdded = false; // ✅ لمعرفة نوع العملية لاحقًا
+
   setState(() {
     if (favoritePlaces.contains(placeId)) {
       favoritePlaces.remove(placeId);
+      isAdded = false;
     } else {
       favoritePlaces.add(placeId);
+      isAdded = true;
     }
   });
 
@@ -92,6 +96,25 @@ Future<void> _toggleFavorite(String placeId) async {
 
     await userDoc.set({'favorites': existingFavorites}, SetOptions(merge: true));
   }
+
+  // ✅ إظهار Snackbar بعد التبديل بألوان مختلفة
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        isAdded
+            ? 'تمت الإضافة إلى المفضلة ❤️'
+            : 'تمت الإزالة من المفضلة 💔',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      backgroundColor: isAdded ? Colors.green.shade600 : Colors.red.shade600,
+      duration: const Duration(seconds: 2),
+      behavior: SnackBarBehavior.fixed,
+    ),
+  );
 }
 
 
