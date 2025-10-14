@@ -62,7 +62,6 @@ final Map<String, List<Map<String, dynamic>>> cityPlacesPages = {
   ],
 };
 
-/// 🔹 خريطة لجميع الأماكن (لتسهيل الوصول عبر الـ ID في صفحة المفضلة)
 final Map<String, Map<String, dynamic>> allPlaces = {
   for (var city in cityPlacesPages.keys)
     for (var place in cityPlacesPages[city]!) place["id"]: place,

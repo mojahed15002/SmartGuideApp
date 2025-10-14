@@ -149,7 +149,6 @@ class _PlaceCardState extends State<PlaceCard> {
           ),
         ),
         onTap: () {
-          // يمكنك لاحقاً فتح تفاصيل المكان هنا
         },
       ),
     );
