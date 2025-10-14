@@ -1,16 +1,14 @@
-library;
-
 import 'package:flutter/material.dart';
-import '../theme_notifier.dart';
-import 'place_details_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../places_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../theme_notifier.dart';
+import '../places_data.dart';
+import 'place_details_page.dart';
 
 class CityPlacesPage extends StatefulWidget {
-  final ThemeNotifier themeNotifier;
   final String cityName;
+  final ThemeNotifier themeNotifier;
 
   const CityPlacesPage({
     super.key,
@@ -32,158 +30,148 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
     _loadFavorites();
   }
 
-Future<void> _loadFavorites() async {
-  final prefs = await SharedPreferences.getInstance();
-  final user = FirebaseAuth.instance.currentUser;
-
-  if (user != null) {
-    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    if (doc.exists && doc.data()?['favorites'] != null) {
-      setState(() {
-        favoritePlaces = List<String>.from(doc.data()!['favorites']);
-      });
-      await prefs.setStringList(_prefsKey, favoritePlaces);
-      return;
-    }
+  Future<void> _loadFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      favoritePlaces = prefs.getStringList(_prefsKey) ?? [];
+    });
   }
 
-  // إذا المستخدم مش مسجل دخول أو ما في بيانات
-  setState(() {
-    favoritePlaces = prefs.getStringList(_prefsKey) ?? [];
-  });
-}
+  Future<void> _toggleFavorite(String placeId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final user = FirebaseAuth.instance.currentUser;
 
+    bool isAdded = false;
 
-Future<void> _toggleFavorite(String placeId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final user = FirebaseAuth.instance.currentUser;
-
-  bool isAdded = false; // ✅ لمعرفة نوع العملية لاحقًا
-
-  setState(() {
-    if (favoritePlaces.contains(placeId)) {
-      favoritePlaces.remove(placeId);
-      isAdded = false;
-    } else {
-      favoritePlaces.add(placeId);
-      isAdded = true;
-    }
-  });
-
-  // 🔹 حفظ محلي دائمًا
-  await prefs.setStringList(_prefsKey, favoritePlaces);
-
-  // 🔹 إذا المستخدم مسجل دخول → عدّل Firestore بدل ما تستبدل البيانات
-  if (user != null) {
-    final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
-    final userSnapshot = await userDoc.get();
-
-    List<String> existingFavorites = [];
-
-    if (userSnapshot.exists && userSnapshot.data()?['favorites'] != null) {
-      existingFavorites = List<String>.from(userSnapshot.data()!['favorites']);
-    }
-
-    // تحديث حسب العملية
-    if (favoritePlaces.contains(placeId)) {
-      if (!existingFavorites.contains(placeId)) {
-        existingFavorites.add(placeId);
+    setState(() {
+      if (favoritePlaces.contains(placeId)) {
+        favoritePlaces.remove(placeId);
+        isAdded = false;
+      } else {
+        favoritePlaces.add(placeId);
+        isAdded = true;
       }
-    } else {
-      existingFavorites.remove(placeId);
+    });
+
+    await prefs.setStringList(_prefsKey, favoritePlaces);
+
+    if (user != null) {
+      final userDoc =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final userSnapshot = await userDoc.get();
+
+      List<String> existingFavorites = [];
+
+      if (userSnapshot.exists &&
+          userSnapshot.data()?['favorites'] != null) {
+        existingFavorites =
+            List<String>.from(userSnapshot.data()!['favorites']);
+      }
+
+      if (favoritePlaces.contains(placeId)) {
+        if (!existingFavorites.contains(placeId)) {
+          existingFavorites.add(placeId);
+        }
+      } else {
+        existingFavorites.remove(placeId);
+      }
+
+      await userDoc.set({'favorites': existingFavorites},
+          SetOptions(merge: true));
     }
 
-    await userDoc.set({'favorites': existingFavorites}, SetOptions(merge: true));
-  }
-
-  // ✅ إظهار Snackbar بعد التبديل بألوان مختلفة
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        isAdded
-            ? 'تمت الإضافة إلى المفضلة ❤️'
-            : 'تمت الإزالة من المفضلة 💔',
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
+    // ✅ Snackbar ملوّن لإشعار المستخدم
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isAdded
+              ? 'تمت الإضافة إلى المفضلة ❤️'
+              : 'تمت الإزالة من المفضلة 💔',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        backgroundColor:
+            isAdded ? Colors.green.shade600 : Colors.red.shade600,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.fixed,
       ),
-      backgroundColor: isAdded ? Colors.green.shade600 : Colors.red.shade600,
-      duration: const Duration(seconds: 2),
-      behavior: SnackBarBehavior.fixed,
-    ),
-  );
-}
-
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final cityName = widget.cityName;
     final themeNotifier = widget.themeNotifier;
     final isDark = themeNotifier.value == ThemeMode.dark;
-
-    // 🔹 الماب موجود جوّا build (مع إضافات heroTag لكل مكان)
-
-    final places = cityPlacesPages[widget.cityName] ?? [];
+    final cityPlaces = allPlaces.entries
+        .where((entry) => entry.value['city'] == widget.cityName)
+        .toList();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("أماكن في $cityName"),
-        actions: [
-          // ✅ زر الوضع الليلي
-        ],
+        title: Text(widget.cityName),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: places.length <= 3
-            // ✅ عرض كقائمة (كروت بعرض الشاشة)
-            ? ListView.builder(
-                itemCount: places.length,
+      body: cityPlaces.isEmpty
+          ? const Center(
+              child: Text(
+                'لا توجد أماكن مسجلة لهذه المدينة بعد.',
+                style: TextStyle(fontSize: 18),
+              ),
+            )
+          : Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: GridView.builder(
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 3 / 4,
+                ),
+                itemCount: cityPlaces.length,
                 itemBuilder: (context, index) {
-                  final placeData = places[index];
-                  final String id = placeData["id"];
-                  final String title = placeData["title"];
+                  final id = cityPlaces[index].key;
+                  final place = cityPlaces[index].value;
+
+                  final String title = place["title"];
                   final List<String> images =
-                      List<String>.from(placeData["images"]);
-                  final String heroTag =
-                      placeData["hero"] ?? "${cityName}_$title";
-                  final bool isFav = favoritePlaces.contains(id);
+                      List<String>.from(place["images"]);
+                  final String heroTag = place["hero"];
+                  final String city = place["city"];
 
                   return Stack(
                     children: [
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0.0, end: 1.0),
-                        duration: Duration(milliseconds: 300 + index * 120),
-                        curve: Curves.easeOut,
-                        builder: (context, value, child) {
-                          return Opacity(
-                            opacity: value,
-                            child: Transform.translate(
-                              offset: Offset(0, 20 * (1 - value)),
-                              child: child,
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PlaceDetailsPage(
+                                title: title,
+                                cityName: city,
+                                images: images,
+                                url: place["url"],
+                                themeNotifier: themeNotifier,
+                                heroTag: heroTag,
+                              ),
                             ),
                           );
                         },
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => placeData["page"]),
-                            );
-                          },
-                          child: Card(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 4,
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 4,
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius:
+                                      const BorderRadius.vertical(
                                     top: Radius.circular(16),
                                   ),
                                   child: Hero(
@@ -191,24 +179,22 @@ Future<void> _toggleFavorite(String placeId) async {
                                     child: Image.asset(
                                       images.first,
                                       fit: BoxFit.cover,
-                                      height: 200,
-                                      width: double.infinity,
                                     ),
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.all(12.0),
-                                  child: Text(
-                                    title,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  title,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -217,134 +203,32 @@ Future<void> _toggleFavorite(String placeId) async {
                         right: 8,
                         child: IconButton(
                           iconSize: 34,
-                          icon: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 250),
-                            transitionBuilder:
-                                (Widget child, Animation<double> anim) =>
-                                    ScaleTransition(scale: anim, child: child),
-                            child: Icon(
-                              isFav
-                                  ? Icons.favorite
-                                  : Icons.favorite_border_outlined,
-                              key: ValueKey<bool>(isFav),
-                              color: isFav
-                                  ? Colors.redAccent
-                                  : (isDark
-                                      ? Colors.white70
-                                      : Colors.black54),
-                                      size: 30,
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStatePropertyAll(
+                              isDark
+                                  ? Colors.black.withOpacity(0.3)
+                                  : Colors.white.withOpacity(0.8),
                             ),
+                            shape:
+                                const WidgetStatePropertyAll(CircleBorder()),
                           ),
-                          onPressed: () => _toggleFavorite(id),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              )
-            // ✅ عرض كـ Grid
-            : GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // عمودين
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 3 / 4, // نسبة العرض للارتفاع
-                ),
-                itemCount: places.length,
-                itemBuilder: (context, index) {
-                  final placeData = places[index];
-                  final String id = placeData["id"];
-                  final String title = placeData["title"];
-                  final List<String> images =
-                      List<String>.from(placeData["images"]);
-                  final String heroTag =
-                      placeData["hero"] ?? "${cityName}_$title";
-                  final bool isFav = favoritePlaces.contains(id);
-
-                  return Stack(
-                    children: [
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0.0, end: 1.0),
-                        duration: Duration(milliseconds: 300 + index * 100),
-                        curve: Curves.easeOut,
-                        builder: (context, value, child) {
-                          return Opacity(
-                            opacity: value,
-                            child: Transform.translate(
-                              offset: Offset(0, 20 * (1 - value)),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => placeData["page"]),
-                            );
-                          },
-                          child: Card(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 4,
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius:
-                                        const BorderRadius.vertical(
-                                      top: Radius.circular(16),
-                                    ),
-                                    child: Hero(
-                                      tag: heroTag,
-                                      child: Image.asset(
-                                        images.first,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    title,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: IconButton(
-                          iconSize: 34,
                           icon: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 250),
-                            transitionBuilder:
-                                (Widget child, Animation<double> anim) =>
-                                    ScaleTransition(scale: anim, child: child),
+                            duration:
+                                const Duration(milliseconds: 250),
+                            transitionBuilder: (Widget child,
+                                    Animation<double> anim) =>
+                                ScaleTransition(
+                                    scale: anim, child: child),
                             child: Icon(
-                              isFav
+                              favoritePlaces.contains(id)
                                   ? Icons.favorite
-                                  : Icons.favorite_border_outlined,
-                              key: ValueKey<bool>(isFav),
-                              color: isFav
+                                  : Icons.favorite_border,
+                              key: ValueKey(
+                                  favoritePlaces.contains(id)),
+                              color: favoritePlaces.contains(id)
                                   ? Colors.redAccent
-                                  : (isDark
-                                      ? Colors.white70
-                                      : Colors.black54),
-                                      size: 30,
+                                  : Colors.grey,
+                              size: 30,
                             ),
                           ),
                           onPressed: () => _toggleFavorite(id),
@@ -354,7 +238,7 @@ Future<void> _toggleFavorite(String placeId) async {
                   );
                 },
               ),
-      ),
+            ),
     );
   }
 }
