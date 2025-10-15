@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:share_plus/share_plus.dart'; 
 import '../theme_notifier.dart';
 import '../places_data.dart';
 import 'place_details_page.dart';
@@ -99,6 +100,18 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
         behavior: SnackBarBehavior.fixed,
       ),
     );
+  }
+
+  // ✅ دالة مشاركة الرابط العميق كـ Web Link (يظهر كرابط أزرق في واتساب)
+  void _sharePlace(String city, String id, String title) {
+    final String encodedCity = Uri.encodeComponent(city);
+    final String webLink =
+        'https://smartcityguide.app/place?city=$encodedCity&id=$id';
+
+    final String shareText =
+        'شوف هذا المكان في $city: $title\n\nافتحه في تطبيق Smart City Guide من هنا:\n$webLink';
+
+    Share.share(shareText);
   }
 
   @override
@@ -232,6 +245,27 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
                             ),
                           ),
                           onPressed: () => _toggleFavorite(id),
+                        ),
+                      ),
+                      // ✅ زر المشاركة (نسخة محسّنة لإرسال رابط ويب قابل للنقر)
+                      Positioned(
+                        bottom: 8,
+                        right: 8,
+                        child: IconButton(
+                          iconSize: 34,
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStatePropertyAll(
+                              isDark
+                                  ? Colors.black.withOpacity(0.3)
+                                  : Colors.white.withOpacity(0.8),
+                            ),
+                            shape: const WidgetStatePropertyAll(CircleBorder()),
+                          ),
+                          icon: const Icon(
+                            Icons.share,
+                            size: 28,
+                          ),
+                          onPressed: () => _sharePlace(city, id, title),
                         ),
                       ),
                     ],

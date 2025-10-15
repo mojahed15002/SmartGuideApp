@@ -1,5 +1,3 @@
-import '../theme_notifier.dart';
-import '../pages/place_details_page.dart';
 
 final Map<String, List<Map<String, dynamic>>> cityPlacesPages = {
   "نابلس": [
