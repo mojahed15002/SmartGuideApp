@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <title>Open in Smart City Guide</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const city = params.get('city') || '';
+      const id   = params.get('id')   || '';
+
+      // رابط الـ scheme الخاص بالتطبيق
+      const appUrl = `smartcityguide://place?city=${encodeURIComponent(city)}&id=${encodeURIComponent(id)}`;
+
+      // جرّب فتح التطبيق
+      window.location.href = appUrl;
+
+      // خطة احتياطية: لو بقي في المتصفح (ما عنده التطبيق) نظهر زر تحميل أو رسالة
+      setTimeout(() => {
+        document.getElementById('fallback').style.display = 'block';
+      }, 1200);
+    })();
+  </script>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:24px}
+    #fallback{display:none}
+  </style>
+</head>
+<body>
+  <h3>جاري فتح التطبيق…</h3>
+  <div id="fallback">
+    <p>إذا لم يفتح التطبيق تلقائيًا، تأكد من تثبيت التطبيق ثم أعد المحاولة.</p>
+  </div>
+</body>
+</html>
