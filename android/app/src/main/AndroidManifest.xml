@@ -38,12 +38,10 @@
     <action android:name="android.intent.action.VIEW" />
     <category android:name="android.intent.category.DEFAULT" />
     <category android:name="android.intent.category.BROWSABLE" />
-
-    <!-- 🔗 نطاق GitHub Pages الذي يستضيف assetlinks.json -->
     <data
         android:scheme="https"
         android:host="mojahed15002.github.io"
-        android:pathPrefix="/SmartGuideApp/place" />
+        android:pathPrefix="/SmartGuideApp" />
 </intent-filter>
 
 

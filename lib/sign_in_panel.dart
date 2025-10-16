@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'deep_link_helper.dart';
 
 class SignInPanel extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -171,6 +172,15 @@ SizedBox(
               'updatedAt': FieldValue.serverTimestamp(),
             }, SetOptions(merge: true));
           }
+// معالجة الروابط العميقة (إن وجدت)
+final pending = DeepLinkStore.take();
+if (pending != null) {
+  openPlaceFromUri(
+    context: context,
+    themeNotifier: widget.themeNotifier, // أو themeNotifier المناسب لديك
+    uri: pending,
+  );
+}
 
           // ✅ قراءة المفضلات من Firestore بعد تسجيل الدخول
           final favSnapshot = await FirebaseFirestore.instance
@@ -234,6 +244,7 @@ SizedBox(
         borderRadius: BorderRadius.circular(30),
       ),
     ),
+    
     child: const Text(
       "تسجيل الدخول",
       style: TextStyle(
@@ -311,7 +322,15 @@ OutlinedButton.icon(
             favorites = List<String>.from(data['favorites']);
           }
         }
-
+// معالجة الروابط العميقة (إن وجدت)
+final pending = DeepLinkStore.take();
+if (pending != null) {
+  openPlaceFromUri(
+    context: context,
+    themeNotifier: widget.themeNotifier, // أو themeNotifier المناسب لديك
+    uri: pending,
+  );
+}
         // ✅ حفظ المفضلات محليًا حتى تظهر في صفحة المفضلة
         final prefs = await SharedPreferences.getInstance();
         await prefs.setStringList('favorites_list', favorites);

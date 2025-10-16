@@ -102,17 +102,17 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
     );
   }
 
-  // ✅ دالة مشاركة الرابط العميق كـ Web Link (يظهر كرابط أزرق في واتساب)
+    // ✅ دالة مشاركة الرابط العميق كـ Web Link (يظهر كرابط أزرق في واتساب)
   void _sharePlace(String city, String id, String title) {
     final String encodedCity = Uri.encodeComponent(city);
+    final String encodedId = Uri.encodeComponent(id);
     final String webLink =
-        'https://smartcityguide.app/place?city=$encodedCity&id=$id';
-
+        'https://mojahed15002.github.io/SmartGuideApp/place?city=$encodedCity&id=$encodedId';
     final String shareText =
-        'شوف هذا المكان في $city: $title\n\nافتحه في تطبيق Smart City Guide من هنا:\n$webLink';
-
+        '📍 اكتشف هذا المكان في $city:\n$title\n\nافتحه مباشرة في تطبيق Smart City Guide:\n$webLink';
     Share.share(shareText);
   }
+
 
   @override
   Widget build(BuildContext context) {

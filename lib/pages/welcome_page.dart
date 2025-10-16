@@ -4,7 +4,8 @@ import '../theme_notifier.dart';
 import '../choice_page_stub.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../sign_in_panel.dart';
-
+import '../deep_link_helper.dart'; // ✅ استيراد ملف المساعدة للروابط
+import 'dart:async'; // ✅ لاستعمال StreamSubscription
 class WelcomePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   final String? userName; 
@@ -23,15 +24,17 @@ class _WelcomePageState extends State<WelcomePage> {
   User? user;
   String? userName; // 🔹 لحفظ اسم المستخدم من Firestore
 
-Future<void> _loadUserTheme() async {
-  try {
-    if (user != null) {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user!.uid)
-          .get();
+  StreamSubscription<Uri>? _deepLinkSub; // ✅ متغير للاشتراك في الروابط
 
-      if (userDoc.exists) {
+  Future<void> _loadUserTheme() async {
+    try {
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user!.uid)
+            .get();
+
+        if (userDoc.exists) {
           final data = userDoc.data();
           if (data != null) {
             // 🔹 نحفظ الاسم في المتغير المحلي
@@ -51,17 +54,32 @@ Future<void> _loadUserTheme() async {
           }
         }
       }
-  } catch (e) {
-    print("⚠️ خطأ أثناء تحميل الثيم من Firestore: $e");
+    } catch (e) {
+      print("⚠️ خطأ أثناء تحميل الثيم من Firestore: $e");
+    }
   }
-}
 
   @override
   void initState() {
-    
     super.initState();
     user = FirebaseAuth.instance.currentUser;
     _loadUserTheme();
+
+    // ✅ الاستماع لأي روابط تصل أثناء وجود المستخدم داخل التطبيق
+    _deepLinkSub = deepLinkStreamController.stream.listen((uri) {
+      debugPrint('🌐 وصل رابط أثناء وجود المستخدم داخل التطبيق: $uri');
+      openPlaceFromUri(
+        context: context,
+        themeNotifier: widget.themeNotifier,
+        uri: uri,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _deepLinkSub?.cancel(); // ✅ إلغاء الاشتراك عند مغادرة الصفحة
+    super.dispose();
   }
 
   @override
@@ -71,62 +89,59 @@ Future<void> _loadUserTheme() async {
     return Scaffold(
       appBar: AppBar(
         title: const Text('مرحباً بك'),
-       actions: [
-  // زر التبديل بين النمطين
-  IconButton(
-    icon: Icon(
-      widget.themeNotifier.isDarkMode
-          ? Icons.wb_sunny
-          : Icons.nightlight_round,
-      color: widget.themeNotifier.isDarkMode
-          ? Colors.orange
-          : Colors.deepOrange,
-    ),
-   onPressed: () async {
-  // تبديل الثيم محلياً
-  widget.themeNotifier.toggleTheme();
+        actions: [
+          // زر التبديل بين النمطين
+          IconButton(
+            icon: Icon(
+              widget.themeNotifier.isDarkMode
+                  ? Icons.wb_sunny
+                  : Icons.nightlight_round,
+              color: widget.themeNotifier.isDarkMode
+                  ? Colors.orange
+                  : Colors.deepOrange,
+            ),
+            onPressed: () async {
+              // تبديل الثيم محلياً
+              widget.themeNotifier.toggleTheme();
 
-  // تحديث الحالة الجديدة في Firestore
-  final user = FirebaseAuth.instance.currentUser;
-  if (user != null) {
-    try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .set(
-            {
-              'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
+              // تحديث الحالة الجديدة في Firestore
+              final user = FirebaseAuth.instance.currentUser;
+              if (user != null) {
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .set(
+                        {
+                          'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
+                        },
+                        SetOptions(merge: true),
+                      );
+                } catch (e) {
+                  print("خطأ أثناء تحديث الثيم في Firestore: $e");
+                }
+              }
             },
-            SetOptions(merge: true),
-          );
-    } catch (e) {
-      print("خطأ أثناء تحديث الثيم في Firestore: $e");
-    }
-  }
-},
+          ),
 
-  ),
+          const SizedBox(height: 20),
 
-  const SizedBox(height: 20),
-
-  IconButton(
-  icon: const Icon(Icons.logout),
-  onPressed: () async {
-    await FirebaseAuth.instance.signOut();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SignInPanel(themeNotifier: widget.themeNotifier),
-        ),
-        (route) => false,
-      );
-    }
-  },
-),
-
-],
-
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              if (mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SignInPanel(themeNotifier: widget.themeNotifier),
+                  ),
+                  (route) => false,
+                );
+              }
+            },
+          ),
+        ],
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -175,8 +190,6 @@ Future<void> _loadUserTheme() async {
               ),
 
               const SizedBox(height: 16),
-
-              
             ],
           ),
         ),

@@ -8,10 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
-import 'package:app_links/app_links.dart'; // ✅ استبدال uni_links بـ app_links
-import 'pages/place_details_page.dart';
-import 'places_data.dart';
-
+import 'package:app_links/app_links.dart'; 
+import 'deep_link_helper.dart';
 final ThemeNotifier themeNotifier = ThemeNotifier();
 
 // ✅ متغير لتخزين الرابط المؤجل (في حال كان التطبيق مغلق)
@@ -109,47 +107,27 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
   }
 
   /// ✅ معالجة الرابط الوارد
-  void _handleIncomingLink(String link) {
-    try {
-      Uri uri = Uri.parse(link);
+void _handleIncomingLink(String link) {
+  try {
+    final uri = Uri.parse(link);
+    debugPrint('✅ وصل رابط: $uri');
 
-      // دعم الصيغتين: smartcityguide://place و https://smartcityguide.app/place
-      if (uri.host == 'place' || uri.path.contains('place')) {
-        final city = uri.queryParameters['city'];
-        final id = uri.queryParameters['id'];
-
-        if (city != null && id != null) {
-          final places = cityPlacesPages[city];
-          if (places != null) {
-            final place = places.firstWhere(
-              (p) => p['id'] == id,
-              orElse: () => {},
-            );
-
-            if (place.isNotEmpty) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PlaceDetailsPage(
-                      title: place['title'],
-                      cityName: place['city'],
-                      images: List<String>.from(place['images']),
-                      url: place['url'],
-                      themeNotifier: widget.themeNotifier,
-                      heroTag: place['hero'],
-                    ),
-                  ),
-                );
-              });
-            }
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint("⚠️ خطأ في تحليل الرابط: $e");
+    // إذا المستخدم غير مسجل دخول حالياً → خزّنه مؤقتاً وارجع
+    if (FirebaseAuth.instance.currentUser == null) {
+      DeepLinkStore.set(uri);
+      debugPrint('🕒 خزنّا الرابط مؤقتاً لفتحه بعد تسجيل الدخول');
+      return;
     }
+
+    // المستخدم داخل التطبيق → افتح الصفحة فوراً
+    deepLinkStreamController.add(
+      uri,
+    );
+  } catch (e) {
+    debugPrint('❌ خطأ في تحليل الرابط: $e');
   }
+}
+
 
   @override
   void dispose() {
@@ -187,36 +165,51 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
           ],
           locale: const Locale('ar'),
 
-          /// ✅ هنا التعديل الأهم
-          /// StreamBuilder يتحقق إن كان المستخدم مسجّل دخول أم لا
-          home: StreamBuilder<User?>(
-            stream: FirebaseAuth.instance.authStateChanges(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
-              }
-              if (snapshot.hasData) {
-                // ✅ المستخدم مسجّل دخول بالفعل
-                final user = snapshot.data!;
-                // قراءة الثيم من Firestore مرة واحدة عند تسجيل الدخول
-                FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(user.uid)
-                    .get()
-                    .then((doc) {
-                  if (doc.exists && doc.data()?['theme'] != null) {
-                    final savedTheme = doc['theme'];
-                    widget.themeNotifier.setTheme(savedTheme == 'dark');
-                  }
-                });
-                return WelcomePage(themeNotifier: widget.themeNotifier);
-              }
-              // ✅ المستخدم غير مسجّل → عرض صفحة تسجيل الدخول
-              return SignInPanel(themeNotifier: widget.themeNotifier);
-            },
-          ),
+/// StreamBuilder يتحقق إن كان المستخدم مسجّل دخول أم لا
+home: StreamBuilder<User?>(
+  stream: FirebaseAuth.instance.authStateChanges(),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (snapshot.hasData) {
+      // ✅ المستخدم مسجّل دخول بالفعل
+      final user = snapshot.data!;
+
+      // ✅ التحقق إن كان هناك رابط مؤجل لفتحه مباشرة بعد الدخول
+      final pending = DeepLinkStore.take();
+      if (pending != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          openPlaceFromUri(
+            context: context,
+            themeNotifier: widget.themeNotifier,
+            uri: pending,
+          );
+        });
+      }
+
+      // قراءة الثيم من Firestore مرة واحدة عند تسجيل الدخول
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get()
+          .then((doc) {
+        if (doc.exists && doc.data()?['theme'] != null) {
+          final savedTheme = doc['theme'];
+          widget.themeNotifier.setTheme(savedTheme == 'dark');
+        }
+      });
+
+      return WelcomePage(themeNotifier: widget.themeNotifier);
+    }
+
+    // ✅ المستخدم غير مسجّل → عرض صفحة تسجيل الدخول
+    return SignInPanel(themeNotifier: widget.themeNotifier);
+  },
+),
         );
       },
     );
