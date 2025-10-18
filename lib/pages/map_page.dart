@@ -179,7 +179,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           p.subLocality,
           p.administrativeArea,
           p.street
-        ].where((e) => e != null && e!.isNotEmpty).join(' - ');
+        ].where((e) => e != null && e.isNotEmpty).join(' - ');
       }
     } catch (e) {
       debugPrint("⚠️ فشل في تحديد اسم المكان: $e");

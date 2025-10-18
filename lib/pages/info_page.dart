@@ -111,4 +111,3 @@ class _InfoPageState extends State<InfoPage> {
 
 
 
-/// صفحة الخريطة (محدثة مع ميزات التحكم الكامل)

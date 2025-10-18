@@ -33,6 +33,10 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
   final TextEditingController _searchController = TextEditingController();
   List<String> _searchHistory = [];
 
+  // ✅ متغيرات الأنيميشن للأزرار
+  bool _isHeartPressed = false;
+  bool _isSharePressed = false;
+
   @override
   void initState() {
     super.initState();
@@ -275,7 +279,6 @@ Future<void> _deleteSearchItem(String query) async {
               child: Column(
                 children: [
                   // 🔍 البحث + الاقتراحات
-// 🔍 البحث + الاقتراحات اليدوية (بدل Autocomplete)
 Expanded(
   flex: 0,
   child: Column(
@@ -286,7 +289,7 @@ Expanded(
         onChanged: (query) async {
           _onSearchChanged(query);
           if (query.isEmpty) {
-            _loadSearchHistory(); // 🔁 أعد تحميل السجل عند تفريغ البحث
+            _loadSearchHistory();
             return;
           }
 
@@ -319,8 +322,7 @@ Expanded(
       ),
       const SizedBox(height: 4),
 
-      // ✅ نستخدم Flexible بدل Container العادي
-   if (_searchHistory.isNotEmpty)
+      if (_searchHistory.isNotEmpty)
   Flexible(
     child: Container(
       decoration: BoxDecoration(
@@ -343,15 +345,11 @@ Expanded(
           return ListTile(
             leading: const Icon(Icons.history, color: Colors.blueAccent),
             title: Text(suggestion),
-
-            // 🔹 زر الحذف
             trailing: IconButton(
               icon: const Icon(Icons.close, color: Colors.redAccent),
               tooltip: 'حذف من السجل',
               onPressed: () => _deleteSearchItem(suggestion),
             ),
-
-            // 🔹 عند الضغط على عنصر البحث
             onTap: () {
               _searchController.text = suggestion;
               _filterPlaces(suggestion);
@@ -456,65 +454,80 @@ const SizedBox(height: 10),
                                       ),
                                     ),
                                   ),
-                                  // ❤️ المفضلة
-                                  Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: IconButton(
-                                      iconSize: 34,
-                                      style: ButtonStyle(
-                                        backgroundColor:
-                                            WidgetStatePropertyAll(
-                                          isDark
-                                              ? Colors.black.withOpacity(0.3)
-                                              : Colors.white.withOpacity(0.8),
-                                        ),
-                                        shape: const WidgetStatePropertyAll(
-                                            CircleBorder()),
-                                      ),
-                                      icon: AnimatedSwitcher(
-                                        duration:
-                                            const Duration(milliseconds: 250),
-                                        transitionBuilder:
-                                            (Widget child, Animation<double> anim) =>
-                                                ScaleTransition(
-                                                    scale: anim, child: child),
-                                        child: Icon(
-                                          favoritePlaces.contains(id)
-                                              ? Icons.favorite
-                                              : Icons.favorite_border,
-                                          key: ValueKey(
-                                              favoritePlaces.contains(id)),
-                                          color: favoritePlaces.contains(id)
-                                              ? Colors.redAccent
-                                              : Colors.grey,
-                                          size: 30,
-                                        ),
-                                      ),
-                                      onPressed: () => _toggleFavorite(id),
-                                    ),
-                                  ),
-                                  // 🔗 المشاركة
-                                  Positioned(
-                                    bottom: 8,
-                                    right: 8,
-                                    child: IconButton(
-                                      iconSize: 34,
-                                      style: ButtonStyle(
-                                        backgroundColor:
-                                            WidgetStatePropertyAll(
-                                          isDark
-                                              ? Colors.black.withOpacity(0.3)
-                                              : Colors.white.withOpacity(0.8),
-                                        ),
-                                        shape: const WidgetStatePropertyAll(
-                                            CircleBorder()),
-                                      ),
-                                      icon: const Icon(Icons.share, size: 28),
-                                      onPressed: () =>
-                                          _sharePlace(city, id, title),
-                                    ),
-                                  ),
+
+   // ❤️ المفضلة (مع أنيميشن النبضة)
+Positioned(
+  top: 8,
+  right: 8,
+  child: AnimatedScale(
+    scale: _isHeartPressed ? 1.3 : 1.0,
+    duration: const Duration(milliseconds: 180),
+    curve: Curves.easeOutBack,
+    child: IconButton(
+      iconSize: 28,
+      style: ButtonStyle(
+        backgroundColor: WidgetStatePropertyAll(
+          isDark
+              ? Colors.black.withOpacity(0.3)
+              : Colors.white.withOpacity(0.8),
+        ),
+        shape: const WidgetStatePropertyAll(CircleBorder()),
+      ),
+      icon: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        transitionBuilder: (child, anim) =>
+            ScaleTransition(scale: anim, child: child),
+        child: Icon(
+          favoritePlaces.contains(id)
+              ? Icons.favorite
+              : Icons.favorite_border,
+          key: ValueKey(favoritePlaces.contains(id)),
+          color: favoritePlaces.contains(id)
+              ? Colors.redAccent
+              : Colors.grey,
+          size: 28,
+        ),
+      ),
+      onPressed: () async {
+        setState(() => _isHeartPressed = true);
+        await Future.delayed(const Duration(milliseconds: 150));
+        setState(() => _isHeartPressed = false);
+        _toggleFavorite(id);
+      },
+    ),
+  ),
+),
+
+
+  // 🔗 المشاركة (مع أنيميشن النبضة)
+Positioned(
+  top: 8,
+  left: 8,
+  child: AnimatedScale(
+    scale: _isSharePressed ? 1.3 : 1.0,
+    duration: const Duration(milliseconds: 180),
+    curve: Curves.easeOutBack,
+    child: IconButton(
+      iconSize: 28,
+      style: ButtonStyle(
+        backgroundColor: WidgetStatePropertyAll(
+          isDark
+              ? Colors.black.withOpacity(0.3)
+              : Colors.white.withOpacity(0.8),
+        ),
+        shape: const WidgetStatePropertyAll(CircleBorder()),
+      ),
+      icon: const Icon(Icons.share, size: 28),
+      onPressed: () async {
+        setState(() => _isSharePressed = true);
+        await Future.delayed(const Duration(milliseconds: 150));
+        setState(() => _isSharePressed = false);
+        _sharePlace(city, id, title);
+      },
+    ),
+  ),
+),
+
                                 ],
                               );
                             },
