@@ -369,7 +369,8 @@ Expanded(
 
 const SizedBox(height: 10),
 
-                  // ✅ عرض الأماكن
+             
+                 // ✅ عرض الأماكن
                   Expanded(
                     child: _filteredPlaces.isEmpty
                         ? const Center(
@@ -395,6 +396,22 @@ const SizedBox(height: 10),
                                   List<String>.from(place["images"] ?? []);
                               final String heroTag = place["hero"];
                               final String city = place["city"];
+// ✅ حساب التقييم الحالي
+final Map<String, dynamic> ratings = Map<String, dynamic>.from(place["ratings"] ?? {});
+final user = FirebaseAuth.instance.currentUser;
+final double userRating = user != null && ratings.containsKey(user.uid)
+    ? (ratings[user.uid] as num).toDouble()
+    : 0.0;
+
+// حساب المتوسط العام
+double avgRating = 0.0;
+if (ratings.isNotEmpty) {
+  avgRating = ratings.values
+      .map((v) => (v as num).toDouble())
+      .reduce((a, b) => a + b) /
+      ratings.length;
+}
+
 
                               return Stack(
                                 children: [
@@ -454,6 +471,75 @@ const SizedBox(height: 10),
                                       ),
                                     ),
                                   ),
+// ⭐ تقييم النجوم
+Positioned(
+  bottom: 12,
+  right: 8,
+  child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: List.generate(5, (starIndex) {
+      final ratingValue = starIndex + 1;
+      return IconButton(
+        iconSize: 24,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        icon: Icon(
+          ratingValue <= userRating ? Icons.star : Icons.star_border,
+          color: Colors.amber,
+        ),
+        onPressed: user == null
+            ? null
+            : () async {
+                await FirebaseFirestore.instance
+                    .collection('places')
+                    .doc(place["id"])
+                    .update({
+                  'ratings.${user.uid}': ratingValue.toDouble(),
+                });
+
+                setState(() {
+                  _fetchPlaces(); // تحديث الأماكن بعد التقييم
+                });
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('تم تقييم المكان بـ $ratingValue نجوم ⭐'),
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              },
+      );
+    }),
+  ),
+),
+
+// 📊 عرض المتوسط العام للتقييم
+if (avgRating > 0)
+  Padding(
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.star, color: Colors.amber, size: 18),
+        const SizedBox(width: 4),
+        Text(
+          avgRating.toStringAsFixed(1), // مثلاً 4.3
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '(${ratings.length} تقييم)', // عدد المقيمين
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 13,
+          ),
+        ),
+      ],
+    ),
+  ),
 
    // ❤️ المفضلة (مع أنيميشن النبضة)
 Positioned(
