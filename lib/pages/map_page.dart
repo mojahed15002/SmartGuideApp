@@ -12,6 +12,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // ✅ جديد
 import 'package:firebase_auth/firebase_auth.dart'; // ✅ جديد
 import 'dart:convert';
 import 'dart:async';
+import 'package:geocoding/geocoding.dart';
 
 class MapPage extends StatefulWidget {
   final Position position;
@@ -160,25 +161,47 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 
   // ✅ حفظ الرحلة داخل Firestore
   Future<void> _saveTripLogToFirebase() async {
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || _destination == null) return;
+
+    // 🔹 نحاول نحصل على اسم المكان من الإحداثيات
+    String placeName = "موقع غير معروف";
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
-
-      await FirebaseFirestore.instance.collection('travel_logs').add({
-        'user_id': user.uid,
-        'destination': _destination.toString(),
-        'time': DateTime.now().toIso8601String(),
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("✅ تم حفظ الرحلة في السجلات")),
-        );
+      final placemarks = await placemarkFromCoordinates(
+        _destination!.latitude,
+        _destination!.longitude,
+      );
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        placeName = [
+          p.locality,
+          p.subLocality,
+          p.administrativeArea,
+          p.street
+        ].where((e) => e != null && e!.isNotEmpty).join(' - ');
       }
     } catch (e) {
-      debugPrint("⚠️ فشل حفظ السجل: $e");
+      debugPrint("⚠️ فشل في تحديد اسم المكان: $e");
     }
+
+    // 🔹 حفظ السجل في Firestore
+    await FirebaseFirestore.instance.collection('travel_logs').add({
+      'user_id': user.uid,
+      'destination': _destination.toString(),
+      'place_name': placeName,
+      'time': DateTime.now().toIso8601String(),
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("✅ تم حفظ الرحلة في السجلات")),
+      );
+    }
+  } catch (e) {
+    debugPrint("⚠️ فشل حفظ السجل: $e");
   }
+}
 
   void _stopLiveTracking() {
     _positionStream?.cancel();

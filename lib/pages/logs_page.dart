@@ -93,48 +93,65 @@ class _LogsPageState extends State<LogsPage> {
     }
   }
 
-  // ✅ عرض الوجهة على الخريطة
-  Future<void> _openMap(String destinationString) async {
-    try {
-      final regex = RegExp(r'LatLng\(([^,]+), ([^)]+)\)');
-      final match = regex.firstMatch(destinationString);
-      if (match == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("⚠️ لا يمكن قراءة الإحداثيات")),
-        );
-        return;
+// ✅ عرض الوجهة على الخريطة - متوافق مع الشكل "LatLng(latitude:..., longitude:...)"
+Future<void> _openMap(dynamic destinationData) async {
+  try {
+    double? lat;
+    double? lng;
+
+    if (destinationData is GeoPoint) {
+      // 🔹 Firestore GeoPoint
+      lat = destinationData.latitude;
+      lng = destinationData.longitude;
+    } else if (destinationData is String) {
+      // 🔹 Regex يدعم الشكل الكامل "LatLng(latitude:32.27, longitude:35.33)"
+      final regex = RegExp(
+        r'LatLng\(latitude[:=]\s*([-]?\d+\.\d+),\s*longitude[:=]\s*([-]?\d+\.\d+)\)',
+      );
+
+      final match = regex.firstMatch(destinationData);
+      if (match != null) {
+        lat = double.tryParse(match.group(1)!);
+        lng = double.tryParse(match.group(2)!);
       }
-
-      final lat = double.tryParse(match.group(1)!);
-      final lng = double.tryParse(match.group(2)!);
-      if (lat == null || lng == null) return;
-
-      final destination = latlng.LatLng(lat, lng);
-      final position = await Geolocator.getCurrentPosition();
-
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MapPage(
-            position: position,
-            destination: destination,
-            enableTap: false,
-            enableLiveTracking: true,
-            themeNotifier: widget.themeNotifier,
-          ),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("⚠️ خطأ أثناء فتح الخريطة: $e")),
-      );
     }
+
+    if (lat == null || lng == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("⚠️ لا يمكن تحديد موقع الوجهة")),
+      );
+      return;
+    }
+
+    final destination = latlng.LatLng(lat, lng);
+    final position = await Geolocator.getCurrentPosition();
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapPage(
+          position: position,
+          destination: destination,
+          enableTap: false,
+          enableLiveTracking: true,
+          themeNotifier: widget.themeNotifier,
+        ),
+      ),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("⚠️ خطأ أثناء فتح الخريطة: $e")),
+    );
   }
+}
+
+
 
   // ✅ نافذة التفاصيل المنبثقة مع خيارات إضافية
   void _showLogDetails(Map<String, dynamic> log, String logId) {
-    final destination = log['destination'] ?? "موقع غير معروف";
+    final destination = log['place_name'] ?? log['destination'] ?? "موقع غير معروف";
     final time = log['time'] ?? "";
     final dateTime = DateTime.tryParse(time);
     final formattedDate = dateTime != null
@@ -233,9 +250,8 @@ class _LogsPageState extends State<LogsPage> {
             itemBuilder: (context, index) {
               final doc = logs[index];
               final log = doc.data() as Map<String, dynamic>;
-              final destination = log['destination'] ?? "موقع غير معروف";
+              final destination = log['place_name'] ?? log['destination'] ?? "موقع غير معروف";
               final time = log['time'] ?? "";
-
               final dateTime = DateTime.tryParse(time);
               final formattedTime = dateTime != null
                   ? "${dateTime.year}/${dateTime.month}/${dateTime.day} - ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}"
