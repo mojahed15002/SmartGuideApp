@@ -36,6 +36,8 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
   // ✅ متغيرات الأنيميشن للأزرار
   bool _isHeartPressed = false;
   bool _isSharePressed = false;
+  
+final Map<String, double> _uiUserRatings = {};
 
   @override
   void initState() {
@@ -385,7 +387,7 @@ const SizedBox(height: 10),
                               crossAxisCount: 2,
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
-                              childAspectRatio: 3 / 4,
+                              childAspectRatio: 2.6 / 4,
                             ),
                             itemCount: _filteredPlaces.length,
                             itemBuilder: (context, index) {
@@ -396,21 +398,30 @@ const SizedBox(height: 10),
                                   List<String>.from(place["images"] ?? []);
                               final String heroTag = place["hero"];
                               final String city = place["city"];
-// ✅ حساب التقييم الحالي
-final Map<String, dynamic> ratings = Map<String, dynamic>.from(place["ratings"] ?? {});
+// ✅ حساب التقييم الحالي (مع تحديث فوري محلي)
+final rawRatings = place["ratings"];
+final Map<String, dynamic> ratings =
+    (rawRatings is Map<String, dynamic>) ? Map<String, dynamic>.from(rawRatings) : {};
+
 final user = FirebaseAuth.instance.currentUser;
-final double userRating = user != null && ratings.containsKey(user.uid)
+
+// التقييم الفعلي المحفوظ في Firestore
+final double storedUserRating = (user != null && ratings[user.uid] is num)
     ? (ratings[user.uid] as num).toDouble()
     : 0.0;
+
+// التقييم المعروض حاليًا (المحلي إن وُجد، وإلا المخزَّن)
+final double userRating = _uiUserRatings[id] ?? storedUserRating;
 
 // حساب المتوسط العام
 double avgRating = 0.0;
 if (ratings.isNotEmpty) {
   avgRating = ratings.values
-      .map((v) => (v as num).toDouble())
+      .map((v) => (v is num ? v.toDouble() : 0.0))
       .reduce((a, b) => a + b) /
       ratings.length;
 }
+
 
 
                               return Stack(
@@ -472,74 +483,110 @@ if (ratings.isNotEmpty) {
                                     ),
                                   ),
 // ⭐ تقييم النجوم
-Positioned(
-  bottom: 12,
-  right: 8,
-  child: Row(
-    mainAxisSize: MainAxisSize.min,
-    children: List.generate(5, (starIndex) {
-      final ratingValue = starIndex + 1;
-      return IconButton(
-        iconSize: 24,
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
-        icon: Icon(
-          ratingValue <= userRating ? Icons.star : Icons.star_border,
-          color: Colors.amber,
-        ),
-        onPressed: user == null
-            ? null
-            : () async {
-                await FirebaseFirestore.instance
-                    .collection('places')
-                    .doc(place["id"])
-                    .update({
-                  'ratings.${user.uid}': ratingValue.toDouble(),
-                });
 
-                setState(() {
-                  _fetchPlaces(); // تحديث الأماكن بعد التقييم
-                });
+Positioned.fill(
+  child: Align(
+    alignment: Alignment.center, // 🔹 يضعها بالمنتصف تمامًا
+    child: Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 🔹 صف النجوم
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (starIndex) {
+              final ratingValue = starIndex + 1;
+              return GestureDetector(
+                onTap: user == null
+                    ? null
+                    : () async {
+                        setState(() {
+                          _uiUserRatings[id] = ratingValue.toDouble();
+                        });
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('تم تقييم المكان بـ $ratingValue نجوم ⭐'),
-                    duration: const Duration(seconds: 1),
+                        await FirebaseFirestore.instance
+                            .collection('places')
+                            .doc(place["id"])
+                            .update({
+                          'ratings.${user.uid}': ratingValue.toDouble(),
+                        });
+
+                        _fetchPlaces();
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('تم تقييم المكان بـ $ratingValue نجوم ⭐'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  transform: Matrix4.identity()
+                    ..scale(ratingValue == _uiUserRatings[id] ? 1.2 : 1.0),
+                  child: Icon(
+                    ratingValue <= (_uiUserRatings[id] ?? 0)
+                        ? Icons.star
+                        : Icons.star_border,
+                    color: Colors.amber,
+                    size: 26,
                   ),
-                );
-              },
-      );
-    }),
+                ),
+              );
+            }),
+          ),
+
+          const SizedBox(height: 4),
+
+          // 🔹 المتوسط العام + عدد المقيمين
+          Builder(builder: (context) {
+            final ratings = place["ratings"];
+            if (ratings is! Map || ratings.isEmpty) {
+              return const Text(
+                "0.0 (0)",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              );
+            }
+
+            final allRatings = ratings.values
+                .map((e) => e is num ? e.toDouble() : 0.0)
+                .toList();
+            final average =
+                allRatings.reduce((a, b) => a + b) / allRatings.length;
+            final count = allRatings.length;
+
+            return Text(
+              "${average.toStringAsFixed(1)} ($count)",
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            );
+          }),
+        ],
+      ),
+    ),
   ),
 ),
 
-// 📊 عرض المتوسط العام للتقييم
-if (avgRating > 0)
-  Padding(
-    padding: const EdgeInsets.only(bottom: 6),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.star, color: Colors.amber, size: 18),
-        const SizedBox(width: 4),
-        Text(
-          avgRating.toStringAsFixed(1), // مثلاً 4.3
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          '(${ratings.length} تقييم)', // عدد المقيمين
-          style: TextStyle(
-            color: Colors.grey.shade600,
-            fontSize: 13,
-          ),
-        ),
-      ],
-    ),
-  ),
+
 
    // ❤️ المفضلة (مع أنيميشن النبضة)
 Positioned(
