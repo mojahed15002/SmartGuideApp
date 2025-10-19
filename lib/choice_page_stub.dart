@@ -5,7 +5,7 @@ import 'pages/choice_page_redirect.dart';
 import '../sign_in_panel.dart';
 import 'pages/favorites_page.dart';
 import 'pages/logs_page.dart';
-
+import 'pages/near_me_page.dart';
 class ChoicePageStub extends StatelessWidget {
   final ThemeNotifier themeNotifier;
   const ChoicePageStub({super.key, required this.themeNotifier});
@@ -25,10 +25,19 @@ class ChoicePageStub extends StatelessWidget {
           );
         },
       ),
+      
       _HubCard(
         title: 'القريبة مني',
         icon: Icons.my_location,
-        onTap: () => Navigator.pushNamed(context, '/nearby'),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NearMePage(themeNotifier: themeNotifier),
+            ),
+          );
+        }
+         
       ),
       _HubCard(
         title: 'المفضلة',

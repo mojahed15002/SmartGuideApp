@@ -350,6 +350,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     return Scaffold(
       appBar: AppBar(
         title: Text("الخريطة (${_currentStyle.toUpperCase()})"),
+        
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) => setState(() => _currentStyle = value),

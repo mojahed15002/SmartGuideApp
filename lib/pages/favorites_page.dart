@@ -5,6 +5,7 @@ import 'place_details_page.dart';
 import '../places_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'custom_drawer.dart';
 
 class FavoritesPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -102,6 +103,7 @@ Future<void> _toggleFavorite(String placeId) async {
       appBar: AppBar(
         title: const Text("المفضلة ❤️"),
       ),
+      drawer: CustomDrawer(themeNotifier: themeNotifier), // ⬅️ هذا السطر المهم
       body: favoritePlaces.isEmpty
           ? const Center(
               child: Text(

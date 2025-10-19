@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart'; 
 import '../theme_notifier.dart';
 import 'place_details_page.dart';
+import 'custom_drawer.dart';
 
 class CityPlacesPage extends StatefulWidget {
   final String cityName;
@@ -274,6 +275,7 @@ Future<void> _deleteSearchItem(String query) async {
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.cityName)),
+      drawer: CustomDrawer(themeNotifier: widget.themeNotifier), // ⬅️ هذا السطر المهم
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(

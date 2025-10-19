@@ -5,7 +5,7 @@ library;
 import 'package:flutter/material.dart';
 import '../theme_notifier.dart';
 import 'city_places_page.dart';
-
+import 'custom_drawer.dart';
 class GeneralInfoPage extends StatelessWidget {
   final ThemeNotifier themeNotifier;
   const GeneralInfoPage({super.key, required this.themeNotifier});
@@ -21,6 +21,7 @@ class GeneralInfoPage extends StatelessWidget {
            // 🔥 زر التبديل الجديد
         ],
       ),
+      drawer: CustomDrawer(themeNotifier: themeNotifier), // ⬅️ هذا السطر المهم
       body: ListView(
         children: cities.map((city) {
           return ListTile(

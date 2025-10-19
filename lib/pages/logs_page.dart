@@ -5,6 +5,7 @@ import '../theme_notifier.dart';
 import 'package:latlong2/latlong.dart' as latlng;
 import 'map_page.dart';
 import 'package:geolocator/geolocator.dart';
+import 'custom_drawer.dart';
 
 class LogsPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -227,6 +228,7 @@ Future<void> _openMap(dynamic destinationData) async {
           ),
         ],
       ),
+      drawer: CustomDrawer(themeNotifier: widget.themeNotifier), // ⬅️ هذا السطر المهم
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore
             .collection('travel_logs')

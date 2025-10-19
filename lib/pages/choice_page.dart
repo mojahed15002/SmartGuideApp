@@ -12,6 +12,7 @@ import 'map_page.dart';
 import 'martyrs_roundabout_page.dart';
 import 'palestine_street_page.dart';
 import 'sofian_street_page.dart';
+import 'custom_drawer.dart';
 
 class ChoicePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -40,6 +41,7 @@ class _ChoicePageState extends State<ChoicePage> {
            // ✅ زر التبديل
         ],
       ),
+      drawer: CustomDrawer(themeNotifier: widget.themeNotifier), // ⬅️ هذا السطر المهم
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Padding(
         padding: const EdgeInsets.all(20.0),

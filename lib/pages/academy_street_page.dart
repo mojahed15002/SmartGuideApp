@@ -8,7 +8,7 @@ import 'package:latlong2/latlong.dart' as latlng;
 import 'package:geolocator/geolocator.dart';
 import 'info_page.dart';
 import 'map_page.dart';
-
+import 'custom_drawer.dart';
 class AcademyStreetPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   const AcademyStreetPage({super.key, required this.themeNotifier});
@@ -21,6 +21,13 @@ class _AcademyStreetPageState extends State<AcademyStreetPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(
+        title: const Text("شارع الأكاديمية"),
+      ),
+  
+      drawer: CustomDrawer(themeNotifier: widget.themeNotifier),
+      // ⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️
+
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isWide = constraints.maxWidth > 700;
