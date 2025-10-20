@@ -108,12 +108,6 @@ class _SignUpPageState extends State<SignUpPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('إنشاء حساب جديد'),
-        actions: [
-          IconButton(
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () => widget.themeNotifier.toggleTheme(),
-          ),
-        ],
       ),
       body: Center(
         child: SingleChildScrollView(
