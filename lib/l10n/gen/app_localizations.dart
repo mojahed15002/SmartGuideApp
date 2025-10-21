@@ -271,6 +271,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language changed successfully!'**
   String get languageApplied;
+
+  /// No description provided for @visitor.
+  ///
+  /// In en, this message translates to:
+  /// **'visitor'**
+  String get visitor;
+
+  /// No description provided for @welcomeVisitor.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome visitor 👋'**
+  String get welcomeVisitor;
 }
 
 class _AppLocalizationsDelegate

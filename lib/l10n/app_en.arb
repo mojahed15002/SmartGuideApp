@@ -28,5 +28,9 @@
   "yes": "Yes",
   "no": "No",
   "themeApplied": "Theme updated successfully!",
-  "languageApplied": "Language changed successfully!"
+  "languageApplied": "Language changed successfully!",
+  "visitor": "visitor",
+  "welcomeVisitor": "Welcome visitor 👋"
+
+
 }

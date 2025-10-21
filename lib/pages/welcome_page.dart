@@ -4,11 +4,13 @@ import '../theme_notifier.dart';
 import '../choice_page_stub.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../sign_in_panel.dart';
-import '../deep_link_helper.dart'; // ✅ استيراد ملف المساعدة للروابط
+import '../deep_link_helper.dart';
 import 'dart:async'; // ✅ لاستعمال StreamSubscription
+import '../l10n/gen/app_localizations.dart';
+
 class WelcomePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
-  final String? userName; 
+  final String? userName;
 
   const WelcomePage({
     super.key,
@@ -47,7 +49,8 @@ class _WelcomePageState extends State<WelcomePage> {
               final savedTheme = data['theme'];
               if (savedTheme == 'dark' && !widget.themeNotifier.isDarkMode) {
                 widget.themeNotifier.setTheme(true);
-              } else if (savedTheme == 'light' && widget.themeNotifier.isDarkMode) {
+              } else if (savedTheme == 'light' &&
+                  widget.themeNotifier.isDarkMode) {
                 widget.themeNotifier.setTheme(false);
               }
             }
@@ -85,10 +88,11 @@ class _WelcomePageState extends State<WelcomePage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final loc = AppLocalizations.of(context)!; // ✅ الوصول إلى الترجمة
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('مرحباً بك'),
+        title: Text(loc.welcome), // ✅ "مرحباً بك" / "Welcome"
         actions: [
           // زر التبديل بين النمطين
           IconButton(
@@ -113,7 +117,9 @@ class _WelcomePageState extends State<WelcomePage> {
                       .doc(user.uid)
                       .set(
                         {
-                          'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
+                          'theme': widget.themeNotifier.isDarkMode
+                              ? 'dark'
+                              : 'light',
                         },
                         SetOptions(merge: true),
                       );
@@ -128,13 +134,15 @@ class _WelcomePageState extends State<WelcomePage> {
 
           IconButton(
             icon: const Icon(Icons.logout),
+            tooltip: 'تسجيل الخروج', // ✅ يبقى ثابت أو يمكن ترجمة tooltip لاحقاً
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
               if (mounted) {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => SignInPanel(themeNotifier: widget.themeNotifier),
+                    builder: (_) =>
+                        SignInPanel(themeNotifier: widget.themeNotifier),
                   ),
                   (route) => false,
                 );
@@ -153,7 +161,7 @@ class _WelcomePageState extends State<WelcomePage> {
                   size: 100, color: Colors.orange.shade600),
               const SizedBox(height: 20),
               Text(
-                'مرحباً ${userName ?? widget.userName ?? user?.displayName ?? "بالزائر"} 👋',
+               loc.welcomeVisitor,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -161,9 +169,9 @@ class _WelcomePageState extends State<WelcomePage> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              const Text(
-                'يسعدنا انضمامك إلى تطبيق Smart City Guide!',
-                style: TextStyle(fontSize: 16),
+              Text(
+                loc.cityGuideDescription,
+                style: const TextStyle(fontSize: 16),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
@@ -171,10 +179,10 @@ class _WelcomePageState extends State<WelcomePage> {
               // ✅ زر الانتقال إلى ChoicePage
               ElevatedButton.icon(
                 icon: const Icon(Icons.map),
-                label: const Text('استكشف المدينة'),
+                label: Text(loc.explorePlaces), // ✅ "استكشف الأماكن"
                 style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 40, vertical: 14),
                   backgroundColor: Colors.deepOrange,
                 ),
                 onPressed: () {

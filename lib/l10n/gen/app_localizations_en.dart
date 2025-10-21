@@ -95,4 +95,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get languageApplied => 'Language changed successfully!';
+
+  @override
+  String get visitor => 'visitor';
+
+  @override
+  String get welcomeVisitor => 'Welcome visitor 👋';
 }
