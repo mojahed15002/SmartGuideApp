@@ -8,6 +8,7 @@ import '../deep_link_helper.dart';
 import 'dart:async'; // ✅ لاستعمال StreamSubscription
 import '../l10n/gen/app_localizations.dart';
 import 'swipeable_page_route.dart'; // تأكد تضيفه بالأعلى
+import 'custom_drawer.dart';
 class WelcomePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   final String? userName;
@@ -151,6 +152,7 @@ class _WelcomePageState extends State<WelcomePage> {
           ),
         ],
       ),
+      drawer: CustomDrawer(themeNotifier: widget.themeNotifier), // ⬅️ هذا السطر المهم
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
