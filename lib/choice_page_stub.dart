@@ -6,6 +6,7 @@ import '../sign_in_panel.dart';
 import 'pages/favorites_page.dart';
 import 'pages/logs_page.dart';
 import 'pages/near_me_page.dart';
+import 'pages/settings_page.dart';
 class ChoicePageStub extends StatelessWidget {
   final ThemeNotifier themeNotifier;
   const ChoicePageStub({super.key, required this.themeNotifier});
@@ -67,7 +68,13 @@ class ChoicePageStub extends StatelessWidget {
       _HubCard(
         title: 'الإعدادات',
         icon: Icons.settings,
-        onTap: () => Navigator.pushNamed(context, '/settings'),
+        onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) =>  SettingsPage(themeNotifier: themeNotifier) ),
+  );
+},
+
       ),
       _HubCard(
         title: 'تسجيل الخروج',

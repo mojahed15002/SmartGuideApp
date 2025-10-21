@@ -8,8 +8,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
-import 'package:app_links/app_links.dart'; 
+import 'package:app_links/app_links.dart';
 import 'deep_link_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'l10n/gen/app_localizations.dart';
+
 final ThemeNotifier themeNotifier = ThemeNotifier();
 
 // ✅ متغير لتخزين الرابط المؤجل (في حال كان التطبيق مغلق)
@@ -23,41 +26,88 @@ void main() async {
 
   // ✅ محاولة قراءة الرابط عند تشغيل التطبيق لأول مرة
   try {
-  final appLinks = AppLinks();
-  // ✅ هذه الدالة موجودة في جميع الإصدارات القديمة والجديدة
-  final Uri? initialUri = await appLinks.getInitialLink();
-
-  if (initialUri != null) {
-    _pendingDeepLink = initialUri.toString();
+    final appLinks = AppLinks();
+    final Uri? initialUri = await appLinks.getInitialLink();
+    if (initialUri != null) {
+      _pendingDeepLink = initialUri.toString();
+    }
+  } catch (e) {
+    debugPrint("⚠️ خطأ أثناء قراءة الرابط الابتدائي: $e");
   }
-} catch (e) {
-  debugPrint("⚠️ خطأ أثناء قراءة الرابط الابتدائي: $e");
-}
-
 
   runApp(MyAppWrapper(themeNotifier: themeNotifier));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  Locale _locale = const Locale('ar');
+  ThemeMode _themeMode = ThemeMode.light;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedLang = prefs.getString('language') ?? 'ar';
+    final isDark = prefs.getBool('isDarkMode') ?? false;
+
+    setState(() {
+      _locale = Locale(savedLang);
+      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'Smart City Guide',
-      home: SignInPanel(themeNotifier: ThemeNotifier()),
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      debugShowCheckedModeBanner: false,
+
+      // ✅ الثيمات
+      theme: ThemeData(
+        primarySwatch: Colors.orange,
+        fontFamily: "Roboto",
+        brightness: Brightness.light,
+      ),
+      darkTheme: ThemeData(
+        primarySwatch: Colors.orange,
+        fontFamily: "Roboto",
+        brightness: Brightness.dark,
+      ),
+      themeMode: _themeMode,
+
+      // ✅ اللغة والترجمة
+      locale: _locale,
       supportedLocales: const [
         Locale('ar'),
         Locale('en'),
       ],
-      // تثبيت اللغة العربية
-      locale: const Locale('ar'),
+      localizationsDelegates: const [
+        AppLocalizations.delegate, // 🔥 ضروري جداً
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+
+      // ✅ الاتجاه حسب اللغة
+      builder: (context, child) {
+        return Directionality(
+          textDirection:
+              _locale.languageCode == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+          child: child!,
+        );
+      },
+
+      home: SignInPanel(themeNotifier: themeNotifier),
     );
   }
 }
@@ -73,8 +123,8 @@ class MyAppWrapper extends StatefulWidget {
 }
 
 class _MyAppWrapperState extends State<MyAppWrapper> {
-  StreamSubscription<Uri?>? _sub; // ✅ تعديل النوع من String إلى Uri
-  late final AppLinks _appLinks; // ✅ إنشاء كائن AppLinks
+  StreamSubscription<Uri?>? _sub;
+  late final AppLinks _appLinks;
 
   @override
   void initState() {
@@ -82,23 +132,20 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
     _initDeepLinks();
   }
 
-  /// ✅ تهيئة روابط app_links (أثناء تشغيل التطبيق)
   Future<void> _initDeepLinks() async {
     try {
       _appLinks = AppLinks();
 
-      // ✅ الاستماع للروابط أثناء عمل التطبيق
       _sub = _appLinks.uriLinkStream.listen((Uri? uri) {
         if (uri != null) _handleIncomingLink(uri.toString());
       }, onError: (err) {
         debugPrint("❌ خطأ أثناء استقبال الرابط: $err");
       });
 
-      // ✅ إذا وُجد رابط مؤجل من حالة "التطبيق المغلق"
       if (_pendingDeepLink != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _handleIncomingLink(_pendingDeepLink!);
-          _pendingDeepLink = null; // تفريغ الرابط بعد المعالجة
+          _pendingDeepLink = null;
         });
       }
     } catch (e) {
@@ -106,28 +153,22 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
     }
   }
 
-  /// ✅ معالجة الرابط الوارد
-void _handleIncomingLink(String link) {
-  try {
-    final uri = Uri.parse(link);
-    debugPrint('✅ وصل رابط: $uri');
+  void _handleIncomingLink(String link) {
+    try {
+      final uri = Uri.parse(link);
+      debugPrint('✅ وصل رابط: $uri');
 
-    // إذا المستخدم غير مسجل دخول حالياً → خزّنه مؤقتاً وارجع
-    if (FirebaseAuth.instance.currentUser == null) {
-      DeepLinkStore.set(uri);
-      debugPrint('🕒 خزنّا الرابط مؤقتاً لفتحه بعد تسجيل الدخول');
-      return;
+      if (FirebaseAuth.instance.currentUser == null) {
+        DeepLinkStore.set(uri);
+        debugPrint('🕒 خزنّا الرابط مؤقتاً لفتحه بعد تسجيل الدخول');
+        return;
+      }
+
+      deepLinkStreamController.add(uri);
+    } catch (e) {
+      debugPrint('❌ خطأ في تحليل الرابط: $e');
     }
-
-    // المستخدم داخل التطبيق → افتح الصفحة فوراً
-    deepLinkStreamController.add(
-      uri,
-    );
-  } catch (e) {
-    debugPrint('❌ خطأ في تحليل الرابط: $e');
   }
-}
-
 
   @override
   void dispose() {
@@ -137,9 +178,9 @@ void _handleIncomingLink(String link) {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: widget.themeNotifier,
-      builder: (context, themeMode, _) {
+    return AnimatedBuilder(
+      animation: widget.themeNotifier,
+      builder: (context, _) {
         return MaterialApp(
           title: 'Smart City Guide',
           debugShowCheckedModeBanner: false,
@@ -153,63 +194,65 @@ void _handleIncomingLink(String link) {
             fontFamily: "Roboto",
             brightness: Brightness.dark,
           ),
-          themeMode: themeMode,
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
+          themeMode: widget.themeNotifier.themeMode,
+          locale: widget.themeNotifier.locale,
           supportedLocales: const [
             Locale('ar'),
             Locale('en'),
           ],
-          locale: const Locale('ar'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          builder: (context, child) {
+            return Directionality(
+              textDirection: widget.themeNotifier.locale.languageCode == 'ar'
+                  ? TextDirection.rtl
+                  : TextDirection.ltr,
+              child: child!,
+            );
+          },
+          home: StreamBuilder<User?>(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
 
-/// StreamBuilder يتحقق إن كان المستخدم مسجّل دخول أم لا
-home: StreamBuilder<User?>(
-  stream: FirebaseAuth.instance.authStateChanges(),
-  builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+              if (snapshot.hasData) {
+                final user = snapshot.data!;
+                final pending = DeepLinkStore.take();
+                if (pending != null) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    openPlaceFromUri(
+                      context: context,
+                      themeNotifier: widget.themeNotifier,
+                      uri: pending,
+                    );
+                  });
+                }
 
-    if (snapshot.hasData) {
-      // ✅ المستخدم مسجّل دخول بالفعل
-      final user = snapshot.data!;
+                FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .get()
+                    .then((doc) {
+                  if (doc.exists && doc.data()?['theme'] != null) {
+                    final savedTheme = doc['theme'];
+                    widget.themeNotifier.setTheme(savedTheme == 'dark');
+                  }
+                });
 
-      // ✅ التحقق إن كان هناك رابط مؤجل لفتحه مباشرة بعد الدخول
-      final pending = DeepLinkStore.take();
-      if (pending != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          openPlaceFromUri(
-            context: context,
-            themeNotifier: widget.themeNotifier,
-            uri: pending,
-          );
-        });
-      }
+                return WelcomePage(themeNotifier: widget.themeNotifier);
+              }
 
-      // قراءة الثيم من Firestore مرة واحدة عند تسجيل الدخول
-      FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get()
-          .then((doc) {
-        if (doc.exists && doc.data()?['theme'] != null) {
-          final savedTheme = doc['theme'];
-          widget.themeNotifier.setTheme(savedTheme == 'dark');
-        }
-      });
-
-      return WelcomePage(themeNotifier: widget.themeNotifier);
-    }
-
-    // ✅ المستخدم غير مسجّل → عرض صفحة تسجيل الدخول
-    return SignInPanel(themeNotifier: widget.themeNotifier);
-  },
-),
+              return SignInPanel(themeNotifier: widget.themeNotifier);
+            },
+          ),
         );
       },
     );
@@ -224,9 +267,9 @@ class MyAppWrapperBackup1 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: themeNotifier,
-      builder: (context, themeMode, _) {
+    return AnimatedBuilder(
+      animation: themeNotifier,
+      builder: (context, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'Smart City Guide',
@@ -240,7 +283,7 @@ class MyAppWrapperBackup1 extends StatelessWidget {
             fontFamily: "Roboto",
             brightness: Brightness.dark,
           ),
-          themeMode: themeMode,
+          themeMode: themeNotifier.themeMode,
           home: StreamBuilder<User?>(
             stream: FirebaseAuth.instance.authStateChanges(),
             builder: (context, snapshot) {

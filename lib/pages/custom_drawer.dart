@@ -10,7 +10,7 @@ class CustomDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final isDark = themeNotifier.value == ThemeMode.dark;
+    final isDark = themeNotifier.isDarkMode;
 
     return Drawer(
       child: Column(

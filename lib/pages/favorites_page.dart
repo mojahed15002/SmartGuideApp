@@ -97,7 +97,7 @@ Future<void> _toggleFavorite(String placeId) async {
   @override
   Widget build(BuildContext context) {
     final themeNotifier = widget.themeNotifier;
-    final isDark = themeNotifier.value == ThemeMode.dark;
+    final isDark = themeNotifier.isDarkMode;
 
     return Scaffold(
       appBar: AppBar(

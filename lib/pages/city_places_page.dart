@@ -271,7 +271,7 @@ Future<void> _deleteSearchItem(String query) async {
   Widget build(BuildContext context) {
     debugPrint('🧩 عدد عناصر السجل: ${_searchHistory.length}');
     final themeNotifier = widget.themeNotifier;
-    final isDark = themeNotifier.value == ThemeMode.dark;
+    final isDark = themeNotifier.isDarkMode;
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.cityName)),

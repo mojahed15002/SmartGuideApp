@@ -59,7 +59,8 @@ Future<void> resetPassword() async {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = widget.themeNotifier.value == ThemeMode.dark;
+    final isDarkMode = widget.themeNotifier.isDarkMode;
+
 
     return Scaffold(
       appBar: AppBar(

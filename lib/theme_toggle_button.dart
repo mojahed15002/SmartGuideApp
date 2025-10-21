@@ -9,45 +9,42 @@ class ThemeToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: themeNotifier,
-      builder: (context, themeMode, _) {
-        final isDark = themeMode == ThemeMode.dark;
+    // ✅ استخدم AnimatedBuilder بدل ValueListenableBuilder
+    return AnimatedBuilder(
+      animation: themeNotifier,
+      builder: (context, _) {
+        final isDark = themeNotifier.isDarkMode;
 
         return TextButton.icon(
-  onPressed: () async {
-    // ✅ تغيير الثيم محليًا
-    themeNotifier.value =
-        themeNotifier.value == ThemeMode.dark
-            ? ThemeMode.light
-            : ThemeMode.dark;
+          onPressed: () async {
+            // ✅ تغيير الثيم محليًا
+            themeNotifier.setTheme(!isDark);
 
-    // ✅ تحديث الثيم في Firebase للمستخدمين المسجلين فقط (ليس الضيوف)
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null && !user.isAnonymous) {
-      try {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .update({
-          'theme': themeNotifier.value == ThemeMode.dark ? 'dark' : 'light',
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      } catch (e) {
-        print('فشل تحديث الثيم في Firebase: $e');
-      }
-    }
-  },
-  icon: Icon(
-    isDark ? Icons.dark_mode : Icons.light_mode,
-    color: Colors.orange,
-  ),
-  label: Text(
-    isDark ? "إيقاف" : "تفعيل",
-    style: const TextStyle(color: Colors.orange, fontSize: 16),
-  ),
-);
-
+            // ✅ تحديث الثيم في Firebase للمستخدمين المسجلين فقط (ليس الضيوف)
+            final user = FirebaseAuth.instance.currentUser;
+            if (user != null && !user.isAnonymous) {
+              try {
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .update({
+                  'theme': isDark ? 'light' : 'dark',
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
+              } catch (e) {
+                debugPrint('⚠️ فشل تحديث الثيم في Firebase: $e');
+              }
+            }
+          },
+          icon: Icon(
+            isDark ? Icons.dark_mode : Icons.light_mode,
+            color: Colors.orange,
+          ),
+          label: Text(
+            isDark ? "إيقاف" : "تفعيل",
+            style: const TextStyle(color: Colors.orange, fontSize: 16),
+          ),
+        );
       },
     );
   }
