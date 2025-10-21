@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart' as latlng;
 import 'package:geolocator/geolocator.dart';
 import 'info_page.dart';
 import 'map_page.dart';
+import 'swipeable_page_route.dart'; // تأكد تضيف هذا بالأعلى
 
 class PalestineStreetPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -66,8 +67,8 @@ class _PalestineStreetPageState extends State<PalestineStreetPage> {
                     if (!mounted) return;
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => MapPage(
+                      SwipeablePageRoute(
+                          page: MapPage(
                           position: position,
                           destination: latlng.LatLng(32.221378, 35.259687),
                           themeNotifier: widget.themeNotifier,

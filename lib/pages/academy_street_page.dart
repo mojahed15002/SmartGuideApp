@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'info_page.dart';
 import 'map_page.dart';
 import 'custom_drawer.dart';
+import 'swipeable_page_route.dart';
 class AcademyStreetPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   const AcademyStreetPage({super.key, required this.themeNotifier});
@@ -21,13 +22,6 @@ class _AcademyStreetPageState extends State<AcademyStreetPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-        title: const Text("شارع الأكاديمية"),
-      ),
-  
-      drawer: CustomDrawer(themeNotifier: widget.themeNotifier),
-      // ⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️⬆️
-
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isWide = constraints.maxWidth > 700;
@@ -72,8 +66,8 @@ class _AcademyStreetPageState extends State<AcademyStreetPage> {
                     if (!mounted) return;
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => MapPage(
+                      SwipeablePageRoute(
+                          page: MapPage(
                           position: position,
                           destination: latlng.LatLng(32.226938, 35.222279),
                           themeNotifier: widget.themeNotifier,

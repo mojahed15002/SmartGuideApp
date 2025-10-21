@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../theme_notifier.dart';
 import 'nearby_places_list_page.dart';
 import 'custom_drawer.dart';
+import 'swipeable_page_route.dart'; // تأكد تضيف هذا بالأعلى
+
 class NearMePage extends StatelessWidget {
   final ThemeNotifier themeNotifier;
   const NearMePage({super.key, required this.themeNotifier});
@@ -32,8 +34,8 @@ class NearMePage extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => NearbyPlacesListPage(
+                SwipeablePageRoute(
+                    page:NearbyPlacesListPage(
                     category: cat['type'] as String,
                     categoryLabel: cat['name'] as String,
                     themeNotifier: themeNotifier,

@@ -13,6 +13,12 @@ import 'deep_link_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'l10n/gen/app_localizations.dart';
 
+import 'pages/choice_page.dart';
+import 'pages/near_me_page.dart';
+import 'pages/favorites_page.dart';
+import 'pages/logs_page.dart';
+import 'pages/settings_page.dart';
+ 
 final ThemeNotifier themeNotifier = ThemeNotifier();
 
 // ✅ متغير لتخزين الرابط المؤجل (في حال كان التطبيق مغلق)
@@ -106,6 +112,8 @@ class _MyAppState extends State<MyApp> {
           child: child!,
         );
       },
+
+
 
       home: SignInPanel(themeNotifier: themeNotifier),
     );
@@ -214,6 +222,15 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
               child: child!,
             );
           },
+          // ⬇️ أضف هان
+  routes: {
+    '/home': (context) => ChoicePage(themeNotifier: widget.themeNotifier),
+    '/near_me': (context) => NearMePage(themeNotifier: widget.themeNotifier),
+    '/favorites': (context) => FavoritesPage(themeNotifier: widget.themeNotifier),
+    '/logs': (context) => LogsPage(themeNotifier: widget.themeNotifier),
+    '/login': (context) => SignInPanel(themeNotifier: widget.themeNotifier),
+    '/settings': (context) => SettingsPage(themeNotifier: widget.themeNotifier),
+  },
           home: StreamBuilder<User?>(
             stream: FirebaseAuth.instance.authStateChanges(),
             builder: (context, snapshot) {

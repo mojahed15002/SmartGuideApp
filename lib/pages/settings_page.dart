@@ -5,6 +5,7 @@ import '../theme_notifier.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../sign_in_panel.dart';
+import 'swipeable_page_route.dart'; // أو المسار الصحيح حسب موقع الملف
 
 class SettingsPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -100,8 +101,8 @@ Future<void> _signOut() async {
     // ✅ بعد الخروج نرجع لصفحة تسجيل الدخول
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => SignInPanel(themeNotifier: widget.themeNotifier),
+        SwipeablePageRoute(
+          page: SignInPanel(themeNotifier: widget.themeNotifier),
         ),
         (route) => false,
       );
@@ -200,15 +201,83 @@ Future<void> _signOut() async {
           ),
           const Divider(),
 
-          // 🚪 تسجيل الخروج
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: Text(
-              loc.logout,
-              style: const TextStyle(color: Colors.red),
+          // 🚪 تسجيل الخروج مع رسالة تأكيد احترافية
+ListTile(
+  leading: const Icon(Icons.logout, color: Colors.red),
+  title: Text(
+    loc.logout,
+    style: const TextStyle(color: Colors.red),
+  ),
+  onTap: () async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF2C2C2C)
+            : Colors.white,
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+        title: Row(
+          children: const [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 30),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                "تأكيد تسجيل الخروج",
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
             ),
-            onTap: _signOut,
+          ],
+        ),
+        content: const Text(
+          "هل أنت متأكد أنك تريد تسجيل الخروج؟\n\n"
+          "  في حال قمت بتسجيل الخروج، ستبقى معلومات هذا الحساب محفوظة ولن يتم حذفها.",
+          textAlign: TextAlign.right,
+          style: TextStyle(height: 1.4, fontSize: 15),
+        ),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
+        actions: [
+          TextButton(
+            child: const Text(
+              "إلغاء",
+              style: TextStyle(
+                color: Colors.grey,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onPressed: () => Navigator.pop(context, false),
           ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              "تأكيد الخروج",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      // 🔥 استدعاء دالة تسجيل الخروج الأصلية مع دعم المستخدم الضيف
+      await _signOut();
+    }
+  },
+),
+
         ],
       ),
     );

@@ -13,7 +13,7 @@ import 'martyrs_roundabout_page.dart';
 import 'palestine_street_page.dart';
 import 'sofian_street_page.dart';
 import 'custom_drawer.dart';
-
+import 'swipeable_page_route.dart';
 class ChoicePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   const ChoicePage({super.key, required this.themeNotifier});
@@ -94,9 +94,8 @@ class _ChoicePageState extends State<ChoicePage> {
                 Navigator.push(
                   // ignore: use_build_context_synchronously
                   context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        MapPage(position: position, themeNotifier: widget.themeNotifier), // ✅ مررنا themeNotifier
+                  SwipeablePageRoute(
+                    page: MapPage(position: position, themeNotifier: widget.themeNotifier), // ✅ مررنا themeNotifier
                   ),
                 );
               },

@@ -7,7 +7,7 @@ import '../sign_in_panel.dart';
 import '../deep_link_helper.dart';
 import 'dart:async'; // ✅ لاستعمال StreamSubscription
 import '../l10n/gen/app_localizations.dart';
-
+import 'swipeable_page_route.dart'; // تأكد تضيفه بالأعلى
 class WelcomePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   final String? userName;
@@ -187,13 +187,13 @@ class _WelcomePageState extends State<WelcomePage> {
                 ),
                 onPressed: () {
                   Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChoicePageStub(
-                        themeNotifier: widget.themeNotifier,
-                      ),
-                    ),
-                  );
+  context,
+  SwipeablePageRoute(
+    page: ChoicePageStub(
+      themeNotifier: widget.themeNotifier,
+    ),
+  ),
+);
                 },
               ),
 

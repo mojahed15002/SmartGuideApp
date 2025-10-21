@@ -6,7 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../theme_notifier.dart';
 import 'place_details_page.dart';
 import 'custom_drawer.dart';
-
+import 'swipeable_page_route.dart'; // تأكد تضيف هذا بالأعلى
 class CityPlacesPage extends StatefulWidget {
   final String cityName;
   final ThemeNotifier themeNotifier;
@@ -432,8 +432,8 @@ if (ratings.isNotEmpty) {
                                     onTap: () {
                                       Navigator.push(
                                         context,
-                                        MaterialPageRoute(
-                                          builder: (_) => PlaceDetailsPage(
+                                        SwipeablePageRoute(
+                                          page: PlaceDetailsPage(
                                             title: title,
                                             cityName: city,
                                             images: images,

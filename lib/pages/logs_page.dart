@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart' as latlng;
 import 'map_page.dart';
 import 'package:geolocator/geolocator.dart';
 import 'custom_drawer.dart';
+import 'swipeable_page_route.dart'; // تأكد تضيف هذا بالأعلى
 
 class LogsPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -131,8 +132,8 @@ Future<void> _openMap(dynamic destinationData) async {
 
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => MapPage(
+      SwipeablePageRoute(
+          page: MapPage(
           position: position,
           destination: destination,
           enableTap: false,

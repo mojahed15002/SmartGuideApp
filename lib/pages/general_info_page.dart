@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import '../theme_notifier.dart';
 import 'city_places_page.dart';
 import 'custom_drawer.dart';
+import 'swipeable_page_route.dart'; // تأكد تضيف هذا بالأعلى
+
 class GeneralInfoPage extends StatelessWidget {
   final ThemeNotifier themeNotifier;
   const GeneralInfoPage({super.key, required this.themeNotifier});
@@ -30,8 +32,8 @@ class GeneralInfoPage extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => CityPlacesPage(cityName: city, themeNotifier: themeNotifier),
+                SwipeablePageRoute(
+                  page: CityPlacesPage(cityName: city, themeNotifier: themeNotifier),
                 ),
               );
             },

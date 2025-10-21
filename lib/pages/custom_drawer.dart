@@ -93,27 +93,19 @@ class CustomDrawer extends StatelessWidget {
 
           const Spacer(),
 
-          // تسجيل الخروج
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.logout),
-              label: const Text("تسجيل الخروج"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                minimumSize: const Size(double.infinity, 48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                if (context.mounted) {
-                  Navigator.pushReplacementNamed(context, '/login');
-                }
-              },
-            ),
+// السجلات
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text("الاعدادات"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/settings');
+            },
           ),
+
+          
+
+          
         ],
       ),
     );

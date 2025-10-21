@@ -6,7 +6,7 @@ import '../places_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'custom_drawer.dart';
-
+import 'swipeable_page_route.dart'; // تأكد تضيف هذا بالأعلى
 class FavoritesPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
 
@@ -138,8 +138,8 @@ Future<void> _toggleFavorite(String placeId) async {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => PlaceDetailsPage(
+                            SwipeablePageRoute(
+                              page: PlaceDetailsPage(
                                 title: title,
                                 cityName: city,
                                 images: images,

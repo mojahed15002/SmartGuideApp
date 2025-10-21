@@ -8,7 +8,7 @@ import 'package:latlong2/latlong.dart' as latlng;
 import 'package:geolocator/geolocator.dart';
 import 'info_page.dart';
 import 'map_page.dart';
-
+import 'swipeable_page_route.dart';
 class FaisalStreetPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   const FaisalStreetPage({super.key, required this.themeNotifier});
@@ -66,8 +66,8 @@ class _FaisalStreetPageState extends State<FaisalStreetPage> {
                     if (!mounted) return;
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => MapPage(
+                      SwipeablePageRoute(
+                        page: MapPage(
                           position: position,
                           destination: latlng.LatLng(32.222243, 35.262778),
                           themeNotifier: widget.themeNotifier,
