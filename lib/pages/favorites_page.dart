@@ -7,6 +7,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'custom_drawer.dart';
 import 'swipeable_page_route.dart'; // تأكد تضيف هذا بالأعلى
+
+// ✅ إضافة ملف الترجمة
+import '../l10n/gen/app_localizations.dart';
+
 class FavoritesPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
 
@@ -32,7 +36,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
     // 🔹 تحميل المفضلات من Firestore إن وُجد مستخدم
     if (user != null) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       if (doc.exists && doc.data()?['favorites'] != null) {
         setState(() {
           favoritePlaces = List<String>.from(doc.data()!['favorites']);
@@ -48,184 +53,190 @@ class _FavoritesPageState extends State<FavoritesPage> {
     });
   }
 
-Future<void> _toggleFavorite(String placeId) async {
-  final prefs = await SharedPreferences.getInstance();
-  final user = FirebaseAuth.instance.currentUser;
+  Future<void> _toggleFavorite(String placeId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final user = FirebaseAuth.instance.currentUser;
 
-  bool isAdded = false; // ✅ لتحديد نوع العملية لاحقًا
+    bool isAdded = false; // ✅ لتحديد نوع العملية لاحقًا
 
-  setState(() {
-    if (favoritePlaces.contains(placeId)) {
-      favoritePlaces.remove(placeId);
-      isAdded = false;
-    } else {
-      favoritePlaces.add(placeId);
-      isAdded = true;
+    setState(() {
+      if (favoritePlaces.contains(placeId)) {
+        favoritePlaces.remove(placeId);
+        isAdded = false;
+      } else {
+        favoritePlaces.add(placeId);
+        isAdded = true;
+      }
+    });
+
+    await prefs.setStringList(_prefsKey, favoritePlaces);
+
+    // 🔹 تحديث Firestore بالمفضلات
+    if (user != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set({'favorites': favoritePlaces}, SetOptions(merge: true));
     }
-  });
 
-  await prefs.setStringList(_prefsKey, favoritePlaces);
-
-  // 🔹 تحديث Firestore بالمفضلات
-  if (user != null) {
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .set({'favorites': favoritePlaces}, SetOptions(merge: true));
-  }
-
-  // ✅ إظهار Snackbar مع ألوان مختلفة
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        isAdded
-            ? 'تمت الإضافة إلى المفضلة ❤️'
-            : 'تمت الإزالة من المفضلة 💔',
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
+    // ✅ إظهار Snackbar مع الترجمة
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isAdded
+              ? AppLocalizations.of(context)!.addedToFavorites
+              : AppLocalizations.of(context)!.removedFromFavorites,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        backgroundColor: isAdded ? Colors.green.shade600 : Colors.red.shade600,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.fixed,
       ),
-      backgroundColor: isAdded ? Colors.green.shade600 : Colors.red.shade600,
-      duration: const Duration(seconds: 2),
-      behavior: SnackBarBehavior.fixed,
-    ),
-  );
-}
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final themeNotifier = widget.themeNotifier;
     final isDark = themeNotifier.isDarkMode;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("المفضلة ❤️"),
-      ),
-      drawer: CustomDrawer(themeNotifier: themeNotifier), // ⬅️ هذا السطر المهم
-      body: favoritePlaces.isEmpty
-          ? const Center(
-              child: Text(
-                "لا توجد أماكن مضافة إلى المفضلة بعد.",
-                style: TextStyle(fontSize: 18),
-              ),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 3 / 4,
+    // ✅ تحديد اتجاه الصفحة
+    final isArabic = AppLocalizations.of(context)!.localeName == 'ar';
+    final direction = isArabic ? TextDirection.rtl : TextDirection.ltr;
+
+    return Directionality(
+      textDirection: direction,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(AppLocalizations.of(context)!.favoritesTitle),
+        ),
+        drawer: CustomDrawer(themeNotifier: themeNotifier), // ⬅️ هذا السطر المهم
+        body: favoritePlaces.isEmpty
+            ? Center(
+                child: Text(
+                  AppLocalizations.of(context)!.noFavorites,
+                  style: const TextStyle(fontSize: 18),
                 ),
-                itemCount: favoritePlaces.length,
-                itemBuilder: (context, index) {
-                  final id = favoritePlaces[index];
-                  final place = allPlaces[id];
-                  if (place == null) return const SizedBox();
+              )
+            : Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 3 / 4,
+                  ),
+                  itemCount: favoritePlaces.length,
+                  itemBuilder: (context, index) {
+                    final id = favoritePlaces[index];
+                    final place = allPlaces[id];
+                    if (place == null) return const SizedBox();
 
-                  final String title = place["title"];
-                  final List<String> images =
-                      List<String>.from(place["images"]);
-                  final String heroTag = place["hero"];
-                  final String city = place["city"];
+                    final String title = place["title"];
+                    final List<String> images =
+                        List<String>.from(place["images"]);
+                    final String heroTag = place["hero"];
+                    final String city = place["city"];
 
-                  return Stack(
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            SwipeablePageRoute(
-                              page: PlaceDetailsPage(
-                                title: title,
-                                cityName: city,
-                                images: images,
-                                url: place["url"],
-                                themeNotifier: themeNotifier,
-                                heroTag: heroTag,
+                    return Stack(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              SwipeablePageRoute(
+                                page: PlaceDetailsPage(
+                                  title: title,
+                                  cityName: city,
+                                  images: images,
+                                  url: place["url"],
+                                  themeNotifier: themeNotifier,
+                                  heroTag: heroTag,
+                                ),
                               ),
+                            );
+                          },
+                          child: Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                          );
-                        },
-                        child: Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 4,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(
-                                child: ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(16),
-                                  ),
-                                  child: Hero(
-                                    tag: heroTag,
-                                    child: Image.asset(
-                                      images.first,
-                                      fit: BoxFit.cover,
+                            elevation: 4,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(16),
+                                    ),
+                                    child: Hero(
+                                      tag: heroTag,
+                                      child: Image.asset(
+                                        images.first,
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  title,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    title,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: IconButton(
+                            iconSize: 34,
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStatePropertyAll(
+                                isDark
+                                    ? Colors.black.withOpacity(0.3)
+                                    : Colors.white.withOpacity(0.8),
                               ),
-                            ],
+                              shape: const WidgetStatePropertyAll(CircleBorder()),
+                            ),
+                            icon: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 250),
+                              transitionBuilder:
+                                  (Widget child, Animation<double> anim) =>
+                                      ScaleTransition(scale: anim, child: child),
+                              child: Icon(
+                                Icons.favorite,
+                                key: ValueKey(id),
+                                color: Colors.redAccent,
+                                size: 30,
+                              ),
+                            ),
+                            onPressed: () async {
+                              await _toggleFavorite(id);
+                              setState(() {
+                                favoritePlaces.remove(id);
+                              });
+                            },
                           ),
                         ),
-                      ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: IconButton(
-                          iconSize: 34,
-                          style: ButtonStyle(
-                            backgroundColor: WidgetStatePropertyAll(
-                              isDark
-                                  ? Colors.black.withOpacity(0.3)
-                                  : Colors.white.withOpacity(0.8),
-                            ),
-                            shape: const WidgetStatePropertyAll(CircleBorder()),
-                          ),
-                          icon: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 250),
-                            transitionBuilder:
-                                (Widget child, Animation<double> anim) =>
-                                    ScaleTransition(scale: anim, child: child),
-                            child: Icon(
-                              Icons.favorite,
-                              key: ValueKey(id),
-                              color: Colors.redAccent,
-                              size: 30,
-                            ),
-                          ),
-                          // 🔹 هنا تم التعديل فقط ليحذف من المفضلة ويحدّث القائمة مباشرة
-                          onPressed: () async {
-                            await _toggleFavorite(id);
-                            setState(() {
-                              favoritePlaces.remove(id);
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
+      ),
     );
   }
 }

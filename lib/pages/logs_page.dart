@@ -8,6 +8,9 @@ import 'package:geolocator/geolocator.dart';
 import 'custom_drawer.dart';
 import 'swipeable_page_route.dart'; // تأكد تضيف هذا بالأعلى
 
+// ✅ إضافة ملف الترجمة
+import '../l10n/gen/app_localizations.dart';
+
 class LogsPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   const LogsPage({super.key, required this.themeNotifier});
@@ -25,14 +28,16 @@ class _LogsPageState extends State<LogsPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("تأكيد الحذف 🗑️"),
-        content: const Text("هل أنت متأكد أنك تريد حذف جميع السجلات؟ لا يمكن التراجع عن هذه العملية."),
+        title: Text(AppLocalizations.of(context)!.confirmDeleteAllTitle),
+        content: Text(AppLocalizations.of(context)!.confirmDeleteAllMsg),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("إلغاء")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(AppLocalizations.of(context)!.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("حذف الكل"),
+            child: Text(AppLocalizations.of(context)!.deleteAll),
           ),
         ],
       ),
@@ -57,7 +62,7 @@ class _LogsPageState extends State<LogsPage> {
 
     await batch.commit();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("🗑️ تم حذف جميع السجلات")),
+      SnackBar(content: Text(AppLocalizations.of(context)!.allLogsDeleted)),
     );
   }
 
@@ -66,14 +71,16 @@ class _LogsPageState extends State<LogsPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("تأكيد حذف الرحلة 🗑️"),
-        content: const Text("هل أنت متأكد أنك تريد حذف هذه الرحلة؟"),
+        title: Text(AppLocalizations.of(context)!.confirmDeleteTripTitle),
+        content: Text(AppLocalizations.of(context)!.confirmDeleteTripMsg),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("إلغاء")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(AppLocalizations.of(context)!.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("حذف"),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),
@@ -86,79 +93,74 @@ class _LogsPageState extends State<LogsPage> {
     try {
       await _firestore.collection('travel_logs').doc(logId).delete();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("🗑️ تم حذف هذه الرحلة")),
+        SnackBar(content: Text(AppLocalizations.of(context)!.tripDeleted)),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("⚠️ فشل حذف الرحلة: $e")),
+        SnackBar(content: Text("${AppLocalizations.of(context)!.tripDeleteFailed} $e")),
       );
     }
   }
 
-// ✅ عرض الوجهة على الخريطة - متوافق مع الشكل "LatLng(latitude:..., longitude:...)"
-Future<void> _openMap(dynamic destinationData) async {
-  try {
-    double? lat;
-    double? lng;
+  // ✅ عرض الوجهة على الخريطة
+  Future<void> _openMap(dynamic destinationData) async {
+    try {
+      double? lat;
+      double? lng;
 
-    if (destinationData is GeoPoint) {
-      // 🔹 Firestore GeoPoint
-      lat = destinationData.latitude;
-      lng = destinationData.longitude;
-    } else if (destinationData is String) {
-      // 🔹 Regex يدعم الشكل الكامل "LatLng(latitude:32.27, longitude:35.33)"
-      final regex = RegExp(
-        r'LatLng\(latitude[:=]\s*([-]?\d+\.\d+),\s*longitude[:=]\s*([-]?\d+\.\d+)\)',
-      );
-
-      final match = regex.firstMatch(destinationData);
-      if (match != null) {
-        lat = double.tryParse(match.group(1)!);
-        lng = double.tryParse(match.group(2)!);
+      if (destinationData is GeoPoint) {
+        lat = destinationData.latitude;
+        lng = destinationData.longitude;
+      } else if (destinationData is String) {
+        final regex = RegExp(
+          r'LatLng\(latitude[:=]\s*([-]?\d+\.\d+),\s*longitude[:=]\s*([-]?\d+\.\d+)\)',
+        );
+        final match = regex.firstMatch(destinationData);
+        if (match != null) {
+          lat = double.tryParse(match.group(1)!);
+          lng = double.tryParse(match.group(2)!);
+        }
       }
-    }
 
-    if (lat == null || lng == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("⚠️ لا يمكن تحديد موقع الوجهة")),
-      );
-      return;
-    }
+      if (lat == null || lng == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.cannotLocateDestination)),
+        );
+        return;
+      }
 
-    final destination = latlng.LatLng(lat, lng);
-    final position = await Geolocator.getCurrentPosition();
+      final destination = latlng.LatLng(lat, lng);
+      final position = await Geolocator.getCurrentPosition();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    Navigator.push(
-      context,
-      SwipeablePageRoute(
+      Navigator.push(
+        context,
+        SwipeablePageRoute(
           page: MapPage(
-          position: position,
-          destination: destination,
-          enableTap: false,
-          enableLiveTracking: true,
-          themeNotifier: widget.themeNotifier,
+            position: position,
+            destination: destination,
+            enableTap: false,
+            enableLiveTracking: true,
+            themeNotifier: widget.themeNotifier,
+          ),
         ),
-      ),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("⚠️ خطأ أثناء فتح الخريطة: $e")),
-    );
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("${AppLocalizations.of(context)!.mapError}: $e")),
+      );
+    }
   }
-}
 
-
-
-  // ✅ نافذة التفاصيل المنبثقة مع خيارات إضافية
+  // ✅ نافذة التفاصيل المنبثقة
   void _showLogDetails(Map<String, dynamic> log, String logId) {
-    final destination = log['place_name'] ?? log['destination'] ?? "موقع غير معروف";
+    final destination = log['place_name'] ?? log['destination'] ?? AppLocalizations.of(context)!.unknownPlace;
     final time = log['time'] ?? "";
     final dateTime = DateTime.tryParse(time);
     final formattedDate = dateTime != null
         ? "${dateTime.year}/${dateTime.month}/${dateTime.day}"
-        : "غير معروف";
+        : AppLocalizations.of(context)!.unknown;
     final formattedTime = dateTime != null
         ? "${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}"
         : "";
@@ -167,32 +169,29 @@ Future<void> _openMap(dynamic destinationData) async {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("تفاصيل الرحلة 🧭", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context)!.tripDetails, style: const TextStyle(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("📍 الوجهة:\n$destination", style: const TextStyle(fontSize: 16)),
+            Text("${AppLocalizations.of(context)!.destinationLabel}:\n$destination", style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
-            Text("📅 التاريخ: $formattedDate", style: const TextStyle(fontSize: 16)),
-            Text("🕓 الوقت: $formattedTime", style: const TextStyle(fontSize: 16)),
+            Text("${AppLocalizations.of(context)!.dateLabel}: $formattedDate", style: const TextStyle(fontSize: 16)),
+            Text("${AppLocalizations.of(context)!.timeLabel}: $formattedTime", style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 12),
             const Divider(),
-            const Text(
-              "اختر إجراء:",
-              style: TextStyle(fontSize: 15, color: Colors.black87),
-            ),
+            Text(AppLocalizations.of(context)!.chooseAction, style: const TextStyle(fontSize: 15, color: Colors.black87)),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("إغلاق")),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)!.close)),
           TextButton.icon(
             onPressed: () {
               Navigator.pop(context);
               _confirmDeleteSingleLog(logId);
             },
             icon: const Icon(Icons.delete, color: Colors.red),
-            label: const Text("حذف الرحلة", style: TextStyle(color: Colors.red)),
+            label: Text(AppLocalizations.of(context)!.deleteTrip, style: const TextStyle(color: Colors.red)),
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
@@ -201,7 +200,7 @@ Future<void> _openMap(dynamic destinationData) async {
               _openMap(destination);
             },
             icon: const Icon(Icons.map, color: Colors.white),
-            label: const Text("عرض على الخريطة", style: TextStyle(color: Colors.white)),
+            label: Text(AppLocalizations.of(context)!.viewOnMap, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -212,75 +211,86 @@ Future<void> _openMap(dynamic destinationData) async {
   Widget build(BuildContext context) {
     final user = _auth.currentUser;
 
+    // ✅ اتجاه الصفحة
+    final isArabic = AppLocalizations.of(context)!.localeName == 'ar';
+    final direction = isArabic ? TextDirection.rtl : TextDirection.ltr;
+
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: Text("الرجاء تسجيل الدخول لعرض السجلات.")),
+      return Directionality(
+        textDirection: direction,
+        child: Scaffold(
+          body: Center(child: Text(AppLocalizations.of(context)!.pleaseLoginToViewLogs)),
+        ),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("سجل الرحلات"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_forever),
-            tooltip: "حذف جميع السجلات",
-            onPressed: _confirmClearLogs,
-          ),
-        ],
-      ),
-      drawer: CustomDrawer(themeNotifier: widget.themeNotifier), // ⬅️ هذا السطر المهم
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore
-            .collection('travel_logs')
-            .where('user_id', isEqualTo: user.uid)
-            .orderBy('time', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    return Directionality(
+      textDirection: direction,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(AppLocalizations.of(context)!.travelLogsTitle),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.delete_forever),
+              tooltip: AppLocalizations.of(context)!.deleteAllLogsTooltip,
+              onPressed: _confirmClearLogs,
+            ),
+          ],
+        ),
+        drawer: CustomDrawer(themeNotifier: widget.themeNotifier),
+        body: StreamBuilder<QuerySnapshot>(
+          stream: _firestore
+              .collection('travel_logs')
+              .where('user_id', isEqualTo: user.uid)
+              .orderBy('time', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text("لا توجد رحلات محفوظة بعد."));
-          }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Center(child: Text(AppLocalizations.of(context)!.noTripsYet));
+            }
 
-          final logs = snapshot.data!.docs;
+            final logs = snapshot.data!.docs;
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: logs.length,
-            itemBuilder: (context, index) {
-              final doc = logs[index];
-              final log = doc.data() as Map<String, dynamic>;
-              final destination = log['place_name'] ?? log['destination'] ?? "موقع غير معروف";
-              final time = log['time'] ?? "";
-              final dateTime = DateTime.tryParse(time);
-              final formattedTime = dateTime != null
-                  ? "${dateTime.year}/${dateTime.month}/${dateTime.day} - ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}"
-                  : "غير معروف";
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: logs.length,
+              itemBuilder: (context, index) {
+                final doc = logs[index];
+                final log = doc.data() as Map<String, dynamic>;
+                final destination =
+                    log['place_name'] ?? log['destination'] ?? AppLocalizations.of(context)!.unknownPlace;
+                final time = log['time'] ?? "";
+                final dateTime = DateTime.tryParse(time);
+                final formattedTime = dateTime != null
+                    ? "${dateTime.year}/${dateTime.month}/${dateTime.day} - ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}"
+                    : AppLocalizations.of(context)!.unknown;
 
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ListTile(
-                  onTap: () => _showLogDetails(log, doc.id),
-                  leading: const Icon(Icons.location_on, color: Colors.orange, size: 30),
-                  title: Text(destination, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text("الوقت: $formattedTime"),
-                  trailing: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  child: ListTile(
+                    onTap: () => _showLogDetails(log, doc.id),
+                    leading: const Icon(Icons.location_on, color: Colors.orange, size: 30),
+                    title: Text(destination, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text("${AppLocalizations.of(context)!.timeLabel}: $formattedTime"),
+                    trailing: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      onPressed: () => _openMap(destination),
+                      icon: const Icon(Icons.map, color: Colors.white),
+                      label: Text(AppLocalizations.of(context)!.viewOnMap, style: const TextStyle(color: Colors.white)),
                     ),
-                    onPressed: () => _openMap(destination),
-                    icon: const Icon(Icons.map, color: Colors.white),
-                    label: const Text("عرض على الخريطة", style: TextStyle(color: Colors.white)),
                   ),
-                ),
-              );
-            },
-          );
-        },
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme_notifier.dart';
 
+// ✅ إضافة الترجمة
+import '../l10n/gen/app_localizations.dart';
+
 class CustomDrawer extends StatelessWidget {
   final ThemeNotifier themeNotifier;
 
@@ -12,101 +15,103 @@ class CustomDrawer extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
     final isDark = themeNotifier.isDarkMode;
 
-    return Drawer(
-      child: Column(
-        children: [
-          UserAccountsDrawerHeader(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.orange, Colors.deepOrange.shade400],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    // ✅ تحديد اتجاه الصفحة حسب اللغة
+    final isArabic = AppLocalizations.of(context)!.localeName == 'ar';
+    final direction = isArabic ? TextDirection.rtl : TextDirection.ltr;
+
+    return Directionality(
+      textDirection: direction,
+      child: Drawer(
+        child: Column(
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.orange, Colors.deepOrange.shade400],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              accountName: Text(
+                user?.displayName ?? AppLocalizations.of(context)!.user,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              accountEmail: Text(user?.email ?? AppLocalizations.of(context)!.email),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(
+                  Icons.person,
+                  color: Colors.orange.shade700,
+                  size: 40,
+                ),
               ),
             ),
-            accountName: Text(
-              user?.displayName ?? "مستخدم التطبيق",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+
+            // 🏠 الصفحة الرئيسية
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: Text(AppLocalizations.of(context)!.explore),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/home');
+              },
             ),
-            accountEmail: Text(user?.email ?? "البريد غير متوفر"),
-            currentAccountPicture: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(
-                Icons.person,
-                color: Colors.orange.shade700,
-                size: 40,
-              ),
+
+            // 📍 القريبة مني
+            ListTile(
+              leading: const Icon(Icons.location_on),
+              title: Text(AppLocalizations.of(context)!.nearMe),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/near_me');
+              },
             ),
-          ),
 
-          // الصفحة الرئيسية
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text("الصفحة الرئيسية"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/home');
-            },
-          ),
+            // ❤️ المفضلة
+            ListTile(
+              leading: const Icon(Icons.favorite),
+              title: Text(AppLocalizations.of(context)!.favorites),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/favorites');
+              },
+            ),
 
-          // القريبة مني
-          ListTile(
-            leading: const Icon(Icons.location_on),
-            title: const Text("القريبة مني"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/near_me');
-            },
-          ),
+            // 🕓 السجلات
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: Text(AppLocalizations.of(context)!.logs),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/logs');
+              },
+            ),
 
-          // المفضلة
-          ListTile(
-            leading: const Icon(Icons.favorite),
-            title: const Text("المفضلة"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/favorites');
-            },
-          ),
+            const Divider(),
 
-          // السجلات
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: const Text("سجل الرحلات"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/logs');
-            },
-          ),
+            // 🌙 الوضع الليلي
+            SwitchListTile(
+              secondary: const Icon(Icons.dark_mode),
+              title: Text(AppLocalizations.of(context)!.darkMode),
+              value: isDark,
+              onChanged: (val) {
+                themeNotifier.setTheme(val);
+              },
+            ),
 
-          const Divider(),
+            const Spacer(),
 
-          // الوضع الليلي
-          SwitchListTile(
-  secondary: const Icon(Icons.dark_mode),
-  title: const Text("الوضع الليلي"),
-  value: isDark,
-  onChanged: (val) {
-    themeNotifier.setTheme(val);
-  },
-),
-
-
-          const Spacer(),
-
-// السجلات
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text("الاعدادات"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/settings');
-            },
-          ),
-
-          
-
-          
-        ],
+            // ⚙️ الإعدادات
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: Text(AppLocalizations.of(context)!.settings),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/settings');
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

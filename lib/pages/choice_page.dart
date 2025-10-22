@@ -14,6 +14,10 @@ import 'palestine_street_page.dart';
 import 'sofian_street_page.dart';
 import 'custom_drawer.dart';
 import 'swipeable_page_route.dart';
+
+// ✅ إضافة ملف الترجمة
+import '../l10n/gen/app_localizations.dart';
+
 class ChoicePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   const ChoicePage({super.key, required this.themeNotifier});
@@ -25,102 +29,112 @@ class ChoicePage extends StatefulWidget {
 class _ChoicePageState extends State<ChoicePage> {
   @override
   Widget build(BuildContext context) {
+    // ✅ تحديد اتجاه الصفحة حسب اللغة
+    final isArabic = AppLocalizations.of(context)!.localeName == 'ar';
+    final direction = isArabic ? TextDirection.rtl : TextDirection.ltr;
+
     //  نقلنا تعريف الماب لداخل build
     final Map<String, Widget Function()> placePages = {
-      "شارع الأكاديمية": () => AcademyStreetPage(themeNotifier: widget.themeNotifier),
-      "شارع سفيان": () => SofianStreetPage(themeNotifier: widget.themeNotifier),
-      "شارع فيصل": () => FaisalStreetPage(themeNotifier: widget.themeNotifier),
-      "دوار الشهداء": () => MartyrsRoundaboutPage(themeNotifier: widget.themeNotifier),
-      "شارع فلسطين": () => PalestineStreetPage(themeNotifier: widget.themeNotifier),
+      AppLocalizations.of(context)!.academyStreet: () => AcademyStreetPage(themeNotifier: widget.themeNotifier),
+      AppLocalizations.of(context)!.sofianStreet: () => SofianStreetPage(themeNotifier: widget.themeNotifier),
+      AppLocalizations.of(context)!.faisalStreet: () => FaisalStreetPage(themeNotifier: widget.themeNotifier),
+      AppLocalizations.of(context)!.martyrsRoundabout: () => MartyrsRoundaboutPage(themeNotifier: widget.themeNotifier),
+      AppLocalizations.of(context)!.palestineStreet: () => PalestineStreetPage(themeNotifier: widget.themeNotifier),
     };
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("اختيار الموقع"),
-        actions: [
-           // ✅ زر التبديل
-        ],
-      ),
-      drawer: CustomDrawer(themeNotifier: widget.themeNotifier), // ⬅️ هذا السطر المهم
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Autocomplete<String>(
-              optionsBuilder: (TextEditingValue textEditingValue) {
-                if (textEditingValue.text.isEmpty) {
-                  return const Iterable<String>.empty();
-                }
-                return placePages.keys.where((String option) {
-                  return option.contains(textEditingValue.text);
-                });
-              },
-              onSelected: (String selection) {
-                final pageBuilder = placePages[selection];
-                if (pageBuilder != null) {
+    return Directionality(
+      textDirection: direction,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(AppLocalizations.of(context)!.chooseLocation),
+          actions: [
+            // ✅ زر التبديل
+          ],
+        ),
+        drawer: CustomDrawer(themeNotifier: widget.themeNotifier), // ⬅️ هذا السطر المهم
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Autocomplete<String>(
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  if (textEditingValue.text.isEmpty) {
+                    return const Iterable<String>.empty();
+                  }
+                  return placePages.keys.where((String option) {
+                    return option.contains(textEditingValue.text);
+                  });
+                },
+                onSelected: (String selection) {
+                  final pageBuilder = placePages[selection];
+                  if (pageBuilder != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => pageBuilder()),
+                    );
+                  }
+                },
+                fieldViewBuilder:
+                    (context, controller, focusNode, onEditingComplete) {
+                  return TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    onEditingComplete: onEditingComplete,
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context)!.searchHint,
+                      border: const OutlineInputBorder(),
+                      suffixIcon:
+                          const Icon(Icons.search, color: Colors.orange),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 15,
+                  ),
+                ),
+                onPressed: () async {
+                  Position position = await _determinePosition();
+                  Navigator.push(
+                    // ignore: use_build_context_synchronously
+                    context,
+                    SwipeablePageRoute(
+                      page: MapPage(
+                          position: position,
+                          themeNotifier: widget.themeNotifier), // ✅ مررنا themeNotifier
+                    ),
+                  );
+                },
+                child: Text(AppLocalizations.of(context)!.whereAmI),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 15,
+                  ),
+                ),
+                onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => pageBuilder()),
+                    MaterialPageRoute(
+                      builder: (context) => GeneralInfoPage(themeNotifier: widget.themeNotifier),
+                    ),
                   );
-                }
-              },
-              fieldViewBuilder:
-                  (context, controller, focusNode, onEditingComplete) {
-                return TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  onEditingComplete: onEditingComplete,
-                  decoration: const InputDecoration(
-                    hintText: "ابحث عن منطقة أو شارع...",
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.search, color: Colors.orange),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 15,
-                ),
+                },
+                child: Text(AppLocalizations.of(context)!.viewAllCities),
               ),
-              onPressed: () async {
-                Position position = await _determinePosition();
-                Navigator.push(
-                  // ignore: use_build_context_synchronously
-                  context,
-                  SwipeablePageRoute(
-                    page: MapPage(position: position, themeNotifier: widget.themeNotifier), // ✅ مررنا themeNotifier
-                  ),
-                );
-              },
-              child: const Text("أين أنا؟ 📍"),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 15,
-                ),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => GeneralInfoPage(themeNotifier: widget.themeNotifier),
-                  ),
-                );
-              },
-              child: const Text("عرض جميع المدن 🏙️"),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -133,24 +147,21 @@ class _ChoicePageState extends State<ChoicePage> {
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       await Geolocator.openLocationSettings();
-      throw Exception("خدمة الموقع غير مفعلة");
+      throw Exception(AppLocalizations.of(context)!.locationServiceDisabled);
     }
 
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        throw Exception("تم رفض إذن الموقع");
+        throw Exception(AppLocalizations.of(context)!.locationDenied);
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      throw Exception("تم رفض إذن الموقع بشكل دائم");
+      throw Exception(AppLocalizations.of(context)!.locationDeniedForever);
     }
 
     return await Geolocator.getCurrentPosition();
   }
 }
-
-
-

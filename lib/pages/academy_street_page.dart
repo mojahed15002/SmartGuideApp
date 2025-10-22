@@ -8,7 +8,6 @@ import 'package:latlong2/latlong.dart' as latlng;
 import 'package:geolocator/geolocator.dart';
 import 'info_page.dart';
 import 'map_page.dart';
-import 'custom_drawer.dart';
 import 'swipeable_page_route.dart';
 class AcademyStreetPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
