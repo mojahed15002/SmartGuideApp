@@ -949,6 +949,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Jenin'**
   String get cityJenin;
+
+  /// No description provided for @logoutConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout Confirmation'**
+  String get logoutConfirmTitle;
+
+  /// No description provided for @logoutConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to log out?\n\nYour account information will remain saved and will not be deleted.'**
+  String get logoutConfirmMessage;
+
+  /// No description provided for @confirmLogout.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Logout'**
+  String get confirmLogout;
+
+  /// No description provided for @logoutError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while logging out.'**
+  String get logoutError;
+
+  /// No description provided for @home.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home;
+
+  /// No description provided for @travelLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel Logs'**
+  String get travelLogs;
+
+  /// No description provided for @defaultUser.
+  ///
+  /// In en, this message translates to:
+  /// **'App User'**
+  String get defaultUser;
+
+  /// No description provided for @emailNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Email not available'**
+  String get emailNotAvailable;
 }
 
 class _AppLocalizationsDelegate

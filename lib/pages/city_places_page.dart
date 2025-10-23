@@ -6,9 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../theme_notifier.dart';
 import 'place_details_page.dart';
 import 'custom_drawer.dart';
-import 'swipeable_page_route.dart'; // تأكد تضيف هذا بالأعلى
-
-// ✅ استيراد ملف الترجمة
+import 'swipeable_page_route.dart';
 import '../l10n/gen/app_localizations.dart';
 
 class CityPlacesPage extends StatefulWidget {
@@ -29,18 +27,15 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
   final String _prefsKey = 'favorites_list';
   List<String> favoritePlaces = [];
 
-  // ✅ بيانات الأماكن
   List<Map<String, dynamic>> _places = [];
   List<Map<String, dynamic>> _filteredPlaces = [];
   bool _isLoading = true;
 
-  // ✅ متغيرات سجل البحث
   final TextEditingController _searchController = TextEditingController();
   List<String> _searchHistory = [];
 
-  // ✅ متغيرات الأنيميشن للأزرار
-  bool _isHeartPressed = false;
-  bool _isSharePressed = false;
+  final bool _isHeartPressed = false;
+  final bool _isSharePressed = false;
 
   final Map<String, double> _uiUserRatings = {};
 
@@ -48,8 +43,10 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
   void initState() {
     super.initState();
     _loadFavorites();
-    _fetchPlaces();
     _loadSearchHistory();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchPlaces();
+    });
   }
 
   Future<void> _loadSearchHistory() async {
@@ -99,13 +96,13 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
     await prefs.setStringList('local_search_history', localHistory);
 
     if (user != null) {
-      final ref = FirebaseFirestore.instance
-          .collection('search_history')
-          .doc(user.uid);
+      final ref =
+          FirebaseFirestore.instance.collection('search_history').doc(user.uid);
       _searchHistory.remove(query);
       _searchHistory.insert(0, query);
-      if (_searchHistory.length > 8)
+      if (_searchHistory.length > 8) {
         _searchHistory = _searchHistory.sublist(0, 8);
+      }
       await ref.set({'history': _searchHistory});
     }
   }
@@ -126,9 +123,8 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
             .doc(user.uid);
         final doc = await ref.get();
         if (doc.exists && doc.data()?['history'] != null) {
-          List<String> firebaseHistory = List<String>.from(
-            doc.data()!['history'],
-          );
+          List<String> firebaseHistory =
+              List<String>.from(doc.data()!['history']);
           firebaseHistory.remove(query);
           await ref.set({'history': firebaseHistory});
         }
@@ -151,17 +147,27 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
 
   Future<void> _fetchPlaces() async {
     try {
-      final snapshot = await FirebaseFirestore.instance
+      final loc = AppLocalizations.of(context)!;
+      final isArabic = loc.localeName == 'ar';
+
+      final String cityField = isArabic ? 'city_ar' : 'city_en';
+      final String queryValue = widget.cityName.trim();
+
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('places')
-          .where(
-            'city',
-            isEqualTo: _getLocalizedCityName(context, widget.cityName).trim(),
-          )
+          .where(cityField, isEqualTo: queryValue)
           .get();
 
-      final List<Map<String, dynamic>> data = snapshot.docs
-          .map((doc) => doc.data())
-          .toList();
+      if (snapshot.docs.isEmpty) {
+        final fallbackField = isArabic ? 'city_en' : 'city_ar';
+        snapshot = await FirebaseFirestore.instance
+            .collection('places')
+            .where(fallbackField, isEqualTo: queryValue)
+            .get();
+      }
+
+      final List<Map<String, dynamic>> data =
+          snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
 
       setState(() {
         _places = data;
@@ -181,30 +187,13 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
     }
 
     final results = _places.where((place) {
-      final title = (place['title'] ?? '').toString().toLowerCase();
-      return title.contains(query.toLowerCase());
+      final titleAr = (place['title_ar'] ?? '').toString().toLowerCase();
+      final titleEn = (place['title_en'] ?? '').toString().toLowerCase();
+      return titleAr.contains(query.toLowerCase()) ||
+          titleEn.contains(query.toLowerCase());
     }).toList();
 
     setState(() => _filteredPlaces = results);
-  }
-
-  String _getLocalizedCityName(BuildContext context, String name) {
-    final loc = AppLocalizations.of(context)!;
-    final key = name.trim().toLowerCase();
-
-    switch (key) {
-      case 'nablus':
-      case 'نابلس':
-        return loc.cityNablus;
-      case 'ramallah':
-      case 'رام الله':
-        return loc.cityRamallah;
-      case 'jenin':
-      case 'جنين':
-        return loc.cityJenin;
-      default:
-        return name;
-    }
   }
 
   Future<void> _toggleFavorite(String placeId) async {
@@ -225,9 +214,8 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
     await prefs.setStringList(_prefsKey, favoritePlaces);
 
     if (user != null) {
-      final userDoc = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid);
+      final userDoc =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
       final userSnapshot = await userDoc.get();
 
       List<String> existingFavorites = [];
@@ -251,8 +239,9 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
       }, SetOptions(merge: true));
     }
 
-    final addedMsg = AppLocalizations.of(context)!.addedToFavorites;
-    final removedMsg = AppLocalizations.of(context)!.removedFromFavorites;
+    final loc = AppLocalizations.of(context)!;
+    final addedMsg = loc.addedToFavorites;
+    final removedMsg = loc.removedFromFavorites;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -272,174 +261,156 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
     final String encodedId = Uri.encodeComponent(id);
     final String webLink =
         'https://mojahed15002.github.io/SmartGuideApp/place?city=$encodedCity&id=$encodedId';
+    final loc = AppLocalizations.of(context)!;
     final String shareText =
-        '📍 ${AppLocalizations.of(context)!.discoverPlaceIn} $city:\n$title\n\n'
-        '${AppLocalizations.of(context)!.openInApp}:\n$webLink';
+        '📍 ${loc.discoverPlaceIn} $city:\n$title\n\n${loc.openInApp}:\n$webLink';
     Share.share(shareText);
   }
 
   @override
   Widget build(BuildContext context) {
     final themeNotifier = widget.themeNotifier;
-    final isDark = themeNotifier.isDarkMode;
+    final loc = AppLocalizations.of(context)!;
+    final isArabic = loc.localeName == 'ar';
+    final direction = isArabic ? TextDirection.rtl : TextDirection.ltr;
 
-    return Builder(
-      builder: (context) {
-        final isArabic = AppLocalizations.of(context)!.localeName == 'ar';
-        final direction = isArabic ? TextDirection.rtl : TextDirection.ltr;
-
-        return Directionality(
-          textDirection: direction,
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text(_getLocalizedCityName(context, widget.cityName)),
-            ),
-            drawer: CustomDrawer(themeNotifier: widget.themeNotifier),
-            body: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          flex: 0,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TextField(
-                                controller: _searchController,
-                                onChanged: (query) async {
-                                  _filterPlaces(query);
-                                  if (query.isEmpty) {
-                                    _loadSearchHistory();
-                                    return;
-                                  }
-                                },
-                                decoration: InputDecoration(
-                                  hintText: AppLocalizations.of(
-                                    context,
-                                  )!.searchHint,
-                                  prefixIcon: const Icon(Icons.search),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                            ],
-                          ),
+    return Directionality(
+      textDirection: direction,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(loc.citiesTitle),
+        ),
+        drawer: CustomDrawer(themeNotifier: widget.themeNotifier),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _searchController,
+                      onChanged: (query) async {
+                        _filterPlaces(query);
+                        if (query.isEmpty) {
+                          _loadSearchHistory();
+                          return;
+                        }
+                      },
+                      decoration: InputDecoration(
+                        hintText: loc.searchHint,
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(height: 10),
-                        Expanded(
-                          child: _filteredPlaces.isEmpty
-                              ? Center(
-                                  child: Text(
-                                    AppLocalizations.of(context)!.noResults,
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
-                                )
-                              : GridView.builder(
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                        crossAxisSpacing: 12,
-                                        mainAxisSpacing: 12,
-                                        childAspectRatio: 2.6 / 4,
-                                      ),
-                                  itemCount: _filteredPlaces.length,
-                                  itemBuilder: (context, index) {
-                                    final place = _filteredPlaces[index];
-                                    final String id = place["id"];
-                                    final String title = place["title"];
-                                    final List<String> images =
-                                        List<String>.from(
-                                          place["images"] ?? [],
-                                        );
-                                    final String heroTag = place["hero"];
-                                    final String city = place["city"];
-
-                                    return Stack(
-                                      children: [
-                                        GestureDetector(
-                                          onTap: () {
-                                            if (ModalRoute.of(
-                                                  context,
-                                                )?.isCurrent ??
-                                                true) {
-                                              Navigator.pushReplacement(
-                                                context,
-                                                SwipeablePageRoute(
-                                                  page: PlaceDetailsPage(
-                                                    title: title,
-                                                    cityName: city,
-                                                    images: images,
-                                                    url: place["url"],
-                                                    themeNotifier:
-                                                        themeNotifier,
-                                                    heroTag: heroTag,
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                          },
-                                          child: Card(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                            ),
-                                            elevation: 4,
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.stretch,
-                                              children: [
-                                                Expanded(
-                                                  child: ClipRRect(
-                                                    borderRadius:
-                                                        const BorderRadius.vertical(
-                                                          top: Radius.circular(
-                                                            16,
-                                                          ),
-                                                        ),
-                                                    child: Hero(
-                                                      tag: heroTag,
-                                                      child: Image.asset(
-                                                        images.isNotEmpty
-                                                            ? images.first
-                                                            : 'assets/images/default.jpg',
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding: const EdgeInsets.all(
-                                                    8.0,
-                                                  ),
-                                                  child: Text(
-                                                    title,
-                                                    style: const TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-          ),
-        );
-      },
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: _filteredPlaces.isEmpty
+                          ? Center(
+                              child: Text(
+                                loc.noResults,
+                                style: const TextStyle(fontSize: 18),
+                              ),
+                            )
+                          : GridView.builder(
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 2.6 / 4,
+                              ),
+                              itemCount: _filteredPlaces.length,
+                              itemBuilder: (context, index) {
+                                final place = _filteredPlaces[index];
+                                final String id = place["id"] ?? '';
+                                final String title = isArabic
+                                    ? (place["title_ar"] ?? '')
+                                    : (place["title_en"] ?? '');
+                                final List<String> images =
+                                    List<String>.from(place["images"] ?? []);
+                                final String heroTag =
+                                    place["hero"] ?? 'place_$index';
+                                final String cityName = isArabic
+                                    ? (place['city_ar'] ?? '')
+                                    : (place['city_en'] ?? '');
+
+                                return Stack(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        if (ModalRoute.of(context)
+                                                ?.isCurrent ??
+                                            true) {
+                                          Navigator.pushReplacement(
+                                            context,
+                                            SwipeablePageRoute(
+                                              page: PlaceDetailsPage(
+                                                title: title,
+                                                cityName: cityName,
+                                                images: images,
+                                                url: place["url"],
+                                                themeNotifier: themeNotifier,
+                                                heroTag: heroTag,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      child: Card(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                        elevation: 4,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            Expanded(
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    const BorderRadius.vertical(
+                                                  top: Radius.circular(16),
+                                                ),
+                                                child: Hero(
+                                                  tag: heroTag,
+                                                  child: Image.asset(
+                                                    images.isNotEmpty
+                                                        ? images.first
+                                                        : 'assets/images/default.jpg',
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                title,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight:
+                                                      FontWeight.bold,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+      ),
     );
   }
 }

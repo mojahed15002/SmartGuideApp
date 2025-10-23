@@ -435,4 +435,29 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cityJenin => 'جنين';
+
+  @override
+  String get logoutConfirmTitle => 'تأكيد تسجيل الخروج';
+
+  @override
+  String get logoutConfirmMessage =>
+      'هل أنت متأكد أنك تريد تسجيل الخروج؟\n\nفي حال قمت بتسجيل الخروج، ستبقى معلومات هذا الحساب محفوظة ولن يتم حذفها.';
+
+  @override
+  String get confirmLogout => 'تأكيد';
+
+  @override
+  String get logoutError => 'حدث خطأ أثناء تسجيل الخروج';
+
+  @override
+  String get home => 'الصفحة الرئيسية';
+
+  @override
+  String get travelLogs => 'سجل الرحلات';
+
+  @override
+  String get defaultUser => 'مستخدم التطبيق';
+
+  @override
+  String get emailNotAvailable => 'البريد غير متوفر';
 }

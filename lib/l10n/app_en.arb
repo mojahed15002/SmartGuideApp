@@ -141,7 +141,15 @@
   "citiesTitle": "Cities",
   "cityNablus": "Nablus",
   "cityRamallah": "Ramallah",
-  "cityJenin": "Jenin"
+  "cityJenin": "Jenin",
+"logoutConfirmTitle": "Logout Confirmation",
+"logoutConfirmMessage": "Are you sure you want to log out?\n\nYour account information will remain saved and will not be deleted.",
+"confirmLogout": "Confirm Logout",
+"logoutError": "An error occurred while logging out.",
+"home": "Home",
+"travelLogs": "Travel Logs",
+"defaultUser": "App User",
+"emailNotAvailable": "Email not available"
 
 
 }

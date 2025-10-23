@@ -113,8 +113,6 @@ class _MyAppState extends State<MyApp> {
         );
       },
 
-
-
       home: SignInPanel(themeNotifier: themeNotifier),
     );
   }
@@ -223,14 +221,14 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
             );
           },
           // ⬇️ أضف هان
-  routes: {
-    '/home': (context) => ChoicePage(themeNotifier: widget.themeNotifier),
-    '/near_me': (context) => NearMePage(themeNotifier: widget.themeNotifier),
-    '/favorites': (context) => FavoritesPage(themeNotifier: widget.themeNotifier),
-    '/logs': (context) => LogsPage(themeNotifier: widget.themeNotifier),
-    '/login': (context) => SignInPanel(themeNotifier: widget.themeNotifier),
-    '/settings': (context) => SettingsPage(themeNotifier: widget.themeNotifier),
-  },
+          routes: {
+            '/home': (context) => ChoicePage(themeNotifier: widget.themeNotifier),
+            '/near_me': (context) => NearMePage(themeNotifier: widget.themeNotifier),
+            '/favorites': (context) => FavoritesPage(themeNotifier: widget.themeNotifier),
+            '/logs': (context) => LogsPage(themeNotifier: widget.themeNotifier),
+            '/login': (context) => SignInPanel(themeNotifier: widget.themeNotifier),
+            '/settings': (context) => SettingsPage(themeNotifier: widget.themeNotifier),
+          },
           home: StreamBuilder<User?>(
             stream: FirebaseAuth.instance.authStateChanges(),
             builder: (context, snapshot) {
@@ -253,14 +251,29 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
                   });
                 }
 
+                // ✅ تحميل اللغة والثيم من Firestore عند تسجيل الدخول التلقائي
                 FirebaseFirestore.instance
                     .collection('users')
                     .doc(user.uid)
                     .get()
-                    .then((doc) {
-                  if (doc.exists && doc.data()?['theme'] != null) {
-                    final savedTheme = doc['theme'];
-                    widget.themeNotifier.setTheme(savedTheme == 'dark');
+                    .then((doc) async {
+                  if (doc.exists) {
+                    final prefs = await SharedPreferences.getInstance();
+                    final data = doc.data() ?? {};
+
+                    // 🌙 الثيم
+                    if (data['theme'] != null) {
+                      final savedTheme = data['theme'];
+                      widget.themeNotifier.setTheme(savedTheme == 'dark');
+                      await prefs.setBool('isDarkMode', savedTheme == 'dark');
+                    }
+
+                    // 🌐 اللغة
+                    if (data['language'] != null) {
+                      final savedLang = data['language'];
+                      widget.themeNotifier.setLanguage(savedLang);
+                      await prefs.setString('language', savedLang);
+                    }
                   }
                 });
 
@@ -268,51 +281,6 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
               }
 
               return SignInPanel(themeNotifier: widget.themeNotifier);
-            },
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// النسخة الاحتياطية القديمة (نتركها كما هي في حال رغبت لاحقًا بالرجوع)
-class MyAppWrapperBackup1 extends StatelessWidget {
-  final ThemeNotifier themeNotifier = ThemeNotifier();
-
-  MyAppWrapperBackup1({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: themeNotifier,
-      builder: (context, _) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'Smart City Guide',
-          theme: ThemeData(
-            primarySwatch: Colors.orange,
-            fontFamily: "Roboto",
-            brightness: Brightness.light,
-          ),
-          darkTheme: ThemeData(
-            primarySwatch: Colors.orange,
-            fontFamily: "Roboto",
-            brightness: Brightness.dark,
-          ),
-          themeMode: themeNotifier.themeMode,
-          home: StreamBuilder<User?>(
-            stream: FirebaseAuth.instance.authStateChanges(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
-              }
-              if (snapshot.hasData) {
-                return WelcomePage(themeNotifier: themeNotifier);
-              }
-              return SignInPanel(themeNotifier: themeNotifier);
             },
           ),
         );

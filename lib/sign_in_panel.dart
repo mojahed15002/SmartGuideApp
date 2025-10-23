@@ -24,6 +24,22 @@ class _SignInPanelState extends State<SignInPanel> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  String _language = 'ar';
+
+
+Future<void> _changeLanguage(String langCode) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('language', langCode);
+  widget.themeNotifier.setLanguage(langCode);
+
+  if (mounted) {
+    setState(() {
+      _language = langCode;
+    });
+  }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +50,7 @@ class _SignInPanelState extends State<SignInPanel> {
     // ✅ تحديد اتجاه الصفحة
     final isArabic = AppLocalizations.of(context)!.localeName == 'ar';
     final direction = isArabic ? TextDirection.rtl : TextDirection.ltr;
+    final loc = AppLocalizations.of(context)!;
 
     return Directionality(
       textDirection: direction,
@@ -48,32 +65,75 @@ class _SignInPanelState extends State<SignInPanel> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: IconButton(
-                      icon: Icon(
-                        isDarkMode
-                            ? Icons.wb_sunny
-                            : Icons.nightlight_round,
-                        color: primaryColor,
-                      ),
-                      onPressed: () async {
-                        widget.themeNotifier.toggleTheme();
+                  // 🔸 صف يحتوي على زر الثيم وزر اللغة
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      // زر الثيم (كما هو)
+                      IconButton(
+                        icon: Icon(
+                          isDarkMode ? Icons.wb_sunny : Icons.nightlight_round,
+                          color: primaryColor,
+                        ),
+                        onPressed: () async {
+                          widget.themeNotifier.toggleTheme();
 
-                        final user = FirebaseAuth.instance.currentUser;
-                        if (user != null) {
-                          await FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(user.uid)
-                              .update({
-                            'theme': widget.themeNotifier.isDarkMode
-                                ? 'dark'
-                                : 'light',
-                          });
-                        }
-                      },
-                    ),
+                          final user = FirebaseAuth.instance.currentUser;
+                          if (user != null) {
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .update({
+                              'theme': widget.themeNotifier.isDarkMode
+                                  ? 'dark'
+                                  : 'light',
+                            });
+                          }
+                        },
+                      ),
+                      // 🌐 زر تغيير اللغة الجديد
+                      IconButton(
+                        icon: Icon(Icons.language, color: primaryColor),
+                        tooltip: loc.language,
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: Text(loc.language),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  RadioListTile<String>(
+                                    title: Text(loc.arabic),
+                                    value: 'ar',
+                                    groupValue: _language,
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        _changeLanguage(val);
+                                        Navigator.pop(context);
+                                      }
+                                    },
+                                  ),
+                                  RadioListTile<String>(
+                                    title: Text(loc.english),
+                                    value: 'en',
+                                    groupValue: _language,
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        _changeLanguage(val);
+                                        Navigator.pop(context);
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
+
                   const SizedBox(height: 20),
                   Text(
                     AppLocalizations.of(context)!.signIn,
@@ -100,8 +160,7 @@ class _SignInPanelState extends State<SignInPanel> {
                             controller: _emailController,
                             decoration: InputDecoration(
                               labelText: AppLocalizations.of(context)!.email,
-                              prefixIcon:
-                                  const Icon(Icons.email_outlined),
+                              prefixIcon: const Icon(Icons.email_outlined),
                               border: const OutlineInputBorder(),
                             ),
                           ),
@@ -110,10 +169,8 @@ class _SignInPanelState extends State<SignInPanel> {
                             controller: _passwordController,
                             obscureText: _obscurePassword,
                             decoration: InputDecoration(
-                              labelText:
-                                  AppLocalizations.of(context)!.password,
-                              prefixIcon:
-                                  const Icon(Icons.lock_outline),
+                              labelText: AppLocalizations.of(context)!.password,
+                              prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
                                 icon: Icon(_obscurePassword
                                     ? Icons.visibility_off
@@ -135,14 +192,12 @@ class _SignInPanelState extends State<SignInPanel> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => ForgotPasswordPage(
-                                        themeNotifier:
-                                            widget.themeNotifier),
+                                        themeNotifier: widget.themeNotifier),
                                   ),
                                 );
                               },
                               child: Text(
-                                AppLocalizations.of(context)!
-                                    .forgotPassword,
+                                AppLocalizations.of(context)!.forgotPassword,
                                 style: TextStyle(
                                   color: primaryColor,
                                   fontWeight: FontWeight.w500,
@@ -152,7 +207,7 @@ class _SignInPanelState extends State<SignInPanel> {
                           ),
                           const SizedBox(height: 10),
 
-                          // زر تسجيل الدخول
+
                           SizedBox(
                             width: double.infinity,
                             height: 48,
@@ -163,50 +218,49 @@ class _SignInPanelState extends State<SignInPanel> {
                                       await FirebaseAuth.instance
                                           .signInWithEmailAndPassword(
                                     email: _emailController.text.trim(),
-                                    password:
-                                        _passwordController.text.trim(),
+                                    password: _passwordController.text.trim(),
                                   );
 
                                   if (!mounted) return;
                                   final user = credential.user;
                                   if (user != null) {
-                                    final userDoc = FirebaseFirestore
-                                        .instance
+                                    final userDoc = FirebaseFirestore.instance
                                         .collection('users')
                                         .doc(user.uid);
 
                                     final snapshot = await userDoc.get();
 
-                                    if (!snapshot.exists) {
-                                      await userDoc.set({
-                                        'email': user.email,
-                                        'theme': widget.themeNotifier
-                                                .isDarkMode
-                                            ? 'dark'
-                                            : 'light',
-                                        'favorites': [],
-                                        'createdAt':
-                                            FieldValue.serverTimestamp(),
-                                      });
-                                    } else {
-                                      await userDoc.set({
-                                        'email': user.email,
-                                        'theme': widget.themeNotifier
-                                                .isDarkMode
-                                            ? 'dark'
-                                            : 'light',
-                                        'updatedAt':
-                                            FieldValue.serverTimestamp(),
-                                      }, SetOptions(merge: true));
-                                    }
+if (!snapshot.exists) {
+  // 📦 جلب اللغة من SharedPreferences
+  final prefs = await SharedPreferences.getInstance();
+  final savedLang = prefs.getString('language') ?? 'ar';
+
+  await userDoc.set({
+    'email': user.email,
+    'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
+    'language': savedLang, // ✅ حفظ اللغة المختارة
+    'favorites': [],
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+} else {
+  // 📦 جلب اللغة الحالية وتحديثها في حالة المستخدم موجود
+  final prefs = await SharedPreferences.getInstance();
+  final savedLang = prefs.getString('language') ?? 'ar';
+
+  await userDoc.set({
+    'email': user.email,
+    'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
+    'language': savedLang, // ✅ تحديث اللغة دائمًا
+    'updatedAt': FieldValue.serverTimestamp(),
+  }, SetOptions(merge: true));
+}
 
                                     if (!mounted) return;
                                     final pending = DeepLinkStore.take();
                                     if (pending != null) {
                                       openPlaceFromUri(
                                         context: context,
-                                        themeNotifier:
-                                            widget.themeNotifier,
+                                        themeNotifier: widget.themeNotifier,
                                         uri: pending,
                                       );
                                     }
@@ -222,13 +276,11 @@ class _SignInPanelState extends State<SignInPanel> {
                                     if (favSnapshot.exists) {
                                       final data = favSnapshot.data();
                                       if (data != null &&
-                                          data.containsKey(
-                                              'favorites')) {
+                                          data.containsKey('favorites')) {
                                         favorites = List<String>.from(
                                             data['favorites']);
                                         final prefs =
-                                            await SharedPreferences
-                                                .getInstance();
+                                            await SharedPreferences.getInstance();
                                         await prefs.setStringList(
                                             'favorites_list',
                                             favorites.cast<String>());
@@ -238,25 +290,30 @@ class _SignInPanelState extends State<SignInPanel> {
                                     if (!mounted) return;
                                     final userDocData = await userDoc.get();
 
-                                    if (userDocData.exists) {
-                                      final data = userDocData.data();
-                                      if (data != null &&
-                                          data.containsKey('theme')) {
-                                        final savedTheme = data['theme'];
-                                        if (savedTheme == 'dark' &&
-                                            !widget.themeNotifier
-                                                .isDarkMode) {
-                                          widget.themeNotifier
-                                              .setTheme(true);
-                                        } else if (savedTheme ==
-                                                'light' &&
-                                            widget.themeNotifier
-                                                .isDarkMode) {
-                                          widget.themeNotifier
-                                              .setTheme(false);
-                                        }
-                                      }
-                                    }
+if (userDocData.exists) {
+  final data = userDocData.data();
+  if (data != null) {
+    // 🟢 تطبيق اللغة المحفوظة
+    if (data.containsKey('language')) {
+      final savedLang = data['language'];
+      widget.themeNotifier.setLanguage(savedLang);
+      setState(() {
+        _language = savedLang;
+      });
+    }
+
+    // 🌙 تطبيق الثيم المحفوظ
+    if (data.containsKey('theme')) {
+      final savedTheme = data['theme'];
+      if (savedTheme == 'dark' && !widget.themeNotifier.isDarkMode) {
+        widget.themeNotifier.setTheme(true);
+      } else if (savedTheme == 'light' &&
+          widget.themeNotifier.isDarkMode) {
+        widget.themeNotifier.setTheme(false);
+      }
+    }
+  }
+}
                                   }
 
                                   if (!mounted) return;
@@ -264,24 +321,19 @@ class _SignInPanelState extends State<SignInPanel> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => WelcomePage(
-                                        themeNotifier:
-                                            widget.themeNotifier,
-                                        userName: credential
-                                                .user?.email ??
-                                            AppLocalizations.of(context)!
-                                                .user,
+                                        themeNotifier: widget.themeNotifier,
+                                        userName: credential.user?.email ??
+                                            AppLocalizations.of(context)!.user,
                                       ),
                                     ),
                                   );
                                 } catch (e) {
                                   if (!mounted) return;
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(
+                                  ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
                                           "${AppLocalizations.of(context)!.signInError}: $e"),
-                                      backgroundColor:
-                                          Colors.redAccent,
+                                      backgroundColor: Colors.redAccent,
                                     ),
                                   );
                                 }
@@ -289,8 +341,7 @@ class _SignInPanelState extends State<SignInPanel> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: primaryColor,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(30),
+                                  borderRadius: BorderRadius.circular(30),
                                 ),
                               ),
                               child: Text(
@@ -306,154 +357,154 @@ class _SignInPanelState extends State<SignInPanel> {
                           const SizedBox(height: 20),
 
                           // تسجيل الدخول بجوجل
-                          OutlinedButton.icon(
-                            onPressed: () async {
-                              try {
-                                if (Theme.of(context).platform ==
-                                        TargetPlatform.android ||
-                                    Theme.of(context).platform ==
-                                        TargetPlatform.iOS) {
-                                  final GoogleSignInAccount?
-                                      googleUser =
-                                      await GoogleSignIn().signIn();
-                                  if (googleUser == null) return;
-                                  final GoogleSignInAuthentication
-                                      googleAuth =
-                                      await googleUser.authentication;
-                                  final credential =
-                                      GoogleAuthProvider.credential(
-                                    accessToken:
-                                        googleAuth.accessToken,
-                                    idToken: googleAuth.idToken,
-                                  );
-                                  await FirebaseAuth.instance
-                                      .signInWithCredential(credential);
-                                } else {
-                                  await FirebaseAuth.instance
-                                      .signInWithPopup(
-                                          GoogleAuthProvider());
-                                }
+OutlinedButton.icon(
+  onPressed: () async {
+    try {
+      if (Theme.of(context).platform == TargetPlatform.android ||
+          Theme.of(context).platform == TargetPlatform.iOS) {
+        final GoogleSignInAccount? googleUser =
+            await GoogleSignIn().signIn();
+        if (googleUser == null) return;
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        await FirebaseAuth.instance.signInWithCredential(credential);
+      } else {
+        await FirebaseAuth.instance
+            .signInWithPopup(GoogleAuthProvider());
+      }
 
-                                if (!mounted) return;
-                                final user =
-                                    FirebaseAuth.instance.currentUser;
+      if (!mounted) return;
+      final user = FirebaseAuth.instance.currentUser;
 
-                                if (user != null) {
-                                  final userDoc = FirebaseFirestore
-                                      .instance
-                                      .collection('users')
-                                      .doc(user.uid);
-                                  final snapshot = await userDoc.get();
-                                  if (!snapshot.exists) {
-                                    await userDoc.set({
-                                      'name': user.displayName ??
-                                          AppLocalizations.of(context)!
-                                              .googleUser,
-                                      'email': user.email,
-                                      'photoUrl': user.photoURL,
-                                      'createdAt': FieldValue
-                                          .serverTimestamp(),
-                                      'theme': widget.themeNotifier
-                                              .isDarkMode
-                                          ? 'dark'
-                                          : 'light',
-                                      'favorites': [],
-                                    });
-                                  } else {
-                                    await userDoc.set({
-                                      'name': user.displayName ??
-                                          AppLocalizations.of(context)!
-                                              .googleUser,
-                                      'email': user.email,
-                                      'photoUrl': user.photoURL,
-                                      'theme': widget.themeNotifier
-                                              .isDarkMode
-                                          ? 'dark'
-                                          : 'light',
-                                      'updatedAt': FieldValue
-                                          .serverTimestamp(),
-                                    }, SetOptions(merge: true));
-                                  }
+      if (user != null) {
+        final userDoc = FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid);
+        final snapshot = await userDoc.get();
 
-                                  if (!mounted) return;
-                                  final favSnapshot =
-                                      await FirebaseFirestore.instance
-                                          .collection('users')
-                                          .doc(user.uid)
-                                          .get();
+        // ✅ قراءة اللغة من SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        final savedLang = prefs.getString('language') ?? _language;
 
-                                  List<String> favorites = [];
-                                  if (favSnapshot.exists) {
-                                    final data = favSnapshot.data();
-                                    if (data != null &&
-                                        data.containsKey('favorites')) {
-                                      favorites =
-                                          List<String>.from(data['favorites']);
-                                    }
-                                  }
+        if (!snapshot.exists) {
+          await userDoc.set({
+            'name': user.displayName ??
+                AppLocalizations.of(context)!.googleUser,
+            'email': user.email,
+            'photoUrl': user.photoURL,
+            'createdAt': FieldValue.serverTimestamp(),
+            'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
+            'language': savedLang, // ✅ حفظ اللغة الفعلية
+            'favorites': [],
+          });
+        } else {
+          await userDoc.set({
+            'name': user.displayName ??
+                AppLocalizations.of(context)!.googleUser,
+            'email': user.email,
+            'photoUrl': user.photoURL,
+            'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
+            'language': savedLang, // ✅ تحديث اللغة
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        }
 
-                                  if (!mounted) return;
-                                  final pending = DeepLinkStore.take();
-                                  if (pending != null) {
-                                    openPlaceFromUri(
-                                      context: context,
-                                      themeNotifier:
-                                          widget.themeNotifier,
-                                      uri: pending,
-                                    );
-                                  }
+        // ✅ قراءة اللغة والثيم من قاعدة البيانات بعد تسجيل الدخول بحساب Google
+        final userDocData = await userDoc.get();
+        if (userDocData.exists) {
+          final data = userDocData.data();
+          if (data != null) {
+            // 🌐 اللغة
+            if (data.containsKey('language')) {
+              final savedLang = data['language'];
+              widget.themeNotifier.setLanguage(savedLang);
+              setState(() {
+                _language = savedLang;
+              });
+            }
 
-                                  final prefs =
-                                      await SharedPreferences.getInstance();
-                                  await prefs.setStringList(
-                                      'favorites_list', favorites);
-                                }
+            // 🌙 الثيم
+            if (data.containsKey('theme')) {
+              final savedTheme = data['theme'];
+              if (savedTheme == 'dark' &&
+                  !widget.themeNotifier.isDarkMode) {
+                widget.themeNotifier.setTheme(true);
+              } else if (savedTheme == 'light' &&
+                  widget.themeNotifier.isDarkMode) {
+                widget.themeNotifier.setTheme(false);
+              }
+            }
+          }
+        }
 
-                                if (!mounted) return;
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => WelcomePage(
-                                      themeNotifier:
-                                          widget.themeNotifier,
-                                      userName: FirebaseAuth.instance
-                                              .currentUser
-                                              ?.displayName ??
-                                          AppLocalizations.of(context)!
-                                              .googleUser,
-                                    ),
-                                  ),
-                                );
-                              } catch (e) {
-                                if (!mounted) return;
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                        "${AppLocalizations.of(context)!.googleSignInError}: $e"),
-                                    backgroundColor: Colors.redAccent,
-                                  ),
-                                );
-                              }
-                            },
-                            icon: Icon(Icons.g_mobiledata,
-                                color: primaryColor),
-                            label: Text(
-                              AppLocalizations.of(context)!
-                                  .signInWithGoogle,
-                              style: TextStyle(color: primaryColor),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: primaryColor),
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(30),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 10),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
+        // ✅ جلب المفضلة وتخزينها محليًا
+        final favSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        List<String> favorites = [];
+        if (favSnapshot.exists) {
+          final data = favSnapshot.data();
+          if (data != null && data.containsKey('favorites')) {
+            favorites = List<String>.from(data['favorites']);
+          }
+        }
+
+        final pending = DeepLinkStore.take();
+        if (pending != null) {
+          openPlaceFromUri(
+            context: context,
+            themeNotifier: widget.themeNotifier,
+            uri: pending,
+          );
+        }
+
+        await prefs.setStringList('favorites_list', favorites);
+      }
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => WelcomePage(
+            themeNotifier: widget.themeNotifier,
+            userName: FirebaseAuth.instance.currentUser?.displayName ??
+                AppLocalizations.of(context)!.googleUser,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "${AppLocalizations.of(context)!.googleSignInError}: $e",
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  },
+  icon: Icon(Icons.g_mobiledata, color: primaryColor),
+  label: Text(
+    AppLocalizations.of(context)!.signInWithGoogle,
+    style: TextStyle(color: primaryColor),
+  ),
+  style: OutlinedButton.styleFrom(
+    side: BorderSide(color: primaryColor),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(30),
+    ),
+    padding:
+        const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+  ),
+),
+const SizedBox(height: 10),
 
                           // زر الدخول كضيف
                           OutlinedButton.icon(
@@ -468,10 +519,9 @@ class _SignInPanelState extends State<SignInPanel> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => WelcomePage(
-                                      userName: AppLocalizations.of(context)!
-                                          .guest,
-                                      themeNotifier:
-                                          widget.themeNotifier,
+                                      userName:
+                                          AppLocalizations.of(context)!.guest,
+                                      themeNotifier: widget.themeNotifier,
                                     ),
                                   ),
                                 );
@@ -479,9 +529,8 @@ class _SignInPanelState extends State<SignInPanel> {
                                 if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(
-                                        AppLocalizations.of(context)!
-                                            .guestLoginError),
+                                    content: Text(AppLocalizations.of(context)!
+                                        .guestLoginError),
                                   ),
                                 );
                               }
@@ -495,8 +544,7 @@ class _SignInPanelState extends State<SignInPanel> {
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: primaryColor),
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(30),
+                                borderRadius: BorderRadius.circular(30),
                               ),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
@@ -511,14 +559,12 @@ class _SignInPanelState extends State<SignInPanel> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => SignUpPage(
-                                      themeNotifier:
-                                          widget.themeNotifier),
+                                      themeNotifier: widget.themeNotifier),
                                 ),
                               );
                             },
                             child: Text(
-                              AppLocalizations.of(context)!
-                                  .createAccount,
+                              AppLocalizations.of(context)!.createAccount,
                               style: TextStyle(
                                 color: primaryColor,
                                 fontWeight: FontWeight.bold,

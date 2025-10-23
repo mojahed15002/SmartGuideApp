@@ -141,7 +141,15 @@
     "citiesTitle": "المدن",
   "cityNablus": "نابلس",
   "cityRamallah": "رام الله",
-  "cityJenin": "جنين"
+  "cityJenin": "جنين",
+"logoutError": "حدث خطأ أثناء تسجيل الخروج",
+"logoutConfirmTitle": "تأكيد تسجيل الخروج",
+"logoutConfirmMessage": "هل أنت متأكد أنك تريد تسجيل الخروج؟\n\nفي حال قمت بتسجيل الخروج، ستبقى معلومات هذا الحساب محفوظة ولن يتم حذفها.",
+"confirmLogout": "تأكيد",
+"home": "الصفحة الرئيسية",
+"travelLogs": "سجل الرحلات",
+"defaultUser": "مستخدم التطبيق",
+"emailNotAvailable": "البريد غير متوفر"
 
 
 

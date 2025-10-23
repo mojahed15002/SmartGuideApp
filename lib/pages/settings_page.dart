@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme_notifier.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/gen/app_localizations.dart';
-import '../sign_in_panel.dart';
-import 'swipeable_page_route.dart'; // أو المسار الصحيح حسب موقع الملف
 
 class SettingsPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -37,7 +36,15 @@ class _SettingsPageState extends State<SettingsPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', value);
 
-    widget.themeNotifier.setTheme(value); // 👈 تحديث الثيم
+    widget.themeNotifier.setTheme(value);
+
+    // ✅ تحديث Firestore للمستخدم الحالي
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'theme': value ? 'dark' : 'light',
+      }, SetOptions(merge: true));
+    }
 
     if (mounted) {
       setState(() => _isDarkMode = value);
@@ -48,14 +55,21 @@ class _SettingsPageState extends State<SettingsPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('language', langCode);
 
-    // ✅ تغيير اللغة فوريًا
     widget.themeNotifier.setLanguage(langCode);
+
+    // ✅ حفظ اللغة في Firestore للمستخدم الحالي
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'language': langCode,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
 
     if (mounted) {
       setState(() => _language = langCode);
     }
 
-    // ✅ إشعار المستخدم
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppLocalizations.of(context)!.languageApplied)),
     );
@@ -79,39 +93,6 @@ class _SettingsPageState extends State<SettingsPage> {
     const url = 'mailto:smartcityguide@gmail.com?subject=استفسار حول التطبيق';
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url));
-    }
-  }
-
-  Future<void> _signOut() async {
-    final user = FirebaseAuth.instance.currentUser;
-
-    try {
-      if (user != null) {
-        // ✅ إذا المستخدم مسجل كضيف
-        if (user.isAnonymous) {
-          await user.delete(); // نحذف الجلسة المؤقتة
-        } else {
-          await FirebaseAuth.instance.signOut();
-        }
-      }
-
-      // ✅ بعد الخروج نرجع لصفحة تسجيل الدخول
-      if (!mounted) return;
-      if (ModalRoute.of(context)?.isCurrent ?? true) {
-        Navigator.of(context).pushAndRemoveUntil(
-          SwipeablePageRoute(
-            page: SignInPanel(themeNotifier: widget.themeNotifier),
-          ),
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      debugPrint('⚠️ خطأ أثناء تسجيل الخروج: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('حدث خطأ أثناء تسجيل الخروج')),
-        );
-      }
     }
   }
 
@@ -191,85 +172,6 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: _contactUs,
           ),
           const Divider(),
-
-          // 🚪 تسجيل الخروج مع رسالة تأكيد احترافية
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: Text(loc.logout, style: const TextStyle(color: Colors.red)),
-            onTap: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  backgroundColor:
-                      Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF2C2C2C)
-                      : Colors.white,
-                  titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                  title: Row(
-                    children: const [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        color: Colors.orange,
-                        size: 30,
-                      ),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          "تأكيد تسجيل الخروج",
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  content: const Text(
-                    "هل أنت متأكد أنك تريد تسجيل الخروج؟\n\n"
-                    "  في حال قمت بتسجيل الخروج، ستبقى معلومات هذا الحساب محفوظة ولن يتم حذفها.",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(height: 1.4, fontSize: 15),
-                  ),
-                  actionsAlignment: MainAxisAlignment.spaceBetween,
-                  actions: [
-                    TextButton(
-                      child: const Text(
-                        "إلغاء",
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      onPressed: () => Navigator.pop(context, false),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        "تأكيد الخروج",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      onPressed: () => Navigator.pop(context, true),
-                    ),
-                  ],
-                ),
-              );
-
-              if (confirm == true) {
-                // 🔥 استدعاء دالة تسجيل الخروج الأصلية مع دعم المستخدم الضيف
-                await _signOut();
-              }
-            },
-          ),
         ],
       ),
     );

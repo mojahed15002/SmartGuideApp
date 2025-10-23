@@ -18,7 +18,7 @@ class NearMePage extends StatelessWidget {
     final direction = isArabic ? TextDirection.rtl : TextDirection.ltr;
 
     // ✅ قائمة الفئات مع الترجمة
-    final _categories = [
+    final categories = [
       {
         'name': AppLocalizations.of(context)!.restaurants,
         'icon': Icons.restaurant,
@@ -63,7 +63,7 @@ class NearMePage extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          children: _categories.map((cat) {
+          children: categories.map((cat) {
             return InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () {

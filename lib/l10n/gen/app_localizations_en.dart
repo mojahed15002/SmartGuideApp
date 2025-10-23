@@ -436,4 +436,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cityJenin => 'Jenin';
+
+  @override
+  String get logoutConfirmTitle => 'Logout Confirmation';
+
+  @override
+  String get logoutConfirmMessage =>
+      'Are you sure you want to log out?\n\nYour account information will remain saved and will not be deleted.';
+
+  @override
+  String get confirmLogout => 'Confirm Logout';
+
+  @override
+  String get logoutError => 'An error occurred while logging out.';
+
+  @override
+  String get home => 'Home';
+
+  @override
+  String get travelLogs => 'Travel Logs';
+
+  @override
+  String get defaultUser => 'App User';
+
+  @override
+  String get emailNotAvailable => 'Email not available';
 }
