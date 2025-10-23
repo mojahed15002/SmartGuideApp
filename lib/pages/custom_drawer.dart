@@ -44,7 +44,7 @@ class CustomDrawer extends StatelessWidget {
             title: const Text("الصفحة الرئيسية"),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(context, '/home');
+              Navigator.pushReplacementNamed(context, '/home');
             },
           ),
 
@@ -54,7 +54,7 @@ class CustomDrawer extends StatelessWidget {
             title: const Text("القريبة مني"),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(context, '/near_me');
+              Navigator.pushReplacementNamed(context, '/near_me');
             },
           ),
 
@@ -64,7 +64,7 @@ class CustomDrawer extends StatelessWidget {
             title: const Text("المفضلة"),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(context, '/favorites');
+              Navigator.pushReplacementNamed(context, '/favorites');
             },
           ),
 
@@ -74,7 +74,7 @@ class CustomDrawer extends StatelessWidget {
             title: const Text("سجل الرحلات"),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(context, '/logs');
+              Navigator.pushReplacementNamed(context, '/logs');
             },
           ),
 
@@ -99,7 +99,7 @@ class CustomDrawer extends StatelessWidget {
             title: const Text("الاعدادات"),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(context, '/settings');
+              Navigator.pushReplacementNamed(context, '/settings');
             },
           ),
 
