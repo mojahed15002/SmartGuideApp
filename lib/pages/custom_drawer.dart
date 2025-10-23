@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme_notifier.dart';
 
-// ✅ إضافة الترجمة
-import '../l10n/gen/app_localizations.dart';
-
 class CustomDrawer extends StatelessWidget {
   final ThemeNotifier themeNotifier;
 
@@ -15,103 +12,154 @@ class CustomDrawer extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
     final isDark = themeNotifier.isDarkMode;
 
-    // ✅ تحديد اتجاه الصفحة حسب اللغة
-    final isArabic = AppLocalizations.of(context)!.localeName == 'ar';
-    final direction = isArabic ? TextDirection.rtl : TextDirection.ltr;
-
-    return Directionality(
-      textDirection: direction,
-      child: Drawer(
-        child: Column(
-          children: [
-            UserAccountsDrawerHeader(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.orange, Colors.deepOrange.shade400],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              accountName: Text(
-                user?.displayName ?? AppLocalizations.of(context)!.user,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              accountEmail: Text(user?.email ?? AppLocalizations.of(context)!.email),
-              currentAccountPicture: CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(
-                  Icons.person,
-                  color: Colors.orange.shade700,
-                  size: 40,
-                ),
+    return Drawer(
+      child: Column(
+        children: [
+          UserAccountsDrawerHeader(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.orange, Colors.deepOrange.shade400],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
-
-            // 🏠 الصفحة الرئيسية
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: Text(AppLocalizations.of(context)!.explore),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/home');
-              },
+            accountName: Text(
+              user?.displayName ?? "مستخدم التطبيق",
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-
-            // 📍 القريبة مني
-            ListTile(
-              leading: const Icon(Icons.location_on),
-              title: Text(AppLocalizations.of(context)!.nearMe),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/near_me');
-              },
+            accountEmail: Text(user?.email ?? "البريد غير متوفر"),
+            currentAccountPicture: CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Icon(
+                Icons.person,
+                color: Colors.orange.shade700,
+                size: 40,
+              ),
             ),
+          ),
 
-            // ❤️ المفضلة
-            ListTile(
-              leading: const Icon(Icons.favorite),
-              title: Text(AppLocalizations.of(context)!.favorites),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/favorites');
-              },
+          // الصفحة الرئيسية
+          ListTile(
+            leading: const Icon(Icons.home),
+            title: const Text("الصفحة الرئيسية"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(context, '/home');
+            },
+          ),
+
+          // القريبة مني
+          ListTile(
+            leading: const Icon(Icons.location_on),
+            title: const Text("القريبة مني"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(context, '/near_me');
+            },
+          ),
+
+          // المفضلة
+          ListTile(
+            leading: const Icon(Icons.favorite),
+            title: const Text("المفضلة"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(context, '/favorites');
+            },
+          ),
+
+          // السجلات
+          ListTile(
+            leading: const Icon(Icons.history),
+            title: const Text("سجل الرحلات"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(context, '/logs');
+            },
+          ),
+
+          const Divider(),
+
+          // الوضع الليلي
+          SwitchListTile(
+  secondary: const Icon(Icons.dark_mode),
+  title: const Text("الوضع الليلي"),
+  value: isDark,
+  onChanged: (val) {
+    themeNotifier.setTheme(val);
+  },
+),
+
+
+          const Spacer(),
+
+// السجلات
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text("الاعدادات"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(context, '/settings');
+            },
+          ),
+
+          const Divider(),
+
+          // 🔐 تسجيل الخروج مع رسالة تأكيد
+Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
+  child: ElevatedButton.icon(
+    icon: const Icon(Icons.logout),
+    label: const Text("تسجيل الخروج"),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.redAccent,
+      minimumSize: const Size(double.infinity, 48),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+    onPressed: () async {
+      // 🔔 عرض رسالة التأكيد
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text(
+            "هل أنت متأكد من تسجيل الخروج؟",
+            textAlign: TextAlign.right,
+          ),
+          content: const Text(
+            "في حال قمت بتسجيل الخروج، ستبقى معلومات هذا الحساب محفوظة ولن يتم حذفها.",
+            textAlign: TextAlign.right,
+          ),
+          actionsAlignment: MainAxisAlignment.spaceBetween,
+          actions: [
+            TextButton(
+              child: const Text("إلغاء"),
+              onPressed: () => Navigator.pop(context, false),
             ),
-
-            // 🕓 السجلات
-            ListTile(
-              leading: const Icon(Icons.history),
-              title: Text(AppLocalizations.of(context)!.logs),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/logs');
-              },
-            ),
-
-            const Divider(),
-
-            // 🌙 الوضع الليلي
-            SwitchListTile(
-              secondary: const Icon(Icons.dark_mode),
-              title: Text(AppLocalizations.of(context)!.darkMode),
-              value: isDark,
-              onChanged: (val) {
-                themeNotifier.setTheme(val);
-              },
-            ),
-
-            const Spacer(),
-
-            // ⚙️ الإعدادات
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: Text(AppLocalizations.of(context)!.settings),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/settings');
-              },
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+              ),
+              child: const Text("تأكيد"),
+              onPressed: () => Navigator.pop(context, true),
             ),
           ],
         ),
+      );
+
+      // ✅ إذا المستخدم أكّد الخروج
+      if (confirm == true) {
+        await FirebaseAuth.instance.signOut();
+        if (context.mounted) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+      }
+    },
+  ),
+),
+const Spacer(),
+        ],
       ),
     );
   }

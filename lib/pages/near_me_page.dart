@@ -22,32 +22,32 @@ class NearMePage extends StatelessWidget {
       {
         'name': AppLocalizations.of(context)!.restaurants,
         'icon': Icons.restaurant,
-        'type': 'restaurant'
+        'type': 'restaurant',
       },
       {
         'name': AppLocalizations.of(context)!.cafes,
         'icon': Icons.local_cafe,
-        'type': 'cafe'
+        'type': 'cafe',
       },
       {
         'name': AppLocalizations.of(context)!.clothingStores,
         'icon': Icons.shopping_bag,
-        'type': 'clothes'
+        'type': 'clothes',
       },
       {
         'name': AppLocalizations.of(context)!.sweets,
         'icon': Icons.cake,
-        'type': 'sweets'
+        'type': 'sweets',
       },
       {
         'name': AppLocalizations.of(context)!.hotels,
         'icon': Icons.hotel,
-        'type': 'hotel'
+        'type': 'hotel',
       },
       {
         'name': AppLocalizations.of(context)!.touristPlaces,
         'icon': Icons.museum,
-        'type': 'tourism'
+        'type': 'tourism',
       },
     ];
 
@@ -55,7 +55,9 @@ class NearMePage extends StatelessWidget {
       textDirection: direction,
       child: Scaffold(
         appBar: AppBar(title: Text(AppLocalizations.of(context)!.nearMe)),
-        drawer: CustomDrawer(themeNotifier: themeNotifier), // ⬅️ هذا السطر المهم
+        drawer: CustomDrawer(
+          themeNotifier: themeNotifier,
+        ), // ⬅️ هذا السطر المهم
         body: GridView.count(
           crossAxisCount: 2,
           padding: const EdgeInsets.all(12),
@@ -65,16 +67,18 @@ class NearMePage extends StatelessWidget {
             return InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () {
-                Navigator.push(
-                  context,
-                  SwipeablePageRoute(
-                    page: NearbyPlacesListPage(
-                      category: cat['type'] as String,
-                      categoryLabel: cat['name'] as String,
-                      themeNotifier: themeNotifier,
+                if (ModalRoute.of(context)?.isCurrent ?? true) {
+                  Navigator.pushReplacement(
+                    context,
+                    SwipeablePageRoute(
+                      page: NearbyPlacesListPage(
+                        category: cat['type'] as String,
+                        categoryLabel: cat['name'] as String,
+                        themeNotifier: themeNotifier,
+                      ),
                     ),
-                  ),
-                );
+                  );
+                }
               },
               child: Card(
                 shape: RoundedRectangleBorder(
@@ -85,13 +89,18 @@ class NearMePage extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(cat['icon'] as IconData,
-                          size: 44, color: Colors.orange),
+                      Icon(
+                        cat['icon'] as IconData,
+                        size: 44,
+                        color: Colors.orange,
+                      ),
                       const SizedBox(height: 10),
                       Text(
                         cat['name'] as String,
                         style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),

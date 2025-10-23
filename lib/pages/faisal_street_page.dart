@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'info_page.dart';
 import 'map_page.dart';
 import 'swipeable_page_route.dart';
+
 class FaisalStreetPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   const FaisalStreetPage({super.key, required this.themeNotifier});
@@ -34,10 +35,7 @@ class _FaisalStreetPageState extends State<FaisalStreetPage> {
                   "يُعد شارع فيصل من أبرز الشوارع التجارية في مدينة نابلس، "
                   "ويضم مجموعة كبيرة من المحلات والمطاعم والمقاهي. "
                   "يتميز بالحركة الدائمة ويُعتبر مركزًا للتسوق والنشاط الاقتصادي.",
-              images: [
-                "assets/images/faisal.jpg",
-                "assets/images/faisal2.jpg",
-              ],
+              images: ["assets/images/faisal.jpg", "assets/images/faisal2.jpg"],
               themeNotifier: widget.themeNotifier,
             ),
           );
@@ -46,8 +44,10 @@ class _FaisalStreetPageState extends State<FaisalStreetPage> {
           final routeButton = SafeArea(
             minimum: const EdgeInsets.only(bottom: 16.0),
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Align(
                 alignment: Alignment.bottomCenter,
                 child: ElevatedButton.icon(
@@ -64,18 +64,20 @@ class _FaisalStreetPageState extends State<FaisalStreetPage> {
                   onPressed: () async {
                     final position = await Geolocator.getCurrentPosition();
                     if (!mounted) return;
-                    Navigator.push(
-                      context,
-                      SwipeablePageRoute(
-                        page: MapPage(
-                          position: position,
-                          destination: latlng.LatLng(32.222243, 35.262778),
-                          themeNotifier: widget.themeNotifier,
-                          enableTap: false, // 🚫 تعطيل النقر
-                          enableLiveTracking: true, // ✅ تتبع حي
+                    if (ModalRoute.of(context)?.isCurrent ?? true) {
+                      Navigator.pushReplacement(
+                        context,
+                        SwipeablePageRoute(
+                          page: MapPage(
+                            position: position,
+                            destination: latlng.LatLng(32.222243, 35.262778),
+                            themeNotifier: widget.themeNotifier,
+                            enableTap: false, // 🚫 تعطيل النقر
+                            enableLiveTracking: true, // ✅ تتبع حي
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    }
                   },
                   icon: const Icon(Icons.directions, color: Colors.white),
                   label: const Text(
@@ -112,12 +114,7 @@ class _FaisalStreetPageState extends State<FaisalStreetPage> {
                     const SizedBox(height: 80), // مساحة إضافية تحت المحتوى
                   ],
                 ),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: routeButton,
-                ),
+                Positioned(bottom: 0, left: 0, right: 0, child: routeButton),
               ],
             );
           }

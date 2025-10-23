@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as latlng;
-
 import '../theme_notifier.dart';
 import 'map_page.dart';
+import 'swipeable_page_route.dart';
 
 class NearbyPlacesListPage extends StatefulWidget {
-  final String category;       // مثل: restaurant, cafe ...
-  final String categoryLabel;  // النص المعروض: مطاعم، كوفيشوبات...
+  final String category; // مثل: restaurant, cafe ...
+  final String categoryLabel; // النص المعروض: مطاعم، كوفيشوبات...
   final ThemeNotifier themeNotifier;
 
   const NearbyPlacesListPage({
@@ -42,7 +42,8 @@ class _NearbyPlacesListPageState extends State<NearbyPlacesListPage> {
     try {
       // طلب صلاحية الموقع + جلب الموقع الحالي
       final perm = await Geolocator.requestPermission();
-      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+      if (perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever) {
         setState(() => _error = "يرجى منح إذن الوصول للموقع.");
         return;
       }
@@ -74,12 +75,9 @@ class _NearbyPlacesListPageState extends State<NearbyPlacesListPage> {
         final km = meters / 1000.0;
 
         if (km <= _radiusKm) {
-          temp.add(_PlaceItem(
-            id: d.id,
-            name: name,
-            latLng: pll,
-            meters: meters,
-          ));
+          temp.add(
+            _PlaceItem(id: d.id, name: name, latLng: pll, meters: meters),
+          );
         }
       }
 
@@ -100,7 +98,7 @@ class _NearbyPlacesListPageState extends State<NearbyPlacesListPage> {
   String _fmtDistance(double meters) {
     if (meters >= 1000) return "${(meters / 1000).toStringAsFixed(2)} كم";
     return "${meters.toStringAsFixed(0)} م";
-    }
+  }
 
   // تقدير سريع للوقت (بدون اتصال API): مشي 4.5 كم/س، سيارة 35 كم/س داخل المدينة
   String _fmtEta(double meters, {bool walking = true}) {
@@ -120,33 +118,44 @@ class _NearbyPlacesListPageState extends State<NearbyPlacesListPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Text(_error!, textAlign: TextAlign.center))
-              : _items.isEmpty
-                  ? const Center(child: Text("لا يوجد أماكن قريبة ضمن النطاق المحدد"))
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(12),
-                      itemCount: _items.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (context, i) {
-                        final it = _items[i];
-                        return Card(
-                          child: ListTile(
-                            leading: const Icon(Icons.place, color: Colors.orange),
-                            title: Text(it.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text(
-                              "المسافة: ${_fmtDistance(it.meters)} • "
-                              "مشي: ${_fmtEta(it.meters, walking: true)} • "
-                              "سيارة: ${_fmtEta(it.meters, walking: false)}",
-                            ),
-                            trailing: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                              icon: const Icon(Icons.map, color: Colors.white),
-                              label: const Text("خريطة", style: TextStyle(color: Colors.white)),
-                              onPressed: _pos == null ? null : () {
-                                Navigator.push(
+          ? Center(child: Text(_error!, textAlign: TextAlign.center))
+          : _items.isEmpty
+          ? const Center(child: Text("لا يوجد أماكن قريبة ضمن النطاق المحدد"))
+          : ListView.separated(
+              padding: const EdgeInsets.all(12),
+              itemCount: _items.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, i) {
+                final it = _items[i];
+                return Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.place, color: Colors.orange),
+                    title: Text(
+                      it.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      "المسافة: ${_fmtDistance(it.meters)} • "
+                      "مشي: ${_fmtEta(it.meters, walking: true)} • "
+                      "سيارة: ${_fmtEta(it.meters, walking: false)}",
+                    ),
+                    trailing: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                      ),
+                      icon: const Icon(Icons.map, color: Colors.white),
+                      label: const Text(
+                        "خريطة",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      onPressed: _pos == null
+                          ? null
+                          : () {
+                              if (ModalRoute.of(context)?.isCurrent ?? true) {
+                                Navigator.pushReplacement(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (_) => MapPage(
+                                  SwipeablePageRoute(
+                                    page: MapPage(
                                       position: Position(
                                         latitude: _pos!.latitude,
                                         longitude: _pos!.longitude,
@@ -156,7 +165,8 @@ class _NearbyPlacesListPageState extends State<NearbyPlacesListPage> {
                                         heading: _pos!.heading,
                                         speed: _pos!.speed,
                                         speedAccuracy: _pos!.speedAccuracy,
-                                        altitudeAccuracy: _pos!.altitudeAccuracy,
+                                        altitudeAccuracy:
+                                            _pos!.altitudeAccuracy,
                                         headingAccuracy: _pos!.headingAccuracy,
                                       ),
                                       destination: it.latLng,
@@ -166,15 +176,16 @@ class _NearbyPlacesListPageState extends State<NearbyPlacesListPage> {
                                     ),
                                   ),
                                 );
-                              },
-                            ),
-                            onTap: () {
-                              // TODO: افتح صفحة تفاصيل للمكان إن رغبت
+                              }
                             },
-                          ),
-                        );
-                      },
                     ),
+                    onTap: () {
+                      // TODO: افتح صفحة تفاصيل للمكان إن رغبت
+                    },
+                  ),
+                );
+              },
+            ),
     );
   }
 }

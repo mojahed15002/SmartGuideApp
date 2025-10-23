@@ -35,11 +35,16 @@ class _ChoicePageState extends State<ChoicePage> {
 
     //  نقلنا تعريف الماب لداخل build
     final Map<String, Widget Function()> placePages = {
-      AppLocalizations.of(context)!.academyStreet: () => AcademyStreetPage(themeNotifier: widget.themeNotifier),
-      AppLocalizations.of(context)!.sofianStreet: () => SofianStreetPage(themeNotifier: widget.themeNotifier),
-      AppLocalizations.of(context)!.faisalStreet: () => FaisalStreetPage(themeNotifier: widget.themeNotifier),
-      AppLocalizations.of(context)!.martyrsRoundabout: () => MartyrsRoundaboutPage(themeNotifier: widget.themeNotifier),
-      AppLocalizations.of(context)!.palestineStreet: () => PalestineStreetPage(themeNotifier: widget.themeNotifier),
+      AppLocalizations.of(context)!.academyStreet: () =>
+          AcademyStreetPage(themeNotifier: widget.themeNotifier),
+      AppLocalizations.of(context)!.sofianStreet: () =>
+          SofianStreetPage(themeNotifier: widget.themeNotifier),
+      AppLocalizations.of(context)!.faisalStreet: () =>
+          FaisalStreetPage(themeNotifier: widget.themeNotifier),
+      AppLocalizations.of(context)!.martyrsRoundabout: () =>
+          MartyrsRoundaboutPage(themeNotifier: widget.themeNotifier),
+      AppLocalizations.of(context)!.palestineStreet: () =>
+          PalestineStreetPage(themeNotifier: widget.themeNotifier),
     };
 
     return Directionality(
@@ -51,7 +56,9 @@ class _ChoicePageState extends State<ChoicePage> {
             // ✅ زر التبديل
           ],
         ),
-        drawer: CustomDrawer(themeNotifier: widget.themeNotifier), // ⬅️ هذا السطر المهم
+        drawer: CustomDrawer(
+          themeNotifier: widget.themeNotifier,
+        ), // ⬅️ هذا السطر المهم
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -78,18 +85,20 @@ class _ChoicePageState extends State<ChoicePage> {
                 },
                 fieldViewBuilder:
                     (context, controller, focusNode, onEditingComplete) {
-                  return TextField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    onEditingComplete: onEditingComplete,
-                    decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context)!.searchHint,
-                      border: const OutlineInputBorder(),
-                      suffixIcon:
-                          const Icon(Icons.search, color: Colors.orange),
-                    ),
-                  );
-                },
+                      return TextField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        onEditingComplete: onEditingComplete,
+                        decoration: InputDecoration(
+                          hintText: AppLocalizations.of(context)!.searchHint,
+                          border: const OutlineInputBorder(),
+                          suffixIcon: const Icon(
+                            Icons.search,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      );
+                    },
               ),
               const SizedBox(height: 30),
               ElevatedButton(
@@ -102,15 +111,18 @@ class _ChoicePageState extends State<ChoicePage> {
                 ),
                 onPressed: () async {
                   Position position = await _determinePosition();
-                  Navigator.push(
-                    // ignore: use_build_context_synchronously
-                    context,
-                    SwipeablePageRoute(
-                      page: MapPage(
+                  if (ModalRoute.of(context)?.isCurrent ?? true) {
+                    Navigator.pushReplacement(
+                      // ignore: use_build_context_synchronously
+                      context,
+                      SwipeablePageRoute(
+                        page: MapPage(
                           position: position,
-                          themeNotifier: widget.themeNotifier), // ✅ مررنا themeNotifier
-                    ),
-                  );
+                          themeNotifier: widget.themeNotifier,
+                        ), // ✅ مررنا themeNotifier
+                      ),
+                    );
+                  }
                 },
                 child: Text(AppLocalizations.of(context)!.whereAmI),
               ),
@@ -127,7 +139,8 @@ class _ChoicePageState extends State<ChoicePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => GeneralInfoPage(themeNotifier: widget.themeNotifier),
+                      builder: (context) =>
+                          GeneralInfoPage(themeNotifier: widget.themeNotifier),
                     ),
                   );
                 },

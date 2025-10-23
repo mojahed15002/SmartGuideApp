@@ -19,12 +19,14 @@ class ChoicePageStub extends StatelessWidget {
         title: 'استكشف الأماكن',
         icon: Icons.travel_explore,
         onTap: () {
-          Navigator.push(
+          if (ModalRoute.of(context)?.isCurrent ?? true) {
+          Navigator.pushReplacement(
             context,
             SwipeablePageRoute(
     page: ChoicePageRedirect(themeNotifier: themeNotifier),
             ),
           );
+          }
         },
       ),
       
@@ -32,7 +34,7 @@ class ChoicePageStub extends StatelessWidget {
         title: 'القريبة مني',
         icon: Icons.my_location,
         onTap: () {
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             SwipeablePageRoute(
               page: NearMePage(themeNotifier: themeNotifier),
@@ -45,7 +47,7 @@ class ChoicePageStub extends StatelessWidget {
         title: 'المفضلة',
         icon: Icons.favorite,
         onTap: () {
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             SwipeablePageRoute(
     page: FavoritesPage(themeNotifier: themeNotifier),
@@ -57,7 +59,7 @@ class ChoicePageStub extends StatelessWidget {
   title: 'السجلات',
   icon: Icons.history,
   onTap: () {
-    Navigator.push(
+    Navigator.pushReplacement(
       context,
       SwipeablePageRoute(
         page: LogsPage(themeNotifier: themeNotifier),
@@ -70,7 +72,7 @@ class ChoicePageStub extends StatelessWidget {
         title: 'الإعدادات',
         icon: Icons.settings,
         onTap: () {
-  Navigator.push(
+  Navigator.pushReplacement(
     context,
     SwipeablePageRoute(
       page: SettingsPage(themeNotifier: themeNotifier),

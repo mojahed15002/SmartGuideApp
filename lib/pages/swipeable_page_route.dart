@@ -7,7 +7,7 @@ class SwipeablePageRoute<T> extends PageRouteBuilder<T> {
       : super(
           pageBuilder: (context, animation, secondaryAnimation) => page,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            const begin = Offset(-1.0, 0.0); // بداية السحب من اليسار
+            const begin = Offset(-1.0, 0.0);
             const end = Offset.zero;
             const curve = Curves.easeInOut;
 
@@ -17,9 +17,12 @@ class SwipeablePageRoute<T> extends PageRouteBuilder<T> {
             return SlideTransition(
               position: animation.drive(tween),
               child: GestureDetector(
-                onHorizontalDragUpdate: (details) {
-                  if (details.primaryDelta! > 20) {
-                    Navigator.of(context).maybePop(); // يسحب ويرجع
+                behavior: HitTestBehavior.translucent,
+                onHorizontalDragEnd: (details) {
+                  // ✅ نرجع بس لما السحب قوي باتجاه اليمين
+                  if (details.primaryVelocity != null &&
+                      details.primaryVelocity! > 500) {
+                    Navigator.of(context).maybePop();
                   }
                 },
                 child: child,

@@ -64,7 +64,8 @@ class _SofianStreetPageState extends State<SofianStreetPage> {
                   onPressed: () async {
                     final position = await Geolocator.getCurrentPosition();
                     if (!mounted) return;
-                    Navigator.push(
+                    if (ModalRoute.of(context)?.isCurrent ?? true) {
+                    Navigator.pushReplacement(
                       context,
                      SwipeablePageRoute(
                           page: MapPage(
@@ -76,6 +77,7 @@ class _SofianStreetPageState extends State<SofianStreetPage> {
                         ),
                       ),
                     );
+                    }
                   },
                   icon: const Icon(Icons.directions, color: Colors.white),
                   label: const Text(

@@ -36,8 +36,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
     // 🔹 تحميل المفضلات من Firestore إن وُجد مستخدم
     if (user != null) {
-      final doc =
-          await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       if (doc.exists && doc.data()?['favorites'] != null) {
         setState(() {
           favoritePlaces = List<String>.from(doc.data()!['favorites']);
@@ -73,10 +75,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
     // 🔹 تحديث Firestore بالمفضلات
     if (user != null) {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .set({'favorites': favoritePlaces}, SetOptions(merge: true));
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'favorites': favoritePlaces,
+      }, SetOptions(merge: true));
     }
 
     // ✅ إظهار Snackbar مع الترجمة
@@ -87,10 +88,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
               ? AppLocalizations.of(context)!.addedToFavorites
               : AppLocalizations.of(context)!.removedFromFavorites,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         backgroundColor: isAdded ? Colors.green.shade600 : Colors.red.shade600,
         duration: const Duration(seconds: 2),
@@ -114,7 +112,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
         appBar: AppBar(
           title: Text(AppLocalizations.of(context)!.favoritesTitle),
         ),
-        drawer: CustomDrawer(themeNotifier: themeNotifier), // ⬅️ هذا السطر المهم
+        drawer: CustomDrawer(
+          themeNotifier: themeNotifier,
+        ), // ⬅️ هذا السطر المهم
         body: favoritePlaces.isEmpty
             ? Center(
                 child: Text(
@@ -138,8 +138,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
                     if (place == null) return const SizedBox();
 
                     final String title = place["title"];
-                    final List<String> images =
-                        List<String>.from(place["images"]);
+                    final List<String> images = List<String>.from(
+                      place["images"],
+                    );
                     final String heroTag = place["hero"];
                     final String city = place["city"];
 
@@ -147,19 +148,21 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       children: [
                         GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              SwipeablePageRoute(
-                                page: PlaceDetailsPage(
-                                  title: title,
-                                  cityName: city,
-                                  images: images,
-                                  url: place["url"],
-                                  themeNotifier: themeNotifier,
-                                  heroTag: heroTag,
+                            if (ModalRoute.of(context)?.isCurrent ?? true) {
+                              Navigator.pushReplacement(
+                                context,
+                                SwipeablePageRoute(
+                                  page: PlaceDetailsPage(
+                                    title: title,
+                                    cityName: city,
+                                    images: images,
+                                    url: place["url"],
+                                    themeNotifier: themeNotifier,
+                                    heroTag: heroTag,
+                                  ),
                                 ),
-                              ),
-                            );
+                              );
+                            }
                           },
                           child: Card(
                             shape: RoundedRectangleBorder(
@@ -209,13 +212,18 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                     ? Colors.black.withOpacity(0.3)
                                     : Colors.white.withOpacity(0.8),
                               ),
-                              shape: const WidgetStatePropertyAll(CircleBorder()),
+                              shape: const WidgetStatePropertyAll(
+                                CircleBorder(),
+                              ),
                             ),
                             icon: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 250),
                               transitionBuilder:
                                   (Widget child, Animation<double> anim) =>
-                                      ScaleTransition(scale: anim, child: child),
+                                      ScaleTransition(
+                                        scale: anim,
+                                        child: child,
+                                      ),
                               child: Icon(
                                 Icons.favorite,
                                 key: ValueKey(id),

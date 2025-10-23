@@ -55,7 +55,8 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
   Future<void> _loadSearchHistory() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      List<String> localHistory = prefs.getStringList('local_search_history') ?? [];
+      List<String> localHistory =
+          prefs.getStringList('local_search_history') ?? [];
 
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
@@ -87,7 +88,8 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
     if (query.isEmpty) return;
 
     final prefs = await SharedPreferences.getInstance();
-    List<String> localHistory = prefs.getStringList('local_search_history') ?? [];
+    List<String> localHistory =
+        prefs.getStringList('local_search_history') ?? [];
 
     localHistory.remove(query);
     localHistory.insert(0, query);
@@ -97,17 +99,21 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
     await prefs.setStringList('local_search_history', localHistory);
 
     if (user != null) {
-      final ref = FirebaseFirestore.instance.collection('search_history').doc(user.uid);
+      final ref = FirebaseFirestore.instance
+          .collection('search_history')
+          .doc(user.uid);
       _searchHistory.remove(query);
       _searchHistory.insert(0, query);
-      if (_searchHistory.length > 8) _searchHistory = _searchHistory.sublist(0, 8);
+      if (_searchHistory.length > 8)
+        _searchHistory = _searchHistory.sublist(0, 8);
       await ref.set({'history': _searchHistory});
     }
   }
 
   Future<void> _deleteSearchItem(String query) async {
     final prefs = await SharedPreferences.getInstance();
-    List<String> localHistory = prefs.getStringList('local_search_history') ?? [];
+    List<String> localHistory =
+        prefs.getStringList('local_search_history') ?? [];
 
     localHistory.remove(query);
     await prefs.setStringList('local_search_history', localHistory);
@@ -115,10 +121,14 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       try {
-        final ref = FirebaseFirestore.instance.collection('search_history').doc(user.uid);
+        final ref = FirebaseFirestore.instance
+            .collection('search_history')
+            .doc(user.uid);
         final doc = await ref.get();
         if (doc.exists && doc.data()?['history'] != null) {
-          List<String> firebaseHistory = List<String>.from(doc.data()!['history']);
+          List<String> firebaseHistory = List<String>.from(
+            doc.data()!['history'],
+          );
           firebaseHistory.remove(query);
           await ref.set({'history': firebaseHistory});
         }
@@ -143,11 +153,15 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('places')
-          .where('city', isEqualTo: _getLocalizedCityName(context, widget.cityName).trim())
+          .where(
+            'city',
+            isEqualTo: _getLocalizedCityName(context, widget.cityName).trim(),
+          )
           .get();
 
-      final List<Map<String, dynamic>> data =
-          snapshot.docs.map((doc) => doc.data()).toList();
+      final List<Map<String, dynamic>> data = snapshot.docs
+          .map((doc) => doc.data())
+          .toList();
 
       setState(() {
         _places = data;
@@ -174,24 +188,24 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
     setState(() => _filteredPlaces = results);
   }
 
-String _getLocalizedCityName(BuildContext context, String name) {
-  final loc = AppLocalizations.of(context)!;
-  final key = name.trim().toLowerCase();
+  String _getLocalizedCityName(BuildContext context, String name) {
+    final loc = AppLocalizations.of(context)!;
+    final key = name.trim().toLowerCase();
 
-  switch (key) {
-    case 'nablus':
-    case 'نابلس':
-      return loc.cityNablus;
-    case 'ramallah':
-    case 'رام الله':
-      return loc.cityRamallah;
-    case 'jenin':
-    case 'جنين':
-      return loc.cityJenin;
-    default:
-      return name;
+    switch (key) {
+      case 'nablus':
+      case 'نابلس':
+        return loc.cityNablus;
+      case 'ramallah':
+      case 'رام الله':
+        return loc.cityRamallah;
+      case 'jenin':
+      case 'جنين':
+        return loc.cityJenin;
+      default:
+        return name;
+    }
   }
-}
 
   Future<void> _toggleFavorite(String placeId) async {
     final prefs = await SharedPreferences.getInstance();
@@ -211,13 +225,17 @@ String _getLocalizedCityName(BuildContext context, String name) {
     await prefs.setStringList(_prefsKey, favoritePlaces);
 
     if (user != null) {
-      final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final userDoc = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid);
       final userSnapshot = await userDoc.get();
 
       List<String> existingFavorites = [];
 
       if (userSnapshot.exists && userSnapshot.data()?['favorites'] != null) {
-        existingFavorites = List<String>.from(userSnapshot.data()!['favorites']);
+        existingFavorites = List<String>.from(
+          userSnapshot.data()!['favorites'],
+        );
       }
 
       if (favoritePlaces.contains(placeId)) {
@@ -228,7 +246,9 @@ String _getLocalizedCityName(BuildContext context, String name) {
         existingFavorites.remove(placeId);
       }
 
-      await userDoc.set({'favorites': existingFavorites}, SetOptions(merge: true));
+      await userDoc.set({
+        'favorites': existingFavorites,
+      }, SetOptions(merge: true));
     }
 
     final addedMsg = AppLocalizations.of(context)!.addedToFavorites;
@@ -271,8 +291,9 @@ String _getLocalizedCityName(BuildContext context, String name) {
         return Directionality(
           textDirection: direction,
           child: Scaffold(
-           appBar: AppBar(title: Text(_getLocalizedCityName(context, widget.cityName)),
-),
+            appBar: AppBar(
+              title: Text(_getLocalizedCityName(context, widget.cityName)),
+            ),
             drawer: CustomDrawer(themeNotifier: widget.themeNotifier),
             body: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -295,7 +316,9 @@ String _getLocalizedCityName(BuildContext context, String name) {
                                   }
                                 },
                                 decoration: InputDecoration(
-                                  hintText: AppLocalizations.of(context)!.searchHint,
+                                  hintText: AppLocalizations.of(
+                                    context,
+                                  )!.searchHint,
                                   prefixIcon: const Icon(Icons.search),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -318,18 +341,20 @@ String _getLocalizedCityName(BuildContext context, String name) {
                               : GridView.builder(
                                   gridDelegate:
                                       const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                    childAspectRatio: 2.6 / 4,
-                                  ),
+                                        crossAxisCount: 2,
+                                        crossAxisSpacing: 12,
+                                        mainAxisSpacing: 12,
+                                        childAspectRatio: 2.6 / 4,
+                                      ),
                                   itemCount: _filteredPlaces.length,
                                   itemBuilder: (context, index) {
                                     final place = _filteredPlaces[index];
                                     final String id = place["id"];
                                     final String title = place["title"];
                                     final List<String> images =
-                                        List<String>.from(place["images"] ?? []);
+                                        List<String>.from(
+                                          place["images"] ?? [],
+                                        );
                                     final String heroTag = place["hero"];
                                     final String city = place["city"];
 
@@ -337,19 +362,25 @@ String _getLocalizedCityName(BuildContext context, String name) {
                                       children: [
                                         GestureDetector(
                                           onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              SwipeablePageRoute(
-                                                page: PlaceDetailsPage(
-                                                  title: title,
-                                                  cityName: city,
-                                                  images: images,
-                                                  url: place["url"],
-                                                  themeNotifier: themeNotifier,
-                                                  heroTag: heroTag,
+                                            if (ModalRoute.of(
+                                                  context,
+                                                )?.isCurrent ??
+                                                true) {
+                                              Navigator.pushReplacement(
+                                                context,
+                                                SwipeablePageRoute(
+                                                  page: PlaceDetailsPage(
+                                                    title: title,
+                                                    cityName: city,
+                                                    images: images,
+                                                    url: place["url"],
+                                                    themeNotifier:
+                                                        themeNotifier,
+                                                    heroTag: heroTag,
+                                                  ),
                                                 ),
-                                              ),
-                                            );
+                                              );
+                                            }
                                           },
                                           child: Card(
                                             shape: RoundedRectangleBorder(
@@ -365,8 +396,10 @@ String _getLocalizedCityName(BuildContext context, String name) {
                                                   child: ClipRRect(
                                                     borderRadius:
                                                         const BorderRadius.vertical(
-                                                            top:
-                                                                Radius.circular(16)),
+                                                          top: Radius.circular(
+                                                            16,
+                                                          ),
+                                                        ),
                                                     child: Hero(
                                                       tag: heroTag,
                                                       child: Image.asset(
@@ -379,8 +412,9 @@ String _getLocalizedCityName(BuildContext context, String name) {
                                                   ),
                                                 ),
                                                 Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
+                                                  padding: const EdgeInsets.all(
+                                                    8.0,
+                                                  ),
                                                   child: Text(
                                                     title,
                                                     style: const TextStyle(
@@ -388,8 +422,7 @@ String _getLocalizedCityName(BuildContext context, String name) {
                                                       fontWeight:
                                                           FontWeight.bold,
                                                     ),
-                                                    textAlign:
-                                                        TextAlign.center,
+                                                    textAlign: TextAlign.center,
                                                   ),
                                                 ),
                                               ],

@@ -9,15 +9,12 @@ import 'dart:async'; // ✅ لاستعمال StreamSubscription
 import '../l10n/gen/app_localizations.dart';
 import 'swipeable_page_route.dart'; // تأكد تضيفه بالأعلى
 import 'custom_drawer.dart';
+
 class WelcomePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   final String? userName;
 
-  const WelcomePage({
-    super.key,
-    required this.themeNotifier,
-    this.userName,
-  });
+  const WelcomePage({super.key, required this.themeNotifier, this.userName});
 
   @override
   State<WelcomePage> createState() => _WelcomePageState();
@@ -42,7 +39,8 @@ class _WelcomePageState extends State<WelcomePage> {
           if (data != null) {
             // 🔹 نحفظ الاسم في المتغير المحلي
             setState(() {
-              userName = data['name']; // تأكد أن اسم الحقل في Firestore هو "name"
+              userName =
+                  data['name']; // تأكد أن اسم الحقل في Firestore هو "name"
             });
 
             // 🔹 تحميل الثيم
@@ -116,14 +114,11 @@ class _WelcomePageState extends State<WelcomePage> {
                   await FirebaseFirestore.instance
                       .collection('users')
                       .doc(user.uid)
-                      .set(
-                        {
-                          'theme': widget.themeNotifier.isDarkMode
-                              ? 'dark'
-                              : 'light',
-                        },
-                        SetOptions(merge: true),
-                      );
+                      .set({
+                        'theme': widget.themeNotifier.isDarkMode
+                            ? 'dark'
+                            : 'light',
+                      }, SetOptions(merge: true));
                 } catch (e) {
                   print("خطأ أثناء تحديث الثيم في Firestore: $e");
                 }
@@ -152,18 +147,23 @@ class _WelcomePageState extends State<WelcomePage> {
           ),
         ],
       ),
-      drawer: CustomDrawer(themeNotifier: widget.themeNotifier), // ⬅️ هذا السطر المهم
+      drawer: CustomDrawer(
+        themeNotifier: widget.themeNotifier,
+      ), // ⬅️ هذا السطر المهم
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.location_city,
-                  size: 100, color: Colors.orange.shade600),
+              Icon(
+                Icons.location_city,
+                size: 100,
+                color: Colors.orange.shade600,
+              ),
               const SizedBox(height: 20),
               Text(
-               loc.welcomeVisitor,
+                loc.welcomeVisitor,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -184,18 +184,22 @@ class _WelcomePageState extends State<WelcomePage> {
                 label: Text(loc.explorePlaces), // ✅ "استكشف الأماكن"
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 40, vertical: 14),
+                    horizontal: 40,
+                    vertical: 14,
+                  ),
                   backgroundColor: Colors.deepOrange,
                 ),
                 onPressed: () {
-                  Navigator.push(
-  context,
-  SwipeablePageRoute(
-    page: ChoicePageStub(
-      themeNotifier: widget.themeNotifier,
-    ),
-  ),
-);
+                  if (ModalRoute.of(context)?.isCurrent ?? true) {
+                    Navigator.pushReplacement(
+                      context,
+                      SwipeablePageRoute(
+                        page: ChoicePageStub(
+                          themeNotifier: widget.themeNotifier,
+                        ),
+                      ),
+                    );
+                  }
                 },
               ),
 

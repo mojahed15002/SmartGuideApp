@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'info_page.dart';
 import 'map_page.dart';
 import 'swipeable_page_route.dart';
+
 class MartyrsRoundaboutPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   const MartyrsRoundaboutPage({super.key, required this.themeNotifier});
@@ -46,8 +47,10 @@ class _MartyrsRoundaboutPageState extends State<MartyrsRoundaboutPage> {
           final routeButton = SafeArea(
             minimum: const EdgeInsets.only(bottom: 16.0),
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Align(
                 alignment: Alignment.bottomCenter,
                 child: ElevatedButton.icon(
@@ -64,18 +67,20 @@ class _MartyrsRoundaboutPageState extends State<MartyrsRoundaboutPage> {
                   onPressed: () async {
                     final position = await Geolocator.getCurrentPosition();
                     if (!mounted) return;
-                    Navigator.push(
-                      context,
-                      SwipeablePageRoute(
+                    if (ModalRoute.of(context)?.isCurrent ?? true) {
+                      Navigator.pushReplacement(
+                        context,
+                        SwipeablePageRoute(
                           page: MapPage(
-                          position: position,
-                          destination: latlng.LatLng(32.221119, 35.260817),
-                          themeNotifier: widget.themeNotifier,
-                          enableTap: false, // 🚫 تعطيل النقر على الخريطة
-                          enableLiveTracking: true, // ✅ تتبع الموقع الحي
+                            position: position,
+                            destination: latlng.LatLng(32.221119, 35.260817),
+                            themeNotifier: widget.themeNotifier,
+                            enableTap: false, // 🚫 تعطيل النقر على الخريطة
+                            enableLiveTracking: true, // ✅ تتبع الموقع الحي
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    }
                   },
                   icon: const Icon(Icons.directions, color: Colors.white),
                   label: const Text(
@@ -112,12 +117,7 @@ class _MartyrsRoundaboutPageState extends State<MartyrsRoundaboutPage> {
                     const SizedBox(height: 80), // مساحة تحت المحتوى
                   ],
                 ),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: routeButton,
-                ),
+                Positioned(bottom: 0, left: 0, right: 0, child: routeButton),
               ],
             );
           }

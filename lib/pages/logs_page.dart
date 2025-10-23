@@ -32,8 +32,9 @@ class _LogsPageState extends State<LogsPage> {
         content: Text(AppLocalizations.of(context)!.confirmDeleteAllMsg),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(AppLocalizations.of(context)!.cancel)),
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
@@ -75,8 +76,9 @@ class _LogsPageState extends State<LogsPage> {
         content: Text(AppLocalizations.of(context)!.confirmDeleteTripMsg),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(AppLocalizations.of(context)!.cancel)),
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
@@ -97,7 +99,9 @@ class _LogsPageState extends State<LogsPage> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("${AppLocalizations.of(context)!.tripDeleteFailed} $e")),
+        SnackBar(
+          content: Text("${AppLocalizations.of(context)!.tripDeleteFailed} $e"),
+        ),
       );
     }
   }
@@ -124,7 +128,11 @@ class _LogsPageState extends State<LogsPage> {
 
       if (lat == null || lng == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.cannotLocateDestination)),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.cannotLocateDestination,
+            ),
+          ),
         );
         return;
       }
@@ -133,29 +141,35 @@ class _LogsPageState extends State<LogsPage> {
       final position = await Geolocator.getCurrentPosition();
 
       if (!mounted) return;
-
-      Navigator.push(
-        context,
-        SwipeablePageRoute(
-          page: MapPage(
-            position: position,
-            destination: destination,
-            enableTap: false,
-            enableLiveTracking: true,
-            themeNotifier: widget.themeNotifier,
+      if (ModalRoute.of(context)?.isCurrent ?? true) {
+        Navigator.pushReplacement(
+          context,
+          SwipeablePageRoute(
+            page: MapPage(
+              position: position,
+              destination: destination,
+              enableTap: false,
+              enableLiveTracking: true,
+              themeNotifier: widget.themeNotifier,
+            ),
           ),
-        ),
-      );
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("${AppLocalizations.of(context)!.mapError}: $e")),
+        SnackBar(
+          content: Text("${AppLocalizations.of(context)!.mapError}: $e"),
+        ),
       );
     }
   }
 
   // ✅ نافذة التفاصيل المنبثقة
   void _showLogDetails(Map<String, dynamic> log, String logId) {
-    final destination = log['place_name'] ?? log['destination'] ?? AppLocalizations.of(context)!.unknownPlace;
+    final destination =
+        log['place_name'] ??
+        log['destination'] ??
+        AppLocalizations.of(context)!.unknownPlace;
     final time = log['time'] ?? "";
     final dateTime = DateTime.tryParse(time);
     final formattedDate = dateTime != null
@@ -169,29 +183,50 @@ class _LogsPageState extends State<LogsPage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(AppLocalizations.of(context)!.tripDetails, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          AppLocalizations.of(context)!.tripDetails,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("${AppLocalizations.of(context)!.destinationLabel}:\n$destination", style: const TextStyle(fontSize: 16)),
+            Text(
+              "${AppLocalizations.of(context)!.destinationLabel}:\n$destination",
+              style: const TextStyle(fontSize: 16),
+            ),
             const SizedBox(height: 8),
-            Text("${AppLocalizations.of(context)!.dateLabel}: $formattedDate", style: const TextStyle(fontSize: 16)),
-            Text("${AppLocalizations.of(context)!.timeLabel}: $formattedTime", style: const TextStyle(fontSize: 16)),
+            Text(
+              "${AppLocalizations.of(context)!.dateLabel}: $formattedDate",
+              style: const TextStyle(fontSize: 16),
+            ),
+            Text(
+              "${AppLocalizations.of(context)!.timeLabel}: $formattedTime",
+              style: const TextStyle(fontSize: 16),
+            ),
             const SizedBox(height: 12),
             const Divider(),
-            Text(AppLocalizations.of(context)!.chooseAction, style: const TextStyle(fontSize: 15, color: Colors.black87)),
+            Text(
+              AppLocalizations.of(context)!.chooseAction,
+              style: const TextStyle(fontSize: 15, color: Colors.black87),
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)!.close)),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(AppLocalizations.of(context)!.close),
+          ),
           TextButton.icon(
             onPressed: () {
               Navigator.pop(context);
               _confirmDeleteSingleLog(logId);
             },
             icon: const Icon(Icons.delete, color: Colors.red),
-            label: Text(AppLocalizations.of(context)!.deleteTrip, style: const TextStyle(color: Colors.red)),
+            label: Text(
+              AppLocalizations.of(context)!.deleteTrip,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
@@ -200,7 +235,10 @@ class _LogsPageState extends State<LogsPage> {
               _openMap(destination);
             },
             icon: const Icon(Icons.map, color: Colors.white),
-            label: Text(AppLocalizations.of(context)!.viewOnMap, style: const TextStyle(color: Colors.white)),
+            label: Text(
+              AppLocalizations.of(context)!.viewOnMap,
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -219,7 +257,9 @@ class _LogsPageState extends State<LogsPage> {
       return Directionality(
         textDirection: direction,
         child: Scaffold(
-          body: Center(child: Text(AppLocalizations.of(context)!.pleaseLoginToViewLogs)),
+          body: Center(
+            child: Text(AppLocalizations.of(context)!.pleaseLoginToViewLogs),
+          ),
         ),
       );
     }
@@ -250,7 +290,9 @@ class _LogsPageState extends State<LogsPage> {
             }
 
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-              return Center(child: Text(AppLocalizations.of(context)!.noTripsYet));
+              return Center(
+                child: Text(AppLocalizations.of(context)!.noTripsYet),
+              );
             }
 
             final logs = snapshot.data!.docs;
@@ -262,7 +304,9 @@ class _LogsPageState extends State<LogsPage> {
                 final doc = logs[index];
                 final log = doc.data() as Map<String, dynamic>;
                 final destination =
-                    log['place_name'] ?? log['destination'] ?? AppLocalizations.of(context)!.unknownPlace;
+                    log['place_name'] ??
+                    log['destination'] ??
+                    AppLocalizations.of(context)!.unknownPlace;
                 final time = log['time'] ?? "";
                 final dateTime = DateTime.tryParse(time);
                 final formattedTime = dateTime != null
@@ -273,17 +317,32 @@ class _LogsPageState extends State<LogsPage> {
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   child: ListTile(
                     onTap: () => _showLogDetails(log, doc.id),
-                    leading: const Icon(Icons.location_on, color: Colors.orange, size: 30),
-                    title: Text(destination, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text("${AppLocalizations.of(context)!.timeLabel}: $formattedTime"),
+                    leading: const Icon(
+                      Icons.location_on,
+                      color: Colors.orange,
+                      size: 30,
+                    ),
+                    title: Text(
+                      destination,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      "${AppLocalizations.of(context)!.timeLabel}: $formattedTime",
+                    ),
                     trailing: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                       ),
                       onPressed: () => _openMap(destination),
                       icon: const Icon(Icons.map, color: Colors.white),
-                      label: Text(AppLocalizations.of(context)!.viewOnMap, style: const TextStyle(color: Colors.white)),
+                      label: Text(
+                        AppLocalizations.of(context)!.viewOnMap,
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 );

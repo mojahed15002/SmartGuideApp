@@ -47,8 +47,10 @@ class _PalestineStreetPageState extends State<PalestineStreetPage> {
           final routeButton = SafeArea(
             minimum: const EdgeInsets.only(bottom: 16.0),
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Align(
                 alignment: Alignment.bottomCenter,
                 child: ElevatedButton.icon(
@@ -65,18 +67,20 @@ class _PalestineStreetPageState extends State<PalestineStreetPage> {
                   onPressed: () async {
                     final position = await Geolocator.getCurrentPosition();
                     if (!mounted) return;
-                    Navigator.push(
-                      context,
-                      SwipeablePageRoute(
+                    if (ModalRoute.of(context)?.isCurrent ?? true) {
+                      Navigator.pushReplacement(
+                        context,
+                        SwipeablePageRoute(
                           page: MapPage(
-                          position: position,
-                          destination: latlng.LatLng(32.221378, 35.259687),
-                          themeNotifier: widget.themeNotifier,
-                          enableTap: false, // 🚫 تعطيل النقر على الخريطة
-                          enableLiveTracking: true, // ✅ تتبع حي للموقع
+                            position: position,
+                            destination: latlng.LatLng(32.221378, 35.259687),
+                            themeNotifier: widget.themeNotifier,
+                            enableTap: false, // 🚫 تعطيل النقر على الخريطة
+                            enableLiveTracking: true, // ✅ تتبع حي للموقع
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    }
                   },
                   icon: const Icon(Icons.directions, color: Colors.white),
                   label: const Text(
@@ -113,12 +117,7 @@ class _PalestineStreetPageState extends State<PalestineStreetPage> {
                     const SizedBox(height: 80), // مساحة أسفل المحتوى
                   ],
                 ),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: routeButton,
-                ),
+                Positioned(bottom: 0, left: 0, right: 0, child: routeButton),
               ],
             );
           }

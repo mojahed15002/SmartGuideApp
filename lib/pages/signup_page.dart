@@ -5,7 +5,7 @@ import '../theme_notifier.dart';
 import '../sign_in_panel.dart';
 import '../l10n/gen/app_localizations.dart'; // ✅ الترجمة
 import '../l10n/country_localizations_extension.dart';
-
+import 'swipeable_page_route.dart';
 class SignUpPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
 
@@ -83,13 +83,14 @@ class _SignUpPageState extends State<SignUpPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.accountCreated)),
       );
-
+if (ModalRoute.of(context)?.isCurrent ?? true) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => SignInPanel(themeNotifier: widget.themeNotifier),
+        SwipeablePageRoute(
+          page: SignInPanel(themeNotifier: widget.themeNotifier),
         ),
       );
+}
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       String msg = AppLocalizations.of(context)!.signUpError;

@@ -70,10 +70,7 @@ class _SettingsPageState extends State<SettingsPage> {
       applicationLegalese: '© 2025 Smart City Guide',
       children: [
         const SizedBox(height: 10),
-        Text(
-          loc.cityGuideDescription,
-          textAlign: TextAlign.justify,
-        ),
+        Text(loc.cityGuideDescription, textAlign: TextAlign.justify),
       ],
     );
   }
@@ -85,48 +82,45 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-Future<void> _signOut() async {
-  final user = FirebaseAuth.instance.currentUser;
+  Future<void> _signOut() async {
+    final user = FirebaseAuth.instance.currentUser;
 
-  try {
-    if (user != null) {
-      // ✅ إذا المستخدم مسجل كضيف
-      if (user.isAnonymous) {
-        await user.delete(); // نحذف الجلسة المؤقتة
-      } else {
-        await FirebaseAuth.instance.signOut();
+    try {
+      if (user != null) {
+        // ✅ إذا المستخدم مسجل كضيف
+        if (user.isAnonymous) {
+          await user.delete(); // نحذف الجلسة المؤقتة
+        } else {
+          await FirebaseAuth.instance.signOut();
+        }
+      }
+
+      // ✅ بعد الخروج نرجع لصفحة تسجيل الدخول
+      if (!mounted) return;
+      if (ModalRoute.of(context)?.isCurrent ?? true) {
+        Navigator.of(context).pushAndRemoveUntil(
+          SwipeablePageRoute(
+            page: SignInPanel(themeNotifier: widget.themeNotifier),
+          ),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️ خطأ أثناء تسجيل الخروج: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('حدث خطأ أثناء تسجيل الخروج')),
+        );
       }
     }
-
-    // ✅ بعد الخروج نرجع لصفحة تسجيل الدخول
-    if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        SwipeablePageRoute(
-          page: SignInPanel(themeNotifier: widget.themeNotifier),
-        ),
-        (route) => false,
-      );
-    }
-  } catch (e) {
-    debugPrint('⚠️ خطأ أثناء تسجيل الخروج: $e');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('حدث خطأ أثناء تسجيل الخروج')),
-      );
-    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(loc.settings),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text(loc.settings), centerTitle: true),
       body: ListView(
         children: [
           const SizedBox(height: 10),
@@ -135,10 +129,7 @@ Future<void> _signOut() async {
           ListTile(
             leading: const Icon(Icons.dark_mode),
             title: Text(loc.darkMode),
-            trailing: Switch(
-              value: _isDarkMode,
-              onChanged: _toggleTheme,
-            ),
+            trailing: Switch(value: _isDarkMode, onChanged: _toggleTheme),
           ),
           const Divider(),
 
@@ -202,82 +193,83 @@ Future<void> _signOut() async {
           const Divider(),
 
           // 🚪 تسجيل الخروج مع رسالة تأكيد احترافية
-ListTile(
-  leading: const Icon(Icons.logout, color: Colors.red),
-  title: Text(
-    loc.logout,
-    style: const TextStyle(color: Colors.red),
-  ),
-  onTap: () async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF2C2C2C)
-            : Colors.white,
-        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-        title: Row(
-          children: const [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 30),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                "تأكيد تسجيل الخروج",
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: Text(loc.logout, style: const TextStyle(color: Colors.red)),
+            onTap: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  backgroundColor:
+                      Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF2C2C2C)
+                      : Colors.white,
+                  titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                  title: Row(
+                    children: const [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.orange,
+                        size: 30,
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          "تأكيد تسجيل الخروج",
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  content: const Text(
+                    "هل أنت متأكد أنك تريد تسجيل الخروج؟\n\n"
+                    "  في حال قمت بتسجيل الخروج، ستبقى معلومات هذا الحساب محفوظة ولن يتم حذفها.",
+                    textAlign: TextAlign.right,
+                    style: TextStyle(height: 1.4, fontSize: 15),
+                  ),
+                  actionsAlignment: MainAxisAlignment.spaceBetween,
+                  actions: [
+                    TextButton(
+                      child: const Text(
+                        "إلغاء",
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context, false),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        "تأكيد الخروج",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: () => Navigator.pop(context, true),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-          ],
-        ),
-        content: const Text(
-          "هل أنت متأكد أنك تريد تسجيل الخروج؟\n\n"
-          "  في حال قمت بتسجيل الخروج، ستبقى معلومات هذا الحساب محفوظة ولن يتم حذفها.",
-          textAlign: TextAlign.right,
-          style: TextStyle(height: 1.4, fontSize: 15),
-        ),
-        actionsAlignment: MainAxisAlignment.spaceBetween,
-        actions: [
-          TextButton(
-            child: const Text(
-              "إلغاء",
-              style: TextStyle(
-                color: Colors.grey,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              "تأكيد الخروج",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            onPressed: () => Navigator.pop(context, true),
-          ),
-        ],
-      ),
-    );
+              );
 
-    if (confirm == true) {
-      // 🔥 استدعاء دالة تسجيل الخروج الأصلية مع دعم المستخدم الضيف
-      await _signOut();
-    }
-  },
-),
-
+              if (confirm == true) {
+                // 🔥 استدعاء دالة تسجيل الخروج الأصلية مع دعم المستخدم الضيف
+                await _signOut();
+              }
+            },
+          ),
         ],
       ),
     );

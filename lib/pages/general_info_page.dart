@@ -20,7 +20,7 @@ class GeneralInfoPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text("المدن"),
         actions: [
-           // 🔥 زر التبديل الجديد
+          // 🔥 زر التبديل الجديد
         ],
       ),
       drawer: CustomDrawer(themeNotifier: themeNotifier), // ⬅️ هذا السطر المهم
@@ -30,12 +30,17 @@ class GeneralInfoPage extends StatelessWidget {
             title: Text(city),
             trailing: const Icon(Icons.arrow_forward_ios, color: Colors.orange),
             onTap: () {
-              Navigator.push(
-                context,
-                SwipeablePageRoute(
-                  page: CityPlacesPage(cityName: city, themeNotifier: themeNotifier),
-                ),
-              );
+              if (ModalRoute.of(context)?.isCurrent ?? true) {
+                Navigator.pushReplacement(
+                  context,
+                  SwipeablePageRoute(
+                    page: CityPlacesPage(
+                      cityName: city,
+                      themeNotifier: themeNotifier,
+                    ),
+                  ),
+                );
+              }
             },
           );
         }).toList(),

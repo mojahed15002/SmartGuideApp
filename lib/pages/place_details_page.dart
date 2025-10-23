@@ -9,6 +9,7 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart';
 import 'full_screen_gallery.dart';
+import 'swipeable_page_route.dart';
 
 class PlaceDetailsPage extends StatefulWidget {
   final String title;
@@ -47,10 +48,7 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
     final double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text("تفاصيل ${widget.title}"),
-        actions: [],
-      ),
+      appBar: AppBar(title: Text("تفاصيل ${widget.title}"), actions: []),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: ListView(
@@ -75,23 +73,22 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
                 );
 
                 if (index == 0) {
-                  imageWidget = Hero(
-                    tag: widget.heroTag,
-                    child: imageWidget,
-                  );
+                  imageWidget = Hero(tag: widget.heroTag, child: imageWidget);
                 }
 
                 return GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => FullScreenGallery(
-                          images: widget.images,
-                          initialIndex: index,
+                    if (ModalRoute.of(context)?.isCurrent ?? true) {
+                      Navigator.pushReplacement(
+                        context,
+                        SwipeablePageRoute(
+                          page: FullScreenGallery(
+                            images: widget.images,
+                            initialIndex: index,
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    }
                   },
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
