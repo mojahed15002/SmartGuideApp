@@ -64,7 +64,7 @@ class _FaisalStreetPageState extends State<FaisalStreetPage> {
                   onPressed: () async {
                     final position = await Geolocator.getCurrentPosition();
                     if (!mounted) return;
-                    if (ModalRoute.of(context)?.isCurrent ?? true) {
+                    
                       Navigator.pushReplacement(
                         context,
                         SwipeablePageRoute(
@@ -77,7 +77,7 @@ class _FaisalStreetPageState extends State<FaisalStreetPage> {
                           ),
                         ),
                       );
-                    }
+                    
                   },
                   icon: const Icon(Icons.directions, color: Colors.white),
                   label: const Text(

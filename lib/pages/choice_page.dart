@@ -111,7 +111,7 @@ class _ChoicePageState extends State<ChoicePage> {
                 ),
                 onPressed: () async {
                   Position position = await _determinePosition();
-                  if (ModalRoute.of(context)?.isCurrent ?? true) {
+                    if (!mounted) return;
                     Navigator.pushReplacement(
                       // ignore: use_build_context_synchronously
                       context,
@@ -122,7 +122,7 @@ class _ChoicePageState extends State<ChoicePage> {
                         ), // ✅ مررنا themeNotifier
                       ),
                     );
-                  }
+                  
                 },
                 child: Text(AppLocalizations.of(context)!.whereAmI),
               ),

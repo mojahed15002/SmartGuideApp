@@ -340,9 +340,7 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
                                   children: [
                                     GestureDetector(
                                       onTap: () {
-                                        if (ModalRoute.of(context)
-                                                ?.isCurrent ??
-                                            true) {
+                                        if (!mounted) return;
                                           Navigator.pushReplacement(
                                             context,
                                             SwipeablePageRoute(
@@ -356,7 +354,7 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
                                               ),
                                             ),
                                           );
-                                        }
+                                        
                                       },
                                       child: Card(
                                         shape: RoundedRectangleBorder(

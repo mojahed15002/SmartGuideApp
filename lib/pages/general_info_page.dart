@@ -54,7 +54,7 @@ class GeneralInfoPage extends StatelessWidget {
                   trailing: const Icon(Icons.arrow_forward_ios,
                       color: Colors.orange),
                   onTap: () {
-                    if (ModalRoute.of(context)?.isCurrent ?? true) {
+                  
                       Navigator.pushReplacement(
                         context,
                         SwipeablePageRoute(
@@ -64,7 +64,7 @@ class GeneralInfoPage extends StatelessWidget {
                           ),
                         ),
                       );
-                    }
+                    
                   },
                 );
               },

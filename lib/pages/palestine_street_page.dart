@@ -67,7 +67,7 @@ class _PalestineStreetPageState extends State<PalestineStreetPage> {
                   onPressed: () async {
                     final position = await Geolocator.getCurrentPosition();
                     if (!mounted) return;
-                    if (ModalRoute.of(context)?.isCurrent ?? true) {
+                    
                       Navigator.pushReplacement(
                         context,
                         SwipeablePageRoute(
@@ -80,7 +80,7 @@ class _PalestineStreetPageState extends State<PalestineStreetPage> {
                           ),
                         ),
                       );
-                    }
+                    
                   },
                   icon: const Icon(Icons.directions, color: Colors.white),
                   label: const Text(

@@ -67,7 +67,7 @@ class NearMePage extends StatelessWidget {
             return InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () {
-                if (ModalRoute.of(context)?.isCurrent ?? true) {
+                
                   Navigator.pushReplacement(
                     context,
                     SwipeablePageRoute(
@@ -78,7 +78,7 @@ class NearMePage extends StatelessWidget {
                       ),
                     ),
                   );
-                }
+                
               },
               child: Card(
                 shape: RoundedRectangleBorder(

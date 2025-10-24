@@ -148,8 +148,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       children: [
                         GestureDetector(
                           onTap: () {
-                            if (ModalRoute.of(context)?.isCurrent ?? true) {
-                              Navigator.pushReplacement(
+                            if (!mounted) return;
+                            if (ModalRoute.of(context)?.isCurrent ?? false) {
+                              Navigator.push(
                                 context,
                                 SwipeablePageRoute(
                                   page: PlaceDetailsPage(

@@ -141,7 +141,7 @@ class _LogsPageState extends State<LogsPage> {
       final position = await Geolocator.getCurrentPosition();
 
       if (!mounted) return;
-      if (ModalRoute.of(context)?.isCurrent ?? true) {
+   
         Navigator.pushReplacement(
           context,
           SwipeablePageRoute(
@@ -154,7 +154,7 @@ class _LogsPageState extends State<LogsPage> {
             ),
           ),
         );
-      }
+      
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

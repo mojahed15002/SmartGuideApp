@@ -151,7 +151,7 @@ class _NearbyPlacesListPageState extends State<NearbyPlacesListPage> {
                       onPressed: _pos == null
                           ? null
                           : () {
-                              if (ModalRoute.of(context)?.isCurrent ?? true) {
+                              
                                 Navigator.pushReplacement(
                                   context,
                                   SwipeablePageRoute(
@@ -176,7 +176,7 @@ class _NearbyPlacesListPageState extends State<NearbyPlacesListPage> {
                                     ),
                                   ),
                                 );
-                              }
+                              
                             },
                     ),
                     onTap: () {

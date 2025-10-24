@@ -19,14 +19,14 @@ class ChoicePageStub extends StatelessWidget {
         title: 'استكشف الأماكن',
         icon: Icons.travel_explore,
         onTap: () {
-          if (ModalRoute.of(context)?.isCurrent ?? true) {
+          
           Navigator.pushReplacement(
             context,
             SwipeablePageRoute(
     page: ChoicePageRedirect(themeNotifier: themeNotifier),
             ),
           );
-          }
+      
         },
       ),
       

@@ -83,14 +83,14 @@ class _SignUpPageState extends State<SignUpPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.accountCreated)),
       );
-if (ModalRoute.of(context)?.isCurrent ?? true) {
+
       Navigator.pushReplacement(
         context,
         SwipeablePageRoute(
           page: SignInPanel(themeNotifier: widget.themeNotifier),
         ),
       );
-}
+
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       String msg = AppLocalizations.of(context)!.signUpError;

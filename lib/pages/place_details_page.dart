@@ -78,7 +78,7 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
 
                 return GestureDetector(
                   onTap: () {
-                    if (ModalRoute.of(context)?.isCurrent ?? true) {
+                   
                       Navigator.pushReplacement(
                         context,
                         SwipeablePageRoute(
@@ -88,7 +88,7 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
                           ),
                         ),
                       );
-                    }
+                    
                   },
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
