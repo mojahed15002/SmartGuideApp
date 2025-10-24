@@ -142,10 +142,10 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage>
       final docRef =
           FirebaseFirestore.instance.collection('places').doc(widget.id);
 
-      debugPrint("✅ Saving rating for ${_currentUserId} on place ${widget.id} = $rating");
+      debugPrint("✅ Saving rating for $_currentUserId on place ${widget.id} = $rating");
 
       await docRef.update({
-        'ratings.${_currentUserId}': rating,
+        'ratings.$_currentUserId': rating,
       });
 
       await _loadRatings();
