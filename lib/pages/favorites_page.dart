@@ -154,6 +154,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                 context,
                                 SwipeablePageRoute(
                                   page: PlaceDetailsPage(
+                                    id: id,
                                     title: title,
                                     cityName: city,
                                     images: images,
