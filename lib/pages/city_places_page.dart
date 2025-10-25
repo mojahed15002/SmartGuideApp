@@ -6,7 +6,6 @@ import 'package:share_plus/share_plus.dart';
 import '../theme_notifier.dart';
 import 'place_details_page.dart';
 import 'custom_drawer.dart';
-import 'swipeable_page_route.dart';
 import '../l10n/gen/app_localizations.dart';
 
 class CityPlacesPage extends StatefulWidget {
@@ -335,31 +334,31 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
                                 final String cityName = isArabic
                                     ? (place['city_ar'] ?? '')
                                     : (place['city_en'] ?? '');
-                                final bool isFavorite = favoritePlaces.contains(id);
 
                                 return Stack(
                                   children: [
                                     GestureDetector(
                                       onTap: () {
                                         if (!mounted) return;
-Navigator.pushReplacement(
-  context,
-  SwipeablePageRoute(
-    page: PlaceDetailsPage(
-      id: id, // ✅ أضفنا هذا السطر
-      title: title,
-      cityName: cityName,
-      images: images,
-      url: place["url"],
-      themeNotifier: themeNotifier,
-      heroTag: heroTag,
-    ),
-  ),
-);
+                                          Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => PlaceDetailsPage(
+                                                title: title,
+                                                cityName: cityName,
+                                                images: images,
+                                                url: place["url"],
+                                                themeNotifier: themeNotifier,
+                                                heroTag: heroTag,
+                                              ),
+                                            ),
+                                          );
+                                        
                                       },
                                       child: Card(
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                         ),
                                         elevation: 4,
                                         child: Column(
@@ -384,12 +383,14 @@ Navigator.pushReplacement(
                                               ),
                                             ),
                                             Padding(
-                                              padding: const EdgeInsets.all(8.0),
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
                                               child: Text(
                                                 title,
                                                 style: const TextStyle(
                                                   fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
+                                                  fontWeight:
+                                                      FontWeight.bold,
                                                 ),
                                                 textAlign: TextAlign.center,
                                               ),
@@ -398,67 +399,6 @@ Navigator.pushReplacement(
                                         ),
                                       ),
                                     ),
-
-// ❤️ زر المفضلة مع تأثير Ripple + Scale
-Positioned(
-  top: 10,
-  right: 10,
-  child: InkWell(
-    borderRadius: BorderRadius.circular(50),
-    splashColor: Colors.redAccent.withOpacity(0.3),
-    highlightColor: Colors.transparent,
-    onTap: () async {
-      await _toggleFavorite(id);
-      setState(() {});
-    },
-    child: AnimatedScale(
-      scale: isFavorite ? 1.15 : 1.0,
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.4),
-          shape: BoxShape.circle,
-        ),
-        padding: const EdgeInsets.all(6),
-        child: Icon(
-          isFavorite ? Icons.favorite : Icons.favorite_border,
-          color: isFavorite ? Colors.redAccent : Colors.white,
-          size: 24,
-        ),
-      ),
-    ),
-  ),
-),
-
-// 🔗 زر المشاركة مع تأثير Ripple + Scale
-Positioned(
-  top: 10,
-  left: 10,
-  child: InkWell(
-    borderRadius: BorderRadius.circular(50),
-    splashColor: Colors.blueAccent.withOpacity(0.3),
-    highlightColor: Colors.transparent,
-    onTap: () => _sharePlace(cityName, id, title),
-    child: AnimatedScale(
-      scale: 1.0,
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.4),
-          shape: BoxShape.circle,
-        ),
-        padding: const EdgeInsets.all(6),
-        child: const Icon(
-          Icons.share,
-          color: Colors.white,
-          size: 22,
-        ),
-      ),
-    ),
-  ),
-),
                                   ],
                                 );
                               },

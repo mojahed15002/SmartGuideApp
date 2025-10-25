@@ -6,7 +6,6 @@ import '../places_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'custom_drawer.dart';
-import 'swipeable_page_route.dart'; // تأكد تضيف هذا بالأعلى
 
 // ✅ إضافة ملف الترجمة
 import '../l10n/gen/app_localizations.dart';
@@ -152,9 +151,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
                             if (ModalRoute.of(context)?.isCurrent ?? false) {
                               Navigator.push(
                                 context,
-                                SwipeablePageRoute(
-                                  page: PlaceDetailsPage(
-                                    id: id,
+                                MaterialPageRoute(
+                                  builder: (context) => PlaceDetailsPage(
                                     title: title,
                                     cityName: city,
                                     images: images,

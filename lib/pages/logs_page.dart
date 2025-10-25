@@ -6,7 +6,6 @@ import 'package:latlong2/latlong.dart' as latlng;
 import 'map_page.dart';
 import 'package:geolocator/geolocator.dart';
 import 'custom_drawer.dart';
-import 'swipeable_page_route.dart'; // تأكد تضيف هذا بالأعلى
 
 // ✅ إضافة ملف الترجمة
 import '../l10n/gen/app_localizations.dart';
@@ -144,8 +143,8 @@ class _LogsPageState extends State<LogsPage> {
    
         Navigator.pushReplacement(
           context,
-          SwipeablePageRoute(
-            page: MapPage(
+          MaterialPageRoute(
+            builder: (context) => MapPage(
               position: position,
               destination: destination,
               enableTap: false,

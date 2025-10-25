@@ -157,7 +157,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get touristPlaces => 'أماكن سياحية';
 
   @override
-  String get favoritesTitle => 'المفضلة ❤️';
+  String get favoritesTitle => 'المفضلات';
 
   @override
   String get noFavorites => 'لا توجد أماكن مضافة إلى المفضلة بعد.';
@@ -460,4 +460,43 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get emailNotAvailable => 'البريد غير متوفر';
+
+  @override
+  String get profile => 'الملف الشخصي';
+
+  @override
+  String get signOut => 'تسجيل الخروج';
+
+  @override
+  String get theme => 'الثيم';
+
+  @override
+  String get tripsDone => 'الرحلات المنجزة';
+
+  @override
+  String get lastDestination => 'آخر وجهة';
+
+  @override
+  String get places => 'أماكن';
+
+  @override
+  String get noData => 'لا توجد بيانات';
+
+  @override
+  String get feedback => 'ملاحظات';
+
+  @override
+  String get feedbackThanks => 'شكرًا على ملاحظاتك!';
+
+  @override
+  String get dark => 'داكن';
+
+  @override
+  String get light => 'فاتح';
+
+  @override
+  String get ok => 'موافق';
+
+  @override
+  String get edit => 'تعديل';
 }

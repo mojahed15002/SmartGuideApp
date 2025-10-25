@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme_notifier.dart';
 import 'city_places_page.dart';
 import 'custom_drawer.dart';
-import 'swipeable_page_route.dart';
 import '../l10n/gen/app_localizations.dart'; // ✅ الترجمة
 
 class GeneralInfoPage extends StatelessWidget {
@@ -57,8 +56,8 @@ class GeneralInfoPage extends StatelessWidget {
                   
                       Navigator.pushReplacement(
                         context,
-                        SwipeablePageRoute(
-                          page: CityPlacesPage(
+                        MaterialPageRoute(
+                          builder: (context) => CityPlacesPage(
                             cityName: cityName,
                             themeNotifier: themeNotifier,
                           ),

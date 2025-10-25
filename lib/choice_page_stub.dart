@@ -7,7 +7,6 @@ import 'pages/favorites_page.dart';
 import 'pages/logs_page.dart';
 import 'pages/near_me_page.dart';
 import 'pages/settings_page.dart';
-import 'pages/swipeable_page_route.dart';
 class ChoicePageStub extends StatelessWidget {
   final ThemeNotifier themeNotifier;
   const ChoicePageStub({super.key, required this.themeNotifier});
@@ -22,8 +21,8 @@ class ChoicePageStub extends StatelessWidget {
           
           Navigator.pushReplacement(
             context,
-            SwipeablePageRoute(
-    page: ChoicePageRedirect(themeNotifier: themeNotifier),
+            MaterialPageRoute(
+              builder: (context) => ChoicePageRedirect(themeNotifier: themeNotifier),
             ),
           );
       
@@ -36,8 +35,8 @@ class ChoicePageStub extends StatelessWidget {
         onTap: () {
           Navigator.pushReplacement(
             context,
-            SwipeablePageRoute(
-              page: NearMePage(themeNotifier: themeNotifier),
+            MaterialPageRoute(
+              builder: (context) => NearMePage(themeNotifier: themeNotifier),
             ),
           );
         }
@@ -49,8 +48,8 @@ class ChoicePageStub extends StatelessWidget {
         onTap: () {
           Navigator.pushReplacement(
             context,
-            SwipeablePageRoute(
-    page: FavoritesPage(themeNotifier: themeNotifier),
+            MaterialPageRoute(
+              builder: (context) => FavoritesPage(themeNotifier: themeNotifier),
             ),
           );
         },
@@ -61,8 +60,8 @@ class ChoicePageStub extends StatelessWidget {
   onTap: () {
     Navigator.pushReplacement(
       context,
-      SwipeablePageRoute(
-        page: LogsPage(themeNotifier: themeNotifier),
+      MaterialPageRoute(
+        builder: (context) => LogsPage(themeNotifier: themeNotifier),
       ),
     );
   },
@@ -74,8 +73,8 @@ class ChoicePageStub extends StatelessWidget {
         onTap: () {
   Navigator.pushReplacement(
     context,
-    SwipeablePageRoute(
-      page: SettingsPage(themeNotifier: themeNotifier),
+    MaterialPageRoute(
+      builder: (context) => SettingsPage(themeNotifier: themeNotifier),
     ),
   );
 },
@@ -89,8 +88,8 @@ class ChoicePageStub extends StatelessWidget {
          if (context.mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        SwipeablePageRoute(
-    page: SignInPanel(themeNotifier: themeNotifier),
+        MaterialPageRoute(
+          builder: (context) => SignInPanel(themeNotifier: themeNotifier),
         ),
         (route) => false, // 🔥 هذا يمنع الرجوع للخلف بعد تسجيل الخروج
       );

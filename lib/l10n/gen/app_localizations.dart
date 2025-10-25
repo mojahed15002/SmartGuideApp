@@ -395,7 +395,7 @@ abstract class AppLocalizations {
   /// No description provided for @favoritesTitle.
   ///
   /// In en, this message translates to:
-  /// **'Favorites ❤️'**
+  /// **'Favorites'**
   String get favoritesTitle;
 
   /// No description provided for @noFavorites.
@@ -997,6 +997,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Email not available'**
   String get emailNotAvailable;
+
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// No description provided for @signOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOut;
+
+  /// No description provided for @theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get theme;
+
+  /// No description provided for @tripsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Trips completed'**
+  String get tripsDone;
+
+  /// No description provided for @lastDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Last destination'**
+  String get lastDestination;
+
+  /// No description provided for @places.
+  ///
+  /// In en, this message translates to:
+  /// **'places'**
+  String get places;
+
+  /// No description provided for @noData.
+  ///
+  /// In en, this message translates to:
+  /// **'No data available'**
+  String get noData;
+
+  /// No description provided for @feedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get feedback;
+
+  /// No description provided for @feedbackThanks.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for your feedback!'**
+  String get feedbackThanks;
+
+  /// No description provided for @dark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get dark;
+
+  /// No description provided for @light.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get light;
+
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
 }
 
 class _AppLocalizationsDelegate

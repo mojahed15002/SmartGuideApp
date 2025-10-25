@@ -13,7 +13,6 @@ import 'martyrs_roundabout_page.dart';
 import 'palestine_street_page.dart';
 import 'sofian_street_page.dart';
 import 'custom_drawer.dart';
-import 'swipeable_page_route.dart';
 
 // ✅ إضافة ملف الترجمة
 import '../l10n/gen/app_localizations.dart';
@@ -115,8 +114,8 @@ class _ChoicePageState extends State<ChoicePage> {
                     Navigator.pushReplacement(
                       // ignore: use_build_context_synchronously
                       context,
-                      SwipeablePageRoute(
-                        page: MapPage(
+                      MaterialPageRoute(
+                        builder: (context) => MapPage(
                           position: position,
                           themeNotifier: widget.themeNotifier,
                         ), // ✅ مررنا themeNotifier

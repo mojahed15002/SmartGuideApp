@@ -13,13 +13,14 @@ import 'deep_link_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'l10n/gen/app_localizations.dart';
 
+
 import 'pages/choice_page.dart';
 import 'pages/near_me_page.dart';
 import 'pages/favorites_page.dart';
 import 'pages/logs_page.dart';
 import 'pages/settings_page.dart';
- 
-final ThemeNotifier themeNotifier = ThemeNotifier();
+  
+  final ThemeNotifier themeNotifier = ThemeNotifier();
 
 // ✅ متغير لتخزين الرابط المؤجل (في حال كان التطبيق مغلق)
 String? _pendingDeepLink;
@@ -228,6 +229,7 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
             '/logs': (context) => LogsPage(themeNotifier: widget.themeNotifier),
             '/login': (context) => SignInPanel(themeNotifier: widget.themeNotifier),
             '/settings': (context) => SettingsPage(themeNotifier: widget.themeNotifier),
+      
           },
           home: StreamBuilder<User?>(
             stream: FirebaseAuth.instance.authStateChanges(),

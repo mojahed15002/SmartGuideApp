@@ -8,7 +8,6 @@ import 'package:latlong2/latlong.dart' as latlng;
 import 'package:geolocator/geolocator.dart';
 import 'info_page.dart';
 import 'map_page.dart';
-import 'swipeable_page_route.dart'; // تأكد تضيفه بالأعلى
 class SofianStreetPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   const SofianStreetPage({super.key, required this.themeNotifier});
@@ -67,8 +66,8 @@ class _SofianStreetPageState extends State<SofianStreetPage> {
                     
                     Navigator.pushReplacement(
                       context,
-                     SwipeablePageRoute(
-                          page: MapPage(
+                      MaterialPageRoute(
+                        builder: (context) => MapPage(
                           position: position,
                           destination: latlng.LatLng(32.222376, 35.260532),
                           themeNotifier: widget.themeNotifier,

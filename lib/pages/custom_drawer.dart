@@ -5,8 +5,10 @@ import '../l10n/gen/app_localizations.dart';
 
 class CustomDrawer extends StatelessWidget {
   final ThemeNotifier themeNotifier;
+final void Function(String)? onItemSelected;
+ const CustomDrawer({Key? key, required this.themeNotifier, this.onItemSelected}) : super(key: key);
 
-  const CustomDrawer({super.key, required this.themeNotifier});
+  
 
   @override
   Widget build(BuildContext context) {
@@ -36,8 +38,10 @@ class CustomDrawer extends StatelessWidget {
                 Icons.person,
                 color: Colors.orange.shade700,
                 size: 40,
+                
               ),
             ),
+            
           ),
 
           // الصفحة الرئيسية
@@ -79,6 +83,7 @@ class CustomDrawer extends StatelessWidget {
               Navigator.pushReplacementNamed(context, '/logs');
             },
           ),
+
 
           const Divider(),
 

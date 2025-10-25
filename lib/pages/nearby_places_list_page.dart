@@ -5,7 +5,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as latlng;
 import '../theme_notifier.dart';
 import 'map_page.dart';
-import 'swipeable_page_route.dart';
 
 class NearbyPlacesListPage extends StatefulWidget {
   final String category; // مثل: restaurant, cafe ...
@@ -154,8 +153,8 @@ class _NearbyPlacesListPageState extends State<NearbyPlacesListPage> {
                               
                                 Navigator.pushReplacement(
                                   context,
-                                  SwipeablePageRoute(
-                                    page: MapPage(
+                                  MaterialPageRoute(
+                                    builder: (context) => MapPage(
                                       position: Position(
                                         latitude: _pos!.latitude,
                                         longitude: _pos!.longitude,

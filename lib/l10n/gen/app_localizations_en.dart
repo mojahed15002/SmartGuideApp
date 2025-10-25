@@ -157,7 +157,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get touristPlaces => 'Tourist Places';
 
   @override
-  String get favoritesTitle => 'Favorites ❤️';
+  String get favoritesTitle => 'Favorites';
 
   @override
   String get noFavorites => 'No places added to favorites yet.';
@@ -461,4 +461,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emailNotAvailable => 'Email not available';
+
+  @override
+  String get profile => 'Profile';
+
+  @override
+  String get signOut => 'Sign out';
+
+  @override
+  String get theme => 'Theme';
+
+  @override
+  String get tripsDone => 'Trips completed';
+
+  @override
+  String get lastDestination => 'Last destination';
+
+  @override
+  String get places => 'places';
+
+  @override
+  String get noData => 'No data available';
+
+  @override
+  String get feedback => 'Feedback';
+
+  @override
+  String get feedbackThanks => 'Thank you for your feedback!';
+
+  @override
+  String get dark => 'Dark';
+
+  @override
+  String get light => 'Light';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get edit => 'Edit';
 }

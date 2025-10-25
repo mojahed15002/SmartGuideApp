@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme_notifier.dart';
-import '../choice_page_stub.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../sign_in_panel.dart';
 import '../deep_link_helper.dart';
 import 'dart:async'; // ✅ لاستعمال StreamSubscription
 import '../l10n/gen/app_localizations.dart';
-import 'swipeable_page_route.dart'; // تأكد تضيفه بالأعلى
 import 'custom_drawer.dart';
+import 'main_navigation.dart';
 
 class WelcomePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -190,11 +189,11 @@ class _WelcomePageState extends State<WelcomePage> {
                   backgroundColor: Colors.deepOrange,
                 ),
                 onPressed: () {
-                  if (ModalRoute.of(context)?.isCurrent ?? true) {
+                  if (ModalRoute.of(context)?.isCurrent ?? false) {
                     Navigator.pushReplacement(
                       context,
-                      SwipeablePageRoute(
-                        page: ChoicePageStub(
+                      MaterialPageRoute(
+                        builder: (context) => MainNavigation(
                           themeNotifier: widget.themeNotifier,
                         ),
                       ),

@@ -8,7 +8,6 @@ import 'package:latlong2/latlong.dart' as latlng;
 import 'package:geolocator/geolocator.dart';
 import 'info_page.dart';
 import 'map_page.dart';
-import 'swipeable_page_route.dart';
 
 class MartyrsRoundaboutPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -70,8 +69,8 @@ class _MartyrsRoundaboutPageState extends State<MartyrsRoundaboutPage> {
                    
                       Navigator.pushReplacement(
                         context,
-                        SwipeablePageRoute(
-                          page: MapPage(
+                        MaterialPageRoute(
+                          builder: (context) => MapPage(
                             position: position,
                             destination: latlng.LatLng(32.221119, 35.260817),
                             themeNotifier: widget.themeNotifier,

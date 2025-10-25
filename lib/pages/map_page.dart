@@ -13,6 +13,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // ✅ جديد
 import 'dart:convert';
 import 'dart:async';
 import 'package:geocoding/geocoding.dart';
+import 'custom_drawer.dart';
 
 class MapPage extends StatefulWidget {
   final Position position;
@@ -143,15 +144,21 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text("🎉 تهانينا!"),
-            content: const Text("لقد وصلت إلى وجهتك بنجاح."),
+            content: const Text("لقد وصلت إلى وجهتك بنجاح.\nهل ترغب في حفظ الرحلة؟"),
             actions: [
               TextButton(
                 onPressed: () async {
                   Navigator.pop(context);
                   await _saveTripLogToFirebase();
                 },
-                child: const Text("تم"),
+                child: const Text("نعم"),
               ),
+              TextButton(
+              onPressed: () {
+                Navigator.pop(context); // فقط إغلاق النافذة
+              },
+              child: const Text("لا"),
+            ),
             ],
           ),
         );
@@ -365,6 +372,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           )
         ],
       ),
+      drawer: CustomDrawer(
+          themeNotifier: widget.themeNotifier,), // ⬅️ هذا السطر المهم
       floatingActionButton: widget.enableTap
           ? Column(
               mainAxisSize: MainAxisSize.min,

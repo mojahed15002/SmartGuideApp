@@ -53,7 +53,6 @@ void openPlaceFromUri({
         context,
         MaterialPageRoute(
           builder: (_) => PlaceDetailsPage(
-            id: id!,
             title: place['title'],
             cityName: place['city'],
             images: List<String>.from(place['images']),

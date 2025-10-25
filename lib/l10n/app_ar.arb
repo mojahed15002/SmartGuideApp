@@ -149,7 +149,23 @@
 "home": "الصفحة الرئيسية",
 "travelLogs": "سجل الرحلات",
 "defaultUser": "مستخدم التطبيق",
-"emailNotAvailable": "البريد غير متوفر"
+"emailNotAvailable": "البريد غير متوفر",
+"profile": "الملف الشخصي",
+  "signOut": "تسجيل الخروج",
+  "language": "اللغة",
+  "theme": "الثيم",
+  "favoritesTitle": "المفضلات",
+  "tripsDone": "الرحلات المنجزة",
+  "lastDestination": "آخر وجهة",
+  "places": "أماكن",
+  "noData": "لا توجد بيانات",
+  "feedback": "ملاحظات",
+  "feedbackThanks": "شكرًا على ملاحظاتك!",
+  "settings": "الإعدادات",
+  "dark": "داكن",
+  "light": "فاتح",
+  "ok": "موافق",
+  "edit": "تعديل"
 
 
 

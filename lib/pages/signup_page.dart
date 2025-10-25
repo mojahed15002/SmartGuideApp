@@ -5,7 +5,6 @@ import '../theme_notifier.dart';
 import '../sign_in_panel.dart';
 import '../l10n/gen/app_localizations.dart'; // ✅ الترجمة
 import '../l10n/country_localizations_extension.dart';
-import 'swipeable_page_route.dart';
 class SignUpPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
 
@@ -86,8 +85,8 @@ class _SignUpPageState extends State<SignUpPage> {
 
       Navigator.pushReplacement(
         context,
-        SwipeablePageRoute(
-          page: SignInPanel(themeNotifier: widget.themeNotifier),
+        MaterialPageRoute(
+          builder: (context) => SignInPanel(themeNotifier: widget.themeNotifier),
         ),
       );
 

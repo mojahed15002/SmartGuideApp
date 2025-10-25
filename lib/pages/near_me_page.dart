@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../theme_notifier.dart';
 import 'nearby_places_list_page.dart';
 import 'custom_drawer.dart';
-import 'swipeable_page_route.dart'; // تأكد تضيف هذا بالأعلى
 
 // ✅ إضافة ملف الترجمة
 import '../l10n/gen/app_localizations.dart';
@@ -70,8 +69,8 @@ class NearMePage extends StatelessWidget {
                 
                   Navigator.pushReplacement(
                     context,
-                    SwipeablePageRoute(
-                      page: NearbyPlacesListPage(
+                    MaterialPageRoute(
+                      builder: (context) => NearbyPlacesListPage(
                         category: cat['type'] as String,
                         categoryLabel: cat['name'] as String,
                         themeNotifier: themeNotifier,

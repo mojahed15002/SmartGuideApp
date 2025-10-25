@@ -149,7 +149,23 @@
 "home": "Home",
 "travelLogs": "Travel Logs",
 "defaultUser": "App User",
-"emailNotAvailable": "Email not available"
+"emailNotAvailable": "Email not available",
+"profile": "Profile",
+  "signOut": "Sign out",
+  "language": "Language",
+  "theme": "Theme",
+  "favoritesTitle": "Favorites",
+  "tripsDone": "Trips completed",
+  "lastDestination": "Last destination",
+  "places": "places",
+  "noData": "No data available",
+  "feedback": "Feedback",
+  "feedbackThanks": "Thank you for your feedback!",
+  "settings": "Settings",
+  "dark": "Dark",
+  "light": "Light",
+  "ok": "OK",
+  "edit": "Edit"
 
 
 }
