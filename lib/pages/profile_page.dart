@@ -38,13 +38,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // مستويات gamification
   String get _level {
-    if (travelCount >= 25) return 'خبير';
-    if (travelCount >= 10) return 'مستكشف';
-    return 'مبتدئ';
-  }
+  final loc = AppLocalizations.of(context)!;
+  if (travelCount >= 25) return loc.badgeExpert;
+  if (travelCount >= 10) return loc.badgeActive;
+  return loc.badgeFirst(10 - travelCount);
+}
+
 
   double get _progressToNext {
-    // تقدم نحو المستوى التالي (مقياس بسيط مبني على عدد الرحلات)
     final nextTarget = travelCount >= 25 ? 25 : (travelCount >= 10 ? 25 : 10);
     final currentBase = travelCount >= 25 ? 25 : (travelCount >= 10 ? 10 : 0);
     final span = nextTarget - currentBase;
@@ -76,7 +77,6 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadUserAndStats() async {
     if (user == null) return;
 
-    // users/<uid>
     final userDoc = await FirebaseFirestore.instance
         .collection('users')
         .doc(user!.uid)
@@ -87,7 +87,6 @@ class _ProfilePageState extends State<ProfilePage> {
       favoritesCount = (userData?['favorites'] as List?)?.length ?? 0;
     }
 
-    // travel_logs: نجمع الإحصائيات
     final logsSnap = await FirebaseFirestore.instance
         .collection('travel_logs')
         .where('user_id', isEqualTo: user!.uid)
@@ -101,7 +100,6 @@ class _ProfilePageState extends State<ProfilePage> {
       lastDestination = last['place_name'] ?? '—';
     }
 
-    // مجموع المسافة/الوقت إن وُجدت الحقول (distance_m, duration_s)
     double td = 0;
     double tt = 0;
     for (final d in logsSnap.docs) {
@@ -166,11 +164,10 @@ class _ProfilePageState extends State<ProfilePage> {
     if (h > 0) return '$h س $m د';
     if (m > 0) return '$m د $ss ث';
     return '$ss ث';
-    }
+  }
 
   Future<void> _toggleTheme() async {
     widget.themeNotifier.toggleTheme();
-    // حفظ في Firestore (اختياري)
     if (user != null) {
       await FirebaseFirestore.instance.collection('users').doc(user!.uid).set({
         'theme': widget.themeNotifier.isDarkMode ? 'dark' : 'light',
@@ -192,8 +189,6 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _sendFeedback() async {
-    // هنا يا إما تفتح فورم داخل التطبيق، أو تستخدم mailto.
-    // مبدئيًا نعرض Dialog بسيط:
     if (!mounted) return;
     final loc = AppLocalizations.of(context)!;
     showDialog(
@@ -212,16 +207,17 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _shareApp() async {
+    final loc = AppLocalizations.of(context)!;
     try {
       await Share.share(
         'جرب تطبيق المرشد السياحي الذكي! 🌆🗺️',
-        subject: 'Smart City Guide',
+        subject: loc.shareApp,
       );
     } catch (e) {
       debugPrint('share error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذّر المشاركة الآن')),
+        SnackBar(content: Text(loc.comingSoon)),
       );
     }
   }
@@ -239,6 +235,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _deleteAccount() async {
+    final loc = AppLocalizations.of(context)!;
     if (user == null) return;
     try {
       await user!.delete();
@@ -251,13 +248,10 @@ class _ProfilePageState extends State<ProfilePage> {
         (r) => false,
       );
     } catch (e) {
-      // في العادة يحتاج Re-auth
       debugPrint('delete error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يجب إعادة تسجيل الدخول لحذف الحساب.'),
-        ),
+        SnackBar(content: Text(loc.reloginToDelete)),
       );
     }
   }
@@ -366,10 +360,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           const SizedBox(height: 10),
                           OutlinedButton.icon(
                             onPressed: () {
-                              // هنا لاحقًا تفتح EditProfilePage لتعديل الاسم/الصورة
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('قريبًا: تعديل المعلومات'),
+                                SnackBar(
+                                  content: Text(loc.soonEditInfo),
                                 ),
                               );
                             },
@@ -391,7 +384,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     const Divider(thickness: 1),
 
                     // ————— إحصائيات التطبيق
-                    _sectionTitle('إحصائيات الرحلات'),
+                    _sectionTitle(loc.tripStats),
                     _cardTile(
                       icon: Icons.favorite,
                       title: loc.favoritesTitle,
@@ -399,7 +392,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     _cardTile(
                       icon: Icons.map_outlined,
-                      title: 'عدد الرحلات',
+                      title: loc.tripsCount,
                       subtitle: '$travelCount ${loc.tripsDone}',
                     ),
                     _cardTile(
@@ -409,17 +402,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     _cardTile(
                       icon: Icons.route,
-                      title: 'المسافة الإجمالية',
+                      title: loc.totalDistance,
                       subtitle: _formatDistance(totalDistanceM),
                     ),
                     _cardTile(
                       icon: Icons.timer_outlined,
-                      title: 'الوقت الكلي للرحلات',
+                      title: loc.totalTime,
                       subtitle: _formatDuration(totalDurationS),
                     ),
                     _cardTile(
                       icon: Icons.location_city,
-                      title: 'المدينة الحالية',
+                      title: loc.currentCity,
                       subtitle: currentCity ?? '—',
                     ),
 
@@ -428,7 +421,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
                     // ————— تحكم المستخدم
                     _sectionTitle(loc.settings),
-                    // الثيم
                     Card(
                       elevation: 3,
                       shape: RoundedRectangleBorder(
@@ -442,7 +434,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         secondary: const Icon(Icons.brightness_6, color: Colors.orange),
                       ),
                     ),
-                    // اللغة
                     Card(
                       elevation: 3,
                       shape: RoundedRectangleBorder(
@@ -456,36 +447,33 @@ class _ProfilePageState extends State<ProfilePage> {
                         trailing: PopupMenuButton<String>(
                           onSelected: _changeLanguage,
                           itemBuilder: (c) => [
-                            const PopupMenuItem(value: 'ar', child: Text('العربية')),
-                            const PopupMenuItem(value: 'en', child: Text('English')),
+                            PopupMenuItem(value: 'ar', child: Text(loc.arabic)),
+                            PopupMenuItem(value: 'en', child: Text(loc.english)),
                           ],
                           child: const Icon(Icons.translate),
                         ),
                       ),
                     ),
-                    // إشعارات - Placeholder
                     _cardTile(
                       icon: Icons.notifications_active_outlined,
-                      title: 'الإشعارات',
-                      subtitle: 'قريبًا…',
+                      title: loc.notifications,
+                      subtitle: loc.comingSoon,
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('ميزة الإشعارات قريبًا')),
+                          SnackBar(content: Text(loc.notificationsSoon)),
                         );
                       },
                     ),
-                    // مشاركة التطبيق
                     _cardTile(
                       icon: Icons.share,
-                      title: 'مشاركة التطبيق',
-                      subtitle: 'انشر التطبيق بين أصدقائك',
+                      title: loc.shareApp,
+                      subtitle: loc.shareAppDesc,
                       onTap: _shareApp,
                     ),
-                    // إرسال ملاحظات
                     _cardTile(
                       icon: Icons.feedback_outlined,
-                      title: 'إرسال ملاحظات',
-                      subtitle: 'ساعدنا على تحسين التجربة',
+                      title: loc.sendFeedback,
+                      subtitle: loc.helpImprove,
                       onTap: _sendFeedback,
                     ),
 
@@ -493,7 +481,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     const Divider(thickness: 1),
 
                     // ————— Gamification
-                    _sectionTitle('الإنجازات'),
+                    _sectionTitle(loc.achievements),
                     Card(
                       elevation: 3,
                       color: Colors.orange.shade50,
@@ -510,7 +498,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     color: Colors.orange, size: 28),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'مستواك: $_level',
+                                  '${loc.yourLevel}: $_level',
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold, fontSize: 16),
                                 ),
@@ -524,15 +512,6 @@ class _ProfilePageState extends State<ProfilePage> {
                               backgroundColor: Colors.orange.withOpacity(0.2),
                               color: Colors.orange,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              travelCount >= 10
-                                  ? (travelCount >= 25
-                                      ? '🎉 حصلت على شارة المستكشف الخبير!'
-                                      : '🎉 حصلت على شارة المستكشف النشط!')
-                                  : 'اكتشف ${10 - travelCount} أماكن إضافية لتحصل على أول شارة',
-                              style: const TextStyle(color: Colors.black87),
-                            ),
                           ],
                         ),
                       ),
@@ -542,13 +521,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     const Divider(thickness: 1),
 
                     // ————— إعدادات الحساب
-                    _sectionTitle('إعدادات الحساب'),
-                    // تغيير كلمة المرور (إن كان بريد/باسوورد)
+                    _sectionTitle(loc.accountSettings),
                     if (_passwordEditable(user))
                       _cardTile(
                         icon: Icons.lock_outline,
-                        title: 'تغيير كلمة المرور',
-                        subtitle: 'أعد ضبط كلمة المرور الخاصة بك',
+                        title: loc.changePassword,
+                        subtitle: loc.resetPassword,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -562,15 +540,13 @@ class _ProfilePageState extends State<ProfilePage> {
                     else
                       _cardTile(
                         icon: Icons.lock_outline,
-                        title: 'تغيير كلمة المرور',
-                        subtitle: 'غير متاح لحسابات Google/ضيف',
+                        title: loc.changePassword,
+                        subtitle: loc.notAvailable,
                       ),
-
-                    // حذف الحساب
                     _cardTile(
                       icon: Icons.delete_forever,
-                      title: 'حذف الحساب',
-                      subtitle: 'سيتم حذف حسابك نهائيًا (قد يتطلب إعادة تسجيل الدخول)',
+                      title: loc.deleteAccount,
+                      subtitle: loc.deleteAccountDesc,
                       onTap: _deleteAccount,
                     ),
 
@@ -597,18 +573,18 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   String _accountType(User? u) {
+    final loc = AppLocalizations.of(context)!;
     if (u == null) return '—';
-    if (u.isAnonymous) return 'زائر';
-    // إذا فيه مزود Google
+    if (u.isAnonymous) return loc.visitorAccount;
     final hasGoogle = u.providerData.any((p) => p.providerId == 'google.com');
-    if (hasGoogle) return 'حساب Google';
-    return 'حساب مسجل';
+    if (hasGoogle) return loc.googleAccount;
+    return loc.registeredAccount;
   }
 
   bool _passwordEditable(User? u) {
     if (u == null) return false;
     if (u.isAnonymous) return false;
     final hasGoogle = u.providerData.any((p) => p.providerId == 'google.com');
-    return !hasGoogle; // فقط الإيميل/باسوورد نسمحله يغير
+    return !hasGoogle;
   }
 }

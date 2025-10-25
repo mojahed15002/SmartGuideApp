@@ -395,7 +395,7 @@ abstract class AppLocalizations {
   /// No description provided for @favoritesTitle.
   ///
   /// In en, this message translates to:
-  /// **'Favorites'**
+  /// **'Favorites ❤️'**
   String get favoritesTitle;
 
   /// No description provided for @noFavorites.
@@ -1075,6 +1075,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit'**
   String get edit;
+
+  /// No description provided for @tripStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip Statistics'**
+  String get tripStats;
+
+  /// No description provided for @tripsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of Trips'**
+  String get tripsCount;
+
+  /// No description provided for @totalDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Distance'**
+  String get totalDistance;
+
+  /// No description provided for @totalTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Travel Time'**
+  String get totalTime;
+
+  /// No description provided for @currentCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Current City'**
+  String get currentCity;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @comingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon…'**
+  String get comingSoon;
+
+  /// No description provided for @notificationsSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications feature coming soon'**
+  String get notificationsSoon;
+
+  /// No description provided for @shareApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Share App'**
+  String get shareApp;
+
+  /// No description provided for @shareAppDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Share the app with your friends'**
+  String get shareAppDesc;
+
+  /// No description provided for @sendFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Feedback'**
+  String get sendFeedback;
+
+  /// No description provided for @helpImprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Help us improve the experience'**
+  String get helpImprove;
+
+  /// No description provided for @achievements.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievements'**
+  String get achievements;
+
+  /// No description provided for @yourLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Level'**
+  String get yourLevel;
+
+  /// No description provided for @badgeExpert.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 You earned the Expert Explorer badge!'**
+  String get badgeExpert;
+
+  /// No description provided for @badgeActive.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 You earned the Active Explorer badge!'**
+  String get badgeActive;
+
+  /// No description provided for @badgeFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover {count} more places to earn your first badge'**
+  String badgeFirst(Object count);
+
+  /// No description provided for @accountSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Settings'**
+  String get accountSettings;
+
+  /// No description provided for @changePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Password'**
+  String get changePassword;
+
+  /// No description provided for @resetPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset your password'**
+  String get resetPassword;
+
+  /// No description provided for @notAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available for Google/Guest accounts'**
+  String get notAvailable;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account will be permanently deleted (may require re-login)'**
+  String get deleteAccountDesc;
+
+  /// No description provided for @soonEditInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon: Edit profile info'**
+  String get soonEditInfo;
+
+  /// No description provided for @visitorAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Visitor'**
+  String get visitorAccount;
+
+  /// No description provided for @googleAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Account'**
+  String get googleAccount;
+
+  /// No description provided for @registeredAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Registered Account'**
+  String get registeredAccount;
+
+  /// No description provided for @reloginToDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'You must re-login to delete your account.'**
+  String get reloginToDelete;
 }
 
 class _AppLocalizationsDelegate

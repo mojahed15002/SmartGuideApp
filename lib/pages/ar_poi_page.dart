@@ -151,8 +151,12 @@ class _ARPoiPageState extends State<ARPoiPage> with WidgetsBindingObserver {
       // الفرق بين اتجاه المكان واتجاه الجهاز
       double rel = brng - _headingDeg; // -∞..∞
       // طبّع الزاوية إلى [-180, +180]
-      while (rel > 180) rel -= 360;
-      while (rel < -180) rel += 360;
+      while (rel > 180) {
+        rel -= 360;
+      }
+      while (rel < -180) {
+        rel += 360;
+      }
 
       // أعرض فقط ما يقع داخل مجال رؤية الكاميرا
       if (rel.abs() <= _hFov / 2) {

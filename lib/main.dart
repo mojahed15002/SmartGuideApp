@@ -13,14 +13,13 @@ import 'deep_link_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'l10n/gen/app_localizations.dart';
 
-
 import 'pages/choice_page.dart';
 import 'pages/near_me_page.dart';
 import 'pages/favorites_page.dart';
 import 'pages/logs_page.dart';
 import 'pages/settings_page.dart';
   
-  final ThemeNotifier themeNotifier = ThemeNotifier();
+final ThemeNotifier themeNotifier = ThemeNotifier();
 
 // ✅ متغير لتخزين الرابط المؤجل (في حال كان التطبيق مغلق)
 String? _pendingDeepLink;
@@ -151,8 +150,10 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
 
       if (_pendingDeepLink != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _handleIncomingLink(_pendingDeepLink!);
-          _pendingDeepLink = null;
+          if (mounted && context.mounted) {
+            _handleIncomingLink(_pendingDeepLink!);
+            _pendingDeepLink = null;
+          }
         });
       }
     } catch (e) {
@@ -171,7 +172,10 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
         return;
       }
 
-      deepLinkStreamController.add(uri);
+      // ✅ أضفنا حماية إضافية لتفادي الخطأ بعد تبديل الثيم
+      if (mounted && context.mounted) {
+        deepLinkStreamController.add(uri);
+      }
     } catch (e) {
       debugPrint('❌ خطأ في تحليل الرابط: $e');
     }
@@ -229,7 +233,6 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
             '/logs': (context) => LogsPage(themeNotifier: widget.themeNotifier),
             '/login': (context) => SignInPanel(themeNotifier: widget.themeNotifier),
             '/settings': (context) => SettingsPage(themeNotifier: widget.themeNotifier),
-      
           },
           home: StreamBuilder<User?>(
             stream: FirebaseAuth.instance.authStateChanges(),
@@ -245,39 +248,49 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
                 final pending = DeepLinkStore.take();
                 if (pending != null) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    openPlaceFromUri(
-                      context: context,
-                      themeNotifier: widget.themeNotifier,
-                      uri: pending,
-                    );
+                    // ✅ حماية إضافية ضد الخطأ بعد تبديل الثيم
+                    if (mounted && context.mounted) {
+                      openPlaceFromUri(
+                        context: context,
+                        themeNotifier: widget.themeNotifier,
+                        uri: pending,
+                      );
+                    }
                   });
                 }
 
-                // ✅ تحميل اللغة والثيم من Firestore عند تسجيل الدخول التلقائي
-                FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(user.uid)
-                    .get()
-                    .then((doc) async {
-                  if (doc.exists) {
-                    final prefs = await SharedPreferences.getInstance();
-                    final data = doc.data() ?? {};
+// ✅ تحميل اللغة والثيم من Firestore بشكل آمن بعد تسجيل الدخول التلقائي
+Future.microtask(() async {
+  final user = FirebaseAuth.instance.currentUser;
 
-                    // 🌙 الثيم
-                    if (data['theme'] != null) {
-                      final savedTheme = data['theme'];
-                      widget.themeNotifier.setTheme(savedTheme == 'dark');
-                      await prefs.setBool('isDarkMode', savedTheme == 'dark');
-                    }
+  // ✅ تجاهل المستخدمين المجهولين أو غير المسجلين
+  if (user == null || user.isAnonymous) {
+    debugPrint("🚫 المستخدم ضيف أو غير مسجل، لا حاجة لتحميل إعدادات Firestore");
+    return;
+  }
 
-                    // 🌐 اللغة
-                    if (data['language'] != null) {
-                      final savedLang = data['language'];
-                      widget.themeNotifier.setLanguage(savedLang);
-                      await prefs.setString('language', savedLang);
-                    }
-                  }
-                });
+  final userDoc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .get();
+
+  if (!userDoc.exists) return;
+
+  final prefs = await SharedPreferences.getInstance();
+  final data = userDoc.data() ?? {};
+
+  if (data['theme'] != null) {
+    final savedTheme = data['theme'];
+    widget.themeNotifier.setTheme(savedTheme == 'dark');
+    await prefs.setBool('isDarkMode', savedTheme == 'dark');
+  }
+
+  if (data['language'] != null) {
+    final savedLang = data['language'];
+    widget.themeNotifier.setLanguage(savedLang);
+    await prefs.setString('language', savedLang);
+  }
+});
 
                 return WelcomePage(themeNotifier: widget.themeNotifier);
               }

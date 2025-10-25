@@ -23,12 +23,6 @@ class SwipeablePageRoute<T> extends PageRouteBuilder<T> {
           },
         );
 
-  @override
-  Widget buildTransitions(BuildContext context, Animation<double> animation,
-      Animation<double> secondaryAnimation, Widget child) {
-    return super
-        .buildTransitions(context, animation, secondaryAnimation, child);
-  }
 
   // ⬅️ دعم السوايب من الطرف الأيسر للرجوع (مثل iPhone)
   @override

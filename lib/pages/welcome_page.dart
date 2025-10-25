@@ -4,7 +4,7 @@ import '../theme_notifier.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../sign_in_panel.dart';
 import '../deep_link_helper.dart';
-import 'dart:async'; // ✅ لاستعمال StreamSubscription
+import 'dart:async';
 import '../l10n/gen/app_localizations.dart';
 import 'custom_drawer.dart';
 import 'main_navigation.dart';
@@ -21,9 +21,9 @@ class WelcomePage extends StatefulWidget {
 
 class _WelcomePageState extends State<WelcomePage> {
   User? user;
-  String? userName; // 🔹 لحفظ اسم المستخدم من Firestore
+  String? userName;
 
-  StreamSubscription<Uri>? _deepLinkSub; // ✅ متغير للاشتراك في الروابط
+  StreamSubscription<Uri>? _deepLinkSub;
 
   Future<void> _loadUserTheme() async {
     try {
@@ -35,14 +35,11 @@ class _WelcomePageState extends State<WelcomePage> {
 
         if (userDoc.exists) {
           final data = userDoc.data();
-          if (data != null) {
-            // 🔹 نحفظ الاسم في المتغير المحلي
+          if (data != null && mounted) {
             setState(() {
-              userName =
-                  data['name']; // تأكد أن اسم الحقل في Firestore هو "name"
+              userName = data['name'];
             });
 
-            // 🔹 تحميل الثيم
             if (data.containsKey('theme')) {
               final savedTheme = data['theme'];
               if (savedTheme == 'dark' && !widget.themeNotifier.isDarkMode) {
@@ -56,7 +53,7 @@ class _WelcomePageState extends State<WelcomePage> {
         }
       }
     } catch (e) {
-      print("⚠️ خطأ أثناء تحميل الثيم من Firestore: $e");
+      debugPrint("⚠️ خطأ أثناء تحميل الثيم من Firestore: $e");
     }
   }
 
@@ -66,33 +63,40 @@ class _WelcomePageState extends State<WelcomePage> {
     user = FirebaseAuth.instance.currentUser;
     _loadUserTheme();
 
-    // ✅ الاستماع لأي روابط تصل أثناء وجود المستخدم داخل التطبيق
+    // ✅ الاستماع للروابط بشكل آمن
     _deepLinkSub = deepLinkStreamController.stream.listen((uri) {
-      debugPrint('🌐 وصل رابط أثناء وجود المستخدم داخل التطبيق: $uri');
-      openPlaceFromUri(
-        context: context,
-        themeNotifier: widget.themeNotifier,
-        uri: uri,
-      );
+      if (!mounted) return;
+      debugPrint('🌐 وصل رابط: $uri');
+
+      // نحمي context باستخدام Future.microtask لضمان أنه بعد build
+      Future.microtask(() {
+        if (mounted) {
+          openPlaceFromUri(
+            context: context,
+            themeNotifier: widget.themeNotifier,
+            uri: uri,
+          );
+        }
+      });
     });
   }
 
   @override
   void dispose() {
-    _deepLinkSub?.cancel(); // ✅ إلغاء الاشتراك عند مغادرة الصفحة
+    _deepLinkSub?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final loc = AppLocalizations.of(context)!; // ✅ الوصول إلى الترجمة
+    // ✅ نحمي الوصول إلى AppLocalizations
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(loc.welcome), // ✅ "مرحباً بك" / "Welcome"
+        title: Text(loc.welcome),
         actions: [
-          // زر التبديل بين النمطين
+          // ✅ تعديل زر القمر ليعمل بشكل آمن مع المستخدمين العاديين والضيوف
           IconButton(
             icon: Icon(
               widget.themeNotifier.isDarkMode
@@ -103,24 +107,37 @@ class _WelcomePageState extends State<WelcomePage> {
                   : Colors.deepOrange,
             ),
             onPressed: () async {
-              // تبديل الثيم محلياً
-              widget.themeNotifier.toggleTheme();
+              try {
+                // ✅ بدّل الثيم أولاً بشكل فوري
+                final newMode = !widget.themeNotifier.isDarkMode;
+                widget.themeNotifier.setTheme(newMode);
 
-              // تحديث الحالة الجديدة في Firestore
-              final user = FirebaseAuth.instance.currentUser;
-              if (user != null) {
-                try {
-                  await FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(user.uid)
-                      .set({
-                        'theme': widget.themeNotifier.isDarkMode
-                            ? 'dark'
-                            : 'light',
-                      }, SetOptions(merge: true));
-                } catch (e) {
-                  print("خطأ أثناء تحديث الثيم في Firestore: $e");
-                }
+                // ✅ نفذ تحديث Firestore بعد إعادة البناء بأمان
+                Future.microtask(() async {
+                  try {
+                    final user = FirebaseAuth.instance.currentUser;
+
+                    // 🔒 تحقق أن المستخدم موجود وله UID (حتى لو كان ضيف)
+                    if (user == null || user.uid.isEmpty) {
+                      debugPrint("⚠️ لم يتم العثور على المستخدم أثناء تبديل الثيم");
+                      return;
+                    }
+
+                    // ✅ حدث Firestore فقط إن كان المستخدم ما زال متصلاً
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .set({
+                      'theme': newMode ? 'dark' : 'light',
+                    }, SetOptions(merge: true));
+
+                    debugPrint("✅ تم تحديث الثيم بنجاح للمستخدم ${user.uid}");
+                  } catch (e) {
+                    debugPrint("⚠️ خطأ أثناء تحديث الثيم في Firestore: $e");
+                  }
+                });
+              } catch (e) {
+                debugPrint("⚠️ خطأ أثناء تبديل الثيم: $e");
               }
             },
           ),
@@ -129,26 +146,23 @@ class _WelcomePageState extends State<WelcomePage> {
 
           IconButton(
             icon: const Icon(Icons.logout),
-            tooltip: 'تسجيل الخروج', // ✅ يبقى ثابت أو يمكن ترجمة tooltip لاحقاً
+            tooltip: 'تسجيل الخروج',
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
-              if (mounted) {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        SignInPanel(themeNotifier: widget.themeNotifier),
-                  ),
-                  (route) => false,
-                );
-              }
+              if (!mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      SignInPanel(themeNotifier: widget.themeNotifier),
+                ),
+                (route) => false,
+              );
             },
           ),
         ],
       ),
-      drawer: CustomDrawer(
-        themeNotifier: widget.themeNotifier,
-      ), // ⬅️ هذا السطر المهم
+      drawer: CustomDrawer(themeNotifier: widget.themeNotifier),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -176,11 +190,9 @@ class _WelcomePageState extends State<WelcomePage> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
-
-              // ✅ زر الانتقال إلى ChoicePage
               ElevatedButton.icon(
                 icon: const Icon(Icons.map),
-                label: Text(loc.explorePlaces), // ✅ "استكشف الأماكن"
+                label: Text(loc.explorePlaces),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 40,
@@ -189,6 +201,7 @@ class _WelcomePageState extends State<WelcomePage> {
                   backgroundColor: Colors.deepOrange,
                 ),
                 onPressed: () {
+                  if (!mounted) return;
                   if (ModalRoute.of(context)?.isCurrent ?? false) {
                     Navigator.pushReplacement(
                       context,
@@ -201,7 +214,6 @@ class _WelcomePageState extends State<WelcomePage> {
                   }
                 },
               ),
-
               const SizedBox(height: 16),
             ],
           ),

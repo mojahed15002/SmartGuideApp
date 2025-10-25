@@ -2,19 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme_notifier.dart';
 import '../l10n/gen/app_localizations.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CustomDrawer extends StatelessWidget {
   final ThemeNotifier themeNotifier;
-final void Function(String)? onItemSelected;
- const CustomDrawer({Key? key, required this.themeNotifier, this.onItemSelected}) : super(key: key);
+  final void Function(String)? onItemSelected;
 
-  
+  const CustomDrawer({
+    super.key,
+    required this.themeNotifier,
+    this.onItemSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final isDark = themeNotifier.isDarkMode;
-    final loc = AppLocalizations.of(context)!; // ✅ الترجمة
+    final loc = AppLocalizations.of(context)!;
 
     return Drawer(
       child: Column(
@@ -28,7 +32,7 @@ final void Function(String)? onItemSelected;
               ),
             ),
             accountName: Text(
-              user?.displayName ?? loc.defaultUser, // ✅ مترجم
+              user?.displayName ?? loc.defaultUser,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             accountEmail: Text(user?.email ?? loc.emailNotAvailable),
@@ -38,10 +42,8 @@ final void Function(String)? onItemSelected;
                 Icons.person,
                 color: Colors.orange.shade700,
                 size: 40,
-                
               ),
             ),
-            
           ),
 
           // الصفحة الرئيسية
@@ -84,16 +86,36 @@ final void Function(String)? onItemSelected;
             },
           ),
 
-
           const Divider(),
 
-          // الوضع الليلي
+          // 🌙 الوضع الليلي (زر القمر)
           SwitchListTile(
             secondary: const Icon(Icons.dark_mode),
             title: Text(loc.darkMode),
             value: isDark,
-            onChanged: (val) {
-              themeNotifier.setTheme(val);
+            onChanged: (val) async {
+              Navigator.pop(context); // ✅ أولاً أغلق الـ Drawer
+
+              // ✅ بعد الإغلاق، بدّل الثيم بأمان داخل Future.microtask
+              Future.microtask(() async {
+                try {
+                  themeNotifier.setTheme(val);
+
+                  // 🟢 تحديث Firestore لجميع المستخدمين (بما فيهم الضيوف)
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user != null) {
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .set(
+                      {'theme': val ? 'dark' : 'light'},
+                      SetOptions(merge: true),
+                    );
+                  }
+                } catch (e) {
+                  debugPrint("⚠️ خطأ أثناء تبديل الثيم من الـ Drawer: $e");
+                }
+              });
             },
           ),
 
@@ -111,7 +133,7 @@ final void Function(String)? onItemSelected;
 
           const Divider(),
 
-          // 🔐 تسجيل الخروج مع ترجمة كاملة
+          // 🔐 تسجيل الخروج
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
             child: ElevatedButton.icon(
@@ -128,14 +150,10 @@ final void Function(String)? onItemSelected;
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: Text(
-                      loc.logoutConfirmTitle,
-                      textAlign: TextAlign.right,
-                    ),
-                    content: Text(
-                      loc.logoutConfirmMessage,
-                      textAlign: TextAlign.right,
-                    ),
+                    title: Text(loc.logoutConfirmTitle,
+                        textAlign: TextAlign.right),
+                    content: Text(loc.logoutConfirmMessage,
+                        textAlign: TextAlign.right),
                     actionsAlignment: MainAxisAlignment.spaceBetween,
                     actions: [
                       TextButton(

@@ -49,6 +49,12 @@ void openPlaceFromUri({
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 🛡️ فحص الأمان لمنع استخدام context غير فعّال بعد تبديل الثيم
+      if (!context.mounted) {
+        debugPrint('⚠️ تم تجاهل openPlaceFromUri لأن الـ context لم يعد فعّالاً.');
+        return;
+      }
+
       Navigator.push(
         context,
         MaterialPageRoute(

@@ -157,7 +157,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get touristPlaces => 'Tourist Places';
 
   @override
-  String get favoritesTitle => 'Favorites';
+  String get favoritesTitle => 'Favorites ❤️';
 
   @override
   String get noFavorites => 'No places added to favorites yet.';
@@ -500,4 +500,91 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get edit => 'Edit';
+
+  @override
+  String get tripStats => 'Trip Statistics';
+
+  @override
+  String get tripsCount => 'Number of Trips';
+
+  @override
+  String get totalDistance => 'Total Distance';
+
+  @override
+  String get totalTime => 'Total Travel Time';
+
+  @override
+  String get currentCity => 'Current City';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get comingSoon => 'Coming soon…';
+
+  @override
+  String get notificationsSoon => 'Notifications feature coming soon';
+
+  @override
+  String get shareApp => 'Share App';
+
+  @override
+  String get shareAppDesc => 'Share the app with your friends';
+
+  @override
+  String get sendFeedback => 'Send Feedback';
+
+  @override
+  String get helpImprove => 'Help us improve the experience';
+
+  @override
+  String get achievements => 'Achievements';
+
+  @override
+  String get yourLevel => 'Your Level';
+
+  @override
+  String get badgeExpert => '🎉 You earned the Expert Explorer badge!';
+
+  @override
+  String get badgeActive => '🎉 You earned the Active Explorer badge!';
+
+  @override
+  String badgeFirst(Object count) {
+    return 'Discover $count more places to earn your first badge';
+  }
+
+  @override
+  String get accountSettings => 'Account Settings';
+
+  @override
+  String get changePassword => 'Change Password';
+
+  @override
+  String get resetPassword => 'Reset your password';
+
+  @override
+  String get notAvailable => 'Not available for Google/Guest accounts';
+
+  @override
+  String get deleteAccount => 'Delete Account';
+
+  @override
+  String get deleteAccountDesc =>
+      'Your account will be permanently deleted (may require re-login)';
+
+  @override
+  String get soonEditInfo => 'Coming soon: Edit profile info';
+
+  @override
+  String get visitorAccount => 'Visitor';
+
+  @override
+  String get googleAccount => 'Google Account';
+
+  @override
+  String get registeredAccount => 'Registered Account';
+
+  @override
+  String get reloginToDelete => 'You must re-login to delete your account.';
 }

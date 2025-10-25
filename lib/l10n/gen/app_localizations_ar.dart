@@ -157,7 +157,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get touristPlaces => 'أماكن سياحية';
 
   @override
-  String get favoritesTitle => 'المفضلات';
+  String get favoritesTitle => 'المفضلة ❤️';
 
   @override
   String get noFavorites => 'لا توجد أماكن مضافة إلى المفضلة بعد.';
@@ -499,4 +499,91 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get edit => 'تعديل';
+
+  @override
+  String get tripStats => 'إحصائيات الرحلات';
+
+  @override
+  String get tripsCount => 'عدد الرحلات';
+
+  @override
+  String get totalDistance => 'المسافة الإجمالية';
+
+  @override
+  String get totalTime => 'الوقت الكلي للرحلات';
+
+  @override
+  String get currentCity => 'المدينة الحالية';
+
+  @override
+  String get notifications => 'الإشعارات';
+
+  @override
+  String get comingSoon => 'قريبًا…';
+
+  @override
+  String get notificationsSoon => 'ميزة الإشعارات قريبًا';
+
+  @override
+  String get shareApp => 'مشاركة التطبيق';
+
+  @override
+  String get shareAppDesc => 'انشر التطبيق بين أصدقائك';
+
+  @override
+  String get sendFeedback => 'إرسال ملاحظات';
+
+  @override
+  String get helpImprove => 'ساعدنا على تحسين التجربة';
+
+  @override
+  String get achievements => 'الإنجازات';
+
+  @override
+  String get yourLevel => 'مستواك';
+
+  @override
+  String get badgeExpert => '🎉 حصلت على شارة المستكشف الخبير!';
+
+  @override
+  String get badgeActive => '🎉 حصلت على شارة المستكشف النشط!';
+
+  @override
+  String badgeFirst(Object count) {
+    return 'اكتشف $count أماكن إضافية لتحصل على أول شارة';
+  }
+
+  @override
+  String get accountSettings => 'إعدادات الحساب';
+
+  @override
+  String get changePassword => 'تغيير كلمة المرور';
+
+  @override
+  String get resetPassword => 'أعد ضبط كلمة المرور الخاصة بك';
+
+  @override
+  String get notAvailable => 'غير متاح لحسابات Google/ضيف';
+
+  @override
+  String get deleteAccount => 'حذف الحساب';
+
+  @override
+  String get deleteAccountDesc =>
+      'سيتم حذف حسابك نهائيًا (قد يتطلب إعادة تسجيل الدخول)';
+
+  @override
+  String get soonEditInfo => 'قريبًا: تعديل المعلومات';
+
+  @override
+  String get visitorAccount => 'زائر';
+
+  @override
+  String get googleAccount => 'حساب Google';
+
+  @override
+  String get registeredAccount => 'حساب مسجل';
+
+  @override
+  String get reloginToDelete => 'يجب إعادة تسجيل الدخول لحذف الحساب.';
 }
