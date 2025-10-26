@@ -23,7 +23,20 @@ class CustomDrawer extends StatelessWidget {
     return Drawer(
       child: Column(
         children: [
-          UserAccountsDrawerHeader(
+            // 🟢 رأس المستخدم - صار الآن قابل للنقر لفتح صفحة البروفايل
+          GestureDetector(
+            onTap: () {
+              Navigator.pop(context); // يغلق الـ Drawer أولاً
+              if (onItemSelected != null) {
+                onItemSelected!("profile"); // يرسل إشارة إلى MainNavigation
+              } else {
+                // احتياطًا، في حال تم استخدام Drawer خارج MainNavigation
+                Navigator.pushNamed(context, '/profile');
+              }
+            },
+          
+
+          child: UserAccountsDrawerHeader(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [Colors.orange, Colors.deepOrange.shade400],
@@ -45,7 +58,7 @@ class CustomDrawer extends StatelessWidget {
               ),
             ),
           ),
-
+          ),
           // الصفحة الرئيسية
           ListTile(
             leading: const Icon(Icons.home),

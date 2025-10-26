@@ -10,6 +10,7 @@ import 'custom_drawer.dart';
 // صفحات مساعدة اختيارية (بدّل المسارات إذا لزم)
 import 'forgot_password_page.dart'; // لتغيير/استعادة كلمة المرور
 import '../sign_in_panel.dart';        // للعودة بعد تسجيل الخروج
+import 'edit_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -359,23 +360,26 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           const SizedBox(height: 10),
                           OutlinedButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(loc.soonEditInfo),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.edit_outlined),
-                            label: Text(loc.edit),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.orange),
-                              foregroundColor: Colors.orange,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfilePage(themeNotifier: widget.themeNotifier),
+      ),
+    );
+  },
+  icon: const Icon(Icons.edit_outlined),
+  label: Text(loc.edit),
+  style: OutlinedButton.styleFrom(
+    side: const BorderSide(color: Colors.orange),
+    foregroundColor: Colors.orange,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+  ),
+),
+
+                          
                         ],
                       ),
                     ),

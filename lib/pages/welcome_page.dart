@@ -6,7 +6,6 @@ import '../sign_in_panel.dart';
 import '../deep_link_helper.dart';
 import 'dart:async';
 import '../l10n/gen/app_localizations.dart';
-import 'custom_drawer.dart';
 import 'main_navigation.dart';
 
 class WelcomePage extends StatefulWidget {
@@ -95,6 +94,7 @@ class _WelcomePageState extends State<WelcomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(loc.welcome),
+         automaticallyImplyLeading: false, // ✅ هذا السطر يلغي زر الثلاث شحطات
         actions: [
           // ✅ تعديل زر القمر ليعمل بشكل آمن مع المستخدمين العاديين والضيوف
           IconButton(
@@ -162,7 +162,7 @@ class _WelcomePageState extends State<WelcomePage> {
           ),
         ],
       ),
-      drawer: CustomDrawer(themeNotifier: widget.themeNotifier),
+     
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
