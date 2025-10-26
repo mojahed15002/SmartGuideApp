@@ -94,54 +94,8 @@ class _WelcomePageState extends State<WelcomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(loc.welcome),
-         automaticallyImplyLeading: false, // ✅ هذا السطر يلغي زر الثلاث شحطات
+        automaticallyImplyLeading: false, // ✅ هذا السطر يلغي زر الثلاث شحطات
         actions: [
-          // ✅ تعديل زر القمر ليعمل بشكل آمن مع المستخدمين العاديين والضيوف
-          IconButton(
-            icon: Icon(
-              widget.themeNotifier.isDarkMode
-                  ? Icons.wb_sunny
-                  : Icons.nightlight_round,
-              color: widget.themeNotifier.isDarkMode
-                  ? Colors.orange
-                  : Colors.deepOrange,
-            ),
-            onPressed: () async {
-              try {
-                // ✅ بدّل الثيم أولاً بشكل فوري
-                final newMode = !widget.themeNotifier.isDarkMode;
-                widget.themeNotifier.setTheme(newMode);
-
-                // ✅ نفذ تحديث Firestore بعد إعادة البناء بأمان
-                Future.microtask(() async {
-                  try {
-                    final user = FirebaseAuth.instance.currentUser;
-
-                    // 🔒 تحقق أن المستخدم موجود وله UID (حتى لو كان ضيف)
-                    if (user == null || user.uid.isEmpty) {
-                      debugPrint("⚠️ لم يتم العثور على المستخدم أثناء تبديل الثيم");
-                      return;
-                    }
-
-                    // ✅ حدث Firestore فقط إن كان المستخدم ما زال متصلاً
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(user.uid)
-                        .set({
-                      'theme': newMode ? 'dark' : 'light',
-                    }, SetOptions(merge: true));
-
-                    debugPrint("✅ تم تحديث الثيم بنجاح للمستخدم ${user.uid}");
-                  } catch (e) {
-                    debugPrint("⚠️ خطأ أثناء تحديث الثيم في Firestore: $e");
-                  }
-                });
-              } catch (e) {
-                debugPrint("⚠️ خطأ أثناء تبديل الثيم: $e");
-              }
-            },
-          ),
-
           const SizedBox(height: 20),
 
           IconButton(
