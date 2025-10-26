@@ -22,7 +22,8 @@ class CityPlacesPage extends StatefulWidget {
   State<CityPlacesPage> createState() => _CityPlacesPageState();
 }
 
-class _CityPlacesPageState extends State<CityPlacesPage> {
+class _CityPlacesPageState extends State<CityPlacesPage>
+    with SingleTickerProviderStateMixin {
   final String _prefsKey = 'favorites_list';
   List<String> favoritePlaces = [];
 
@@ -33,10 +34,11 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
   final TextEditingController _searchController = TextEditingController();
   List<String> _searchHistory = [];
 
-  final bool _isHeartPressed = false;
-  final bool _isSharePressed = false;
-
   final Map<String, double> _uiUserRatings = {};
+
+  late AnimationController _animController;
+  double _heartScale = 1.0;
+  double _shareScale = 1.0;
 
   @override
   void initState() {
@@ -46,6 +48,19 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchPlaces();
     });
+
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+      lowerBound: 0.9,
+      upperBound: 1.1,
+    );
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSearchHistory() async {
@@ -208,6 +223,11 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
         favoritePlaces.add(placeId);
         isAdded = true;
       }
+      _heartScale = 1.2;
+    });
+
+    Future.delayed(const Duration(milliseconds: 150), () {
+      setState(() => _heartScale = 1.0);
     });
 
     await prefs.setStringList(_prefsKey, favoritePlaces);
@@ -256,6 +276,10 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
   }
 
   void _sharePlace(String city, String id, String title) {
+    setState(() => _shareScale = 1.2);
+    Future.delayed(const Duration(milliseconds: 150),
+        () => setState(() => _shareScale = 1.0));
+
     final String encodedCity = Uri.encodeComponent(city);
     final String encodedId = Uri.encodeComponent(id);
     final String webLink =
@@ -340,20 +364,20 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
                                     GestureDetector(
                                       onTap: () {
                                         if (!mounted) return;
-                                          Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => PlaceDetailsPage(
-                                                title: title,
-                                                cityName: cityName,
-                                                images: images,
-                                                url: place["url"],
-                                                themeNotifier: themeNotifier,
-                                                heroTag: heroTag,
-                                              ),
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                PlaceDetailsPage(
+                                              title: title,
+                                              cityName: cityName,
+                                              images: images,
+                                              url: place["url"],
+                                              themeNotifier: themeNotifier,
+                                              heroTag: heroTag,
                                             ),
-                                          );
-                                        
+                                          ),
+                                        );
                                       },
                                       child: Card(
                                         shape: RoundedRectangleBorder(
@@ -396,6 +420,78 @@ class _CityPlacesPageState extends State<CityPlacesPage> {
                                               ),
                                             ),
                                           ],
+                                        ),
+                                      ),
+                                    ),
+                                    // ❤️ زر المفضلة مع نبضة
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: GestureDetector(
+                                        onTap: () => _toggleFavorite(id),
+                                        child: AnimatedScale(
+                                          scale: _heartScale,
+                                          duration: const Duration(
+                                              milliseconds: 150),
+                                          child: Container(
+                                            width: 40,
+                                            height: 40,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white
+                                                  .withOpacity(0.8),
+                                              shape: BoxShape.circle,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.2),
+                                                  blurRadius: 4,
+                                                ),
+                                              ],
+                                            ),
+                                            child: Icon(
+                                              favoritePlaces.contains(id)
+                                                  ? Icons.favorite
+                                                  : Icons.favorite_border,
+                                              color:
+                                                  favoritePlaces.contains(id)
+                                                      ? Colors.red
+                                                      : Colors.grey.shade700,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    // 🔗 زر المشاركة مع نبضة
+                                    Positioned(
+                                      top: 8,
+                                      left: 8,
+                                      child: GestureDetector(
+                                        onTap: () => _sharePlace(
+                                            cityName, id, title),
+                                        child: AnimatedScale(
+                                          scale: _shareScale,
+                                          duration: const Duration(
+                                              milliseconds: 150),
+                                          child: Container(
+                                            width: 40,
+                                            height: 40,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white
+                                                  .withOpacity(0.8),
+                                              shape: BoxShape.circle,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.2),
+                                                  blurRadius: 4,
+                                                ),
+                                              ],
+                                            ),
+                                            child: const Icon(
+                                              Icons.share,
+                                              color: Colors.orange,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
