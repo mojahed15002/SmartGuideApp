@@ -18,22 +18,50 @@ class ThemeNotifier extends ChangeNotifier {
     final langCode = prefs.getString('language') ?? 'ar';
     _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
     _locale = Locale(langCode);
-    notifyListeners();
+
+    // ✅ نؤخر الإشعار قليلاً بعد أول إطار لضمان استقرار واجهة البداية
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        notifyListeners();
+      });
+    });
   }
 
   Future<void> setTheme(bool isDark) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', isDark);
-    _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    notifyListeners();
+    final newTheme = isDark ? ThemeMode.dark : ThemeMode.light;
+
+    // ✅ لا نعيد البناء إلا إذا فعلاً تغير الثيم
+    if (newTheme != _themeMode) {
+      _themeMode = newTheme;
+      Future.delayed(const Duration(milliseconds: 150), () {
+        notifyListeners();
+      });
+    }
   }
 
-  Future<void> setLanguage(String langCode) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('language', langCode);
-    _locale = Locale(langCode);
-    notifyListeners();
-  }
+Future<void> setLanguage(String langCode, {bool forceNotify = false}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final current = prefs.getString('language') ?? 'ar';
+
+  // ✅ إذا نفس اللغة ولم يُطلب إجبار التغيير → لا نعيد البناء
+  if (!forceNotify && _locale.languageCode == langCode) return;
+  if (!forceNotify && current == langCode) return;
+
+  await prefs.setString('language', langCode);
+  _locale = Locale(langCode);
+
+  // ✅ تأخير خفيف لمنع التعارض مع التنقّل أثناء تسجيل الدخول
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+        notifyListeners();
+      }
+    });
+  });
+}
+
 
   void toggleTheme() {
     setTheme(_themeMode == ThemeMode.light);

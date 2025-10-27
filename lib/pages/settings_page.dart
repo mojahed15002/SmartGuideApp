@@ -51,29 +51,32 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _changeLanguage(String langCode) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('language', langCode);
+Future<void> _changeLanguage(String langCode) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('language', langCode);
 
-    widget.themeNotifier.setLanguage(langCode);
+  // ✅ نستخدم forceNotify لتحديث اللغة فورًا بدون الحاجة لإعادة التشغيل
+  widget.themeNotifier.setLanguage(langCode, forceNotify: true);
 
-    // ✅ حفظ اللغة في Firestore للمستخدم الحالي
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-        'language': langCode,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    }
-
-    if (mounted) {
-      setState(() => _language = langCode);
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.languageApplied)),
-    );
+  // ✅ حفظ اللغة في Firestore للمستخدم الحالي
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'language': langCode,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
+
+  if (mounted) {
+    setState(() => _language = langCode);
+  }
+
+  // ✅ إشعار المستخدم بالتغيير
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(AppLocalizations.of(context)!.languageApplied)),
+  );
+}
+
 
   void _showAboutDialog() {
     final loc = AppLocalizations.of(context)!;

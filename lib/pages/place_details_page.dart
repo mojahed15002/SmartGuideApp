@@ -303,7 +303,7 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
 
             Center(
               child: Text(
-                "متوسط التقييم: ⭐ ${_averageRating.toStringAsFixed(1)} من 5 (${_totalRatings} تقييم)",
+                "متوسط التقييم: ⭐ ${_averageRating.toStringAsFixed(1)} من 5 ($_totalRatings تقييم)",
                 style: const TextStyle(
                   fontSize: 15,
                   color: Colors.orange,

@@ -18,6 +18,8 @@ import 'pages/near_me_page.dart';
 import 'pages/favorites_page.dart';
 import 'pages/logs_page.dart';
 import 'pages/settings_page.dart';
+
+// ✅ الإضافة الجديدة
   
 final ThemeNotifier themeNotifier = ThemeNotifier();
 
@@ -225,7 +227,6 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
               child: child!,
             );
           },
-          // ⬇️ أضف هان
           routes: {
             '/home': (context) => ChoicePage(themeNotifier: widget.themeNotifier),
             '/near_me': (context) => NearMePage(themeNotifier: widget.themeNotifier),
@@ -248,7 +249,6 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
                 final pending = DeepLinkStore.take();
                 if (pending != null) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    // ✅ حماية إضافية ضد الخطأ بعد تبديل الثيم
                     if (mounted && context.mounted) {
                       openPlaceFromUri(
                         context: context,
@@ -259,40 +259,52 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
                   });
                 }
 
-// ✅ تحميل اللغة والثيم من Firestore بشكل آمن بعد تسجيل الدخول التلقائي
-Future.microtask(() async {
-  final user = FirebaseAuth.instance.currentUser;
+                // ✅ تحميل اللغة والثيم من Firestore بشكل آمن بعد تسجيل الدخول التلقائي
+                Future.microtask(() async {
+                  final user = FirebaseAuth.instance.currentUser;
 
-  // ✅ تجاهل المستخدمين المجهولين أو غير المسجلين
-  if (user == null || user.isAnonymous) {
-    debugPrint("🚫 المستخدم ضيف أو غير مسجل، لا حاجة لتحميل إعدادات Firestore");
-    return;
-  }
+                  if (user == null || user.isAnonymous) {
+                    debugPrint("🚫 المستخدم ضيف أو غير مسجل، لا حاجة لتحميل إعدادات Firestore");
+                    return;
+                  }
 
-  final userDoc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .get();
+                  final userDoc = await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .get();
 
-  if (!userDoc.exists) return;
+                  if (!userDoc.exists) return;
 
-  final prefs = await SharedPreferences.getInstance();
-  final data = userDoc.data() ?? {};
+                  final prefs = await SharedPreferences.getInstance();
+                  final data = userDoc.data() ?? {};
 
-  if (data['theme'] != null) {
-    final savedTheme = data['theme'];
-    widget.themeNotifier.setTheme(savedTheme == 'dark');
-    await prefs.setBool('isDarkMode', savedTheme == 'dark');
-  }
+                  if (data['theme'] != null) {
+                    final savedTheme = data['theme'];
+                    widget.themeNotifier.setTheme(savedTheme == 'dark');
+                    await prefs.setBool('isDarkMode', savedTheme == 'dark');
+                  }
 
-  if (data['language'] != null) {
-    final savedLang = data['language'];
-    widget.themeNotifier.setLanguage(savedLang);
-    await prefs.setString('language', savedLang);
-  }
-});
+                  if (data['language'] != null) {
+                    final savedLang = data['language'];
+                    widget.themeNotifier.setLanguage(savedLang);
+                    await prefs.setString('language', savedLang);
+                  }
+                });
 
-                return WelcomePage(themeNotifier: widget.themeNotifier);
+                if (_pendingDeepLink != null) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final uri = Uri.parse(_pendingDeepLink!);
+    openPlaceFromUri(
+      context: context,
+      themeNotifier: widget.themeNotifier,
+      uri: uri,
+    );
+    _pendingDeepLink = null;
+  });
+}
+
+return WelcomePage(themeNotifier: widget.themeNotifier);
+
               }
 
               return SignInPanel(themeNotifier: widget.themeNotifier);
@@ -303,3 +315,4 @@ Future.microtask(() async {
     );
   }
 }
+

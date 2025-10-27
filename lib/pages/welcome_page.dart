@@ -18,9 +18,14 @@ class WelcomePage extends StatefulWidget {
   State<WelcomePage> createState() => _WelcomePageState();
 }
 
-class _WelcomePageState extends State<WelcomePage> {
+class _WelcomePageState extends State<WelcomePage>
+    with SingleTickerProviderStateMixin {
   User? user;
   String? userName;
+  String? photoUrl; // ✅ مضافة لحفظ رابط الصورة
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
 
   StreamSubscription<Uri>? _deepLinkSub;
 
@@ -35,9 +40,22 @@ class _WelcomePageState extends State<WelcomePage> {
         if (userDoc.exists) {
           final data = userDoc.data();
           if (data != null && mounted) {
-            setState(() {
-              userName = data['name'];
-            });
+            // ✅ لا نكتب اسمًا فارغًا على الاسم المُجهّز مسبقًا
+            final fetched =
+                ((data['name'] ?? data['username'])?.toString().trim()) ?? '';
+            if (fetched.isNotEmpty) {
+              setState(() {
+                userName = fetched;
+              });
+            }
+
+            // ✅ نحاول جلب الصورة من Firestore إذا موجودة
+            final fetchedPhoto = ((data['photoUrl'])?.toString().trim()) ?? '';
+            if (fetchedPhoto.isNotEmpty) {
+              setState(() {
+                photoUrl = fetchedPhoto;
+              });
+            }
 
             if (data.containsKey('theme')) {
               final savedTheme = data['theme'];
@@ -60,6 +78,29 @@ class _WelcomePageState extends State<WelcomePage> {
   void initState() {
     super.initState();
     user = FirebaseAuth.instance.currentUser;
+
+    // ✅ نجهّز الاسم والصورة فورًا قبل أول build (بدون انتظار Firestore)
+    if (user != null && !(user!.isAnonymous)) {
+      userName = widget.userName ??
+          user!.displayName ??
+          user!.email?.split('@').first ??
+          '';
+
+      // ✅ لو حساب Google فيه صورة، نعرضها فوراً
+      photoUrl = user!.photoURL;
+    }
+
+    // 🎬 إعداد الانيميشن
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _fadeAnimation =
+        CurvedAnimation(parent: _animController, curve: Curves.easeInOut);
+    _scaleAnimation =
+        Tween<double>(begin: 0.85, end: 1.0).animate(_fadeAnimation);
+    _animController.forward();
+
     _loadUserTheme();
 
     // ✅ الاستماع للروابط بشكل آمن
@@ -78,10 +119,26 @@ class _WelcomePageState extends State<WelcomePage> {
         }
       });
     });
+
+    // ✅✅ الإضافة الجديدة والمضمونة:
+    // إذا كان هناك رابط مؤجل (مثلاً التطبيق فُتح من رابط GitHub وهو مغلق)
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final uri = DeepLinkStore.take();
+      if (uri != null && FirebaseAuth.instance.currentUser != null && mounted) {
+        debugPrint("🚀 تم العثور على رابط مؤجل، يتم فتحه الآن: $uri");
+        await Future.delayed(const Duration(milliseconds: 500)); // تأخير بسيط لضمان تحميل الواجهة
+        openPlaceFromUri(
+          context: context,
+          themeNotifier: widget.themeNotifier,
+          uri: uri,
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
+    _animController.dispose();
     _deepLinkSub?.cancel();
     super.dispose();
   }
@@ -91,13 +148,20 @@ class _WelcomePageState extends State<WelcomePage> {
     // ✅ نحمي الوصول إلى AppLocalizations
     final loc = AppLocalizations.of(context)!;
 
+    // ✅ تجهيز النص الترحيبي بشكل ذكي
+    String greeting;
+    if (userName != null && userName!.trim().isNotEmpty) {
+      greeting = "${loc.welcome}, $userName 👋";
+    } else {
+      greeting = loc.welcomeVisitor;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(loc.welcome),
         automaticallyImplyLeading: false, // ✅ هذا السطر يلغي زر الثلاث شحطات
         actions: [
           const SizedBox(height: 20),
-
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'تسجيل الخروج',
@@ -128,16 +192,59 @@ class _WelcomePageState extends State<WelcomePage> {
                 size: 100,
                 color: Colors.orange.shade600,
               ),
-              const SizedBox(height: 20),
-              Text(
-                loc.welcomeVisitor,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+              const SizedBox(height: 30),
+
+              // ✅ الصورة والاسم داخل صف جميل مع انيميشن
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (photoUrl != null && photoUrl!.isNotEmpty)
+                        Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.25),
+                                blurRadius: 8,
+                                offset: const Offset(2, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: Image.network(
+                              photoUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: Colors.grey.shade300,
+                                child: const Icon(Icons.person, size: 50),
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (photoUrl != null && photoUrl!.isNotEmpty)
+                        const SizedBox(width: 14),
+                      Flexible(
+                        child: Text(
+                          greeting,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 10),
+
+              const SizedBox(height: 20),
               Text(
                 loc.cityGuideDescription,
                 style: const TextStyle(fontSize: 16),

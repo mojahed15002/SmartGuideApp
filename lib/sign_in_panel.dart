@@ -30,7 +30,9 @@ class _SignInPanelState extends State<SignInPanel> {
 Future<void> _changeLanguage(String langCode) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('language', langCode);
-  widget.themeNotifier.setLanguage(langCode);
+
+  // ✅ نجبر التحديث الفوري لأن هذا تغيير يدوي من المستخدم
+  widget.themeNotifier.setLanguage(langCode, forceNotify: true);
 
   if (mounted) {
     setState(() {
@@ -39,6 +41,36 @@ Future<void> _changeLanguage(String langCode) async {
   }
 }
 
+@override
+void initState() {
+  super.initState();
+  _syncLanguage(); // ✅ استدعاء عند الدخول للصفحة
+}
+
+Future<void> _syncLanguage() async {
+  // نحاول نقرأ اللغة المحفوظة في SharedPreferences أو من ThemeNotifier
+  final prefs = await SharedPreferences.getInstance();
+  final savedLang =
+      prefs.getString('language') ?? widget.themeNotifier.locale.languageCode;
+
+  if (mounted) {
+    setState(() {
+      _language = savedLang;
+    });
+  }
+}
+
+@override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  // تأكد كل مرة تُعرض الصفحة أنها تعرض اللغة الصحيحة
+  final currentLang = widget.themeNotifier.locale.languageCode;
+  if (_language != currentLang) {
+    setState(() {
+      _language = currentLang;
+    });
+  }
+}
 
 
   @override
@@ -584,3 +616,4 @@ const SizedBox(height: 10),
     );
   }
 }
+

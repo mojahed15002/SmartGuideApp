@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'theme_notifier.dart';
 import 'pages/place_details_page.dart';
-import 'places_data.dart';
 
 /// ✅ Stream عام لإرسال الروابط إلى الصفحات المفتوحة داخل التطبيق
-final StreamController<Uri> deepLinkStreamController = StreamController.broadcast();
+final StreamController<Uri> deepLinkStreamController =
+    StreamController.broadcast();
 
 /// خازن بسيط للرابط المؤجل (يُستخدم عند فتح التطبيق وهو مغلق)
 class DeepLinkStore {
@@ -19,57 +21,77 @@ class DeepLinkStore {
 }
 
 /// ✅ دالة عامة لفتح صفحة المكان من Uri (تُستخدم من أي مكان في التطبيق)
-void openPlaceFromUri({
+Future<void> openPlaceFromUri({
   required BuildContext context,
   required ThemeNotifier themeNotifier,
   required Uri uri,
-}) {
+}) async {
   try {
     debugPrint("🔗 تم استقبال الرابط: $uri");
-    String? city;
-    String? id;
 
-    if (uri.scheme == 'smartcityguide' && uri.host == 'place') {
-      city = uri.queryParameters['city'];
-      id = uri.queryParameters['id'];
-    } else if (uri.host.contains('github.io') && uri.path.contains('/place')) {
-      city = uri.queryParameters['city'];
-      id = uri.queryParameters['id'];
-    }
+    String? city = uri.queryParameters['city'];
+    String? id = uri.queryParameters['id'];
 
     if (city == null || id == null) {
-      debugPrint('⚠️ الرابط لا يحتوي city أو id');
+      debugPrint('⚠️ الرابط لا يحتوي على city أو id');
       return;
     }
 
-    final place = allPlaces[id];
-    if (place == null) {
-      debugPrint('⚠️ لم يتم العثور على المكان $id');
-      return;
-    }
+    // ✅ التحقق من المستخدم الحالي أو تسجيل دخول كضيف
+    final auth = FirebaseAuth.instance;
+    User? user = auth.currentUser;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // 🛡️ فحص الأمان لمنع استخدام context غير فعّال بعد تبديل الثيم
-      if (!context.mounted) {
-        debugPrint('⚠️ تم تجاهل openPlaceFromUri لأن الـ context لم يعد فعّالاً.');
-        return;
+    if (user == null) {
+      try {
+        final userCred = await auth.signInAnonymously();
+        user = userCred.user;
+        debugPrint("👤 تم تسجيل الدخول كضيف: ${user?.uid}");
+      } catch (e) {
+        debugPrint("❌ فشل تسجيل الدخول كضيف: $e");
       }
+    }
 
-      Navigator.push(
-        context,
+    // ✅ تحميل بيانات المكان من Firestore باستخدام الـ id
+    DocumentSnapshot<Map<String, dynamic>> snapshot;
+    try {
+      snapshot =
+          await FirebaseFirestore.instance.collection('places').doc(id).get();
+    } catch (e) {
+      debugPrint('❌ خطأ في تحميل بيانات المكان من Firestore: $e');
+      return;
+    }
+
+    if (!snapshot.exists || snapshot.data() == null) {
+      debugPrint('⚠️ لم يتم العثور على المستند المطلوب في Firestore.');
+      return;
+    }
+
+    final placeData = snapshot.data()!;
+    final title = placeData['title_ar'] ?? placeData['title_en'] ?? 'بدون عنوان';
+    final cityName = placeData['city_ar'] ?? placeData['city_en'] ?? city;
+    final images = List<String>.from(placeData['images'] ?? []);
+    final url = placeData['url'] ?? '';
+    final heroTag = placeData['hero'] ?? 'hero_$id';
+
+    // ✅ نفتح الصفحة بعد التأكد من جاهزية الواجهة
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (!context.mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) => PlaceDetailsPage(
-            title: place['title'],
-            cityName: place['city'],
-            images: List<String>.from(place['images']),
-            url: place['url'],
+            title: title,
+            cityName: cityName,
+            images: images,
+            url: url,
             themeNotifier: themeNotifier,
-            heroTag: place['hero'],
+            heroTag: heroTag,
           ),
         ),
+        (route) => false,
       );
     });
   } catch (e) {
-    debugPrint("❌ خطأ أثناء تحليل الرابط: $e");
+    debugPrint("❌ خطأ أثناء تنفيذ openPlaceFromUri: $e");
   }
 }
