@@ -437,11 +437,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cityJenin => 'جنين';
 
   @override
-  String get logoutConfirmTitle => 'تأكيد تسجيل الخروج';
+  String get logoutConfirmTitle => 'هل أنت متأكد من تسجيل الخروج؟';
 
   @override
   String get logoutConfirmMessage =>
-      'هل أنت متأكد أنك تريد تسجيل الخروج؟\n\nفي حال قمت بتسجيل الخروج، ستبقى معلومات هذا الحساب محفوظة ولن يتم حذفها.';
+      'في حال سجلت الخروج، ستبقى بياناتك محفوظة 🙂';
 
   @override
   String get confirmLogout => 'تأكيد';
@@ -585,5 +585,33 @@ class AppLocalizationsAr extends AppLocalizations {
   String get registeredAccount => 'حساب مسجل';
 
   @override
-  String get reloginToDelete => 'يجب إعادة تسجيل الدخول لحذف الحساب.';
+  String get reloginToDelete => 'يرجى تسجيل الدخول مجددًا لحذف الحساب.';
+
+  @override
+  String get deleteAccountConfirmMessage =>
+      'هل أنت متأكد أنك تريد حذف حسابك نهائيًا؟ بعد الحذف لن تتمكن من استعادة بياناتك.';
+
+  @override
+  String get confirmDelete => 'تأكيد الحذف';
+
+  @override
+  String get accountDeletedSuccess => 'تم حذف الحساب بنجاح.';
+
+  @override
+  String get reenterPassword => 'أدخل كلمة المرور لتأكيد حذف الحساب';
+
+  @override
+  String get reauthFailed => 'فشل التحقق من الهوية. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get deletingSoon => 'سيتم حذف الحساب قريبًا...';
+
+  @override
+  String get accountWillBeDeleted => 'سيتم حذف حسابك بعد';
+
+  @override
+  String get cancelDelete => 'إلغاء الحذف';
+
+  @override
+  String get deletionCancelled => 'تم إلغاء حذف الحساب';
 }

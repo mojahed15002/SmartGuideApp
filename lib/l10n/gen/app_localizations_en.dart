@@ -438,14 +438,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cityJenin => 'Jenin';
 
   @override
-  String get logoutConfirmTitle => 'Logout Confirmation';
+  String get logoutConfirmTitle => 'Are you sure you want to log out?';
 
   @override
   String get logoutConfirmMessage =>
-      'Are you sure you want to log out?\n\nYour account information will remain saved and will not be deleted.';
+      'If you log out, your data will remain saved 🙂';
 
   @override
-  String get confirmLogout => 'Confirm Logout';
+  String get confirmLogout => 'Confirm';
 
   @override
   String get logoutError => 'An error occurred while logging out.';
@@ -586,5 +586,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get registeredAccount => 'Registered Account';
 
   @override
-  String get reloginToDelete => 'You must re-login to delete your account.';
+  String get reloginToDelete => 'Please re-login to delete your account.';
+
+  @override
+  String get deleteAccountConfirmMessage =>
+      'Are you sure you want to permanently delete your account? This action cannot be undone.';
+
+  @override
+  String get confirmDelete => 'Confirm Deletion';
+
+  @override
+  String get accountDeletedSuccess => 'Account deleted successfully.';
+
+  @override
+  String get reenterPassword =>
+      'Enter your password to confirm account deletion';
+
+  @override
+  String get reauthFailed => 'Re-authentication failed. Please try again.';
+
+  @override
+  String get deletingSoon => 'Your account will be deleted soon...';
+
+  @override
+  String get accountWillBeDeleted => 'Your account will be deleted in';
+
+  @override
+  String get cancelDelete => 'Cancel Deletion';
+
+  @override
+  String get deletionCancelled => 'Account deletion cancelled';
 }

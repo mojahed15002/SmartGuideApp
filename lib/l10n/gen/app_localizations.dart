@@ -953,19 +953,19 @@ abstract class AppLocalizations {
   /// No description provided for @logoutConfirmTitle.
   ///
   /// In en, this message translates to:
-  /// **'Logout Confirmation'**
+  /// **'Are you sure you want to log out?'**
   String get logoutConfirmTitle;
 
   /// No description provided for @logoutConfirmMessage.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure you want to log out?\n\nYour account information will remain saved and will not be deleted.'**
+  /// **'If you log out, your data will remain saved 🙂'**
   String get logoutConfirmMessage;
 
   /// No description provided for @confirmLogout.
   ///
   /// In en, this message translates to:
-  /// **'Confirm Logout'**
+  /// **'Confirm'**
   String get confirmLogout;
 
   /// No description provided for @logoutError.
@@ -1241,8 +1241,62 @@ abstract class AppLocalizations {
   /// No description provided for @reloginToDelete.
   ///
   /// In en, this message translates to:
-  /// **'You must re-login to delete your account.'**
+  /// **'Please re-login to delete your account.'**
   String get reloginToDelete;
+
+  /// No description provided for @deleteAccountConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to permanently delete your account? This action cannot be undone.'**
+  String get deleteAccountConfirmMessage;
+
+  /// No description provided for @confirmDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Deletion'**
+  String get confirmDelete;
+
+  /// No description provided for @accountDeletedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deleted successfully.'**
+  String get accountDeletedSuccess;
+
+  /// No description provided for @reenterPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password to confirm account deletion'**
+  String get reenterPassword;
+
+  /// No description provided for @reauthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-authentication failed. Please try again.'**
+  String get reauthFailed;
+
+  /// No description provided for @deletingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account will be deleted soon...'**
+  String get deletingSoon;
+
+  /// No description provided for @accountWillBeDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account will be deleted in'**
+  String get accountWillBeDeleted;
+
+  /// No description provided for @cancelDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Deletion'**
+  String get cancelDelete;
+
+  /// No description provided for @deletionCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deletion cancelled'**
+  String get deletionCancelled;
 }
 
 class _AppLocalizationsDelegate

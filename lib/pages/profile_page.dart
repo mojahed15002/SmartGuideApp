@@ -223,8 +223,67 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _signOut() async {
+Future<void> _signOut() async {
+  final loc = AppLocalizations.of(context)!;
+  final isDark = widget.themeNotifier.isDarkMode;
+
+  // ✅ عرض نافذة تأكيد الخروج (مترجمة + حسب الثيم)
+  final bool? confirmLogout = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor:
+          isDark ? const Color(0xFF2C2C2C) : Colors.white, // 🎨 لون الخلفية حسب الثيم
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(
+        loc.logoutConfirmTitle, // 🟢 مثال: "هل أنت متأكد من تسجيل الخروج؟"
+        textAlign: TextAlign.right,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: isDark ? Colors.orangeAccent : Colors.deepOrange,
+        ),
+      ),
+      content: Text(
+        loc.logoutConfirmMessage, // 🟢 مثال: "في حال سجلت الخروج، ستبقى بياناتك محفوظة 🙂"
+        textAlign: TextAlign.right,
+        style: TextStyle(
+          color: isDark ? Colors.white70 : Colors.black87,
+        ),
+      ),
+      actionsAlignment: MainAxisAlignment.spaceBetween,
+      actionsPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(
+            loc.cancel,
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.redAccent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          ),
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(
+            loc.confirmLogout,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  // ✅ تنفيذ الخروج فقط إذا وافق المستخدم
+  if (confirmLogout == true) {
     await FirebaseAuth.instance.signOut();
+
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
@@ -234,28 +293,242 @@ class _ProfilePageState extends State<ProfilePage> {
       (route) => false,
     );
   }
+}
+
+
 
   Future<void> _deleteAccount() async {
-    final loc = AppLocalizations.of(context)!;
-    if (user == null) return;
-    try {
-      await user!.delete();
-      if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SignInPanel(themeNotifier: widget.themeNotifier),
+  final loc = AppLocalizations.of(context)!;
+  final isDark = widget.themeNotifier.isDarkMode;
+  final currentUser = FirebaseAuth.instance.currentUser;
+
+  if (currentUser == null) return;
+
+  // 🧱 تأكيد نية الحذف
+  final bool? confirmDelete = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              loc.deleteAccount,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.orangeAccent : Colors.deepOrange,
+              ),
+            ),
+          ),
+        ],
+      ),
+      content: Text(
+        loc.deleteAccountConfirmMessage,
+        textAlign: TextAlign.right,
+        style: TextStyle(
+          color: isDark ? Colors.white70 : Colors.black87,
         ),
-        (r) => false,
+      ),
+      actionsAlignment: MainAxisAlignment.spaceBetween,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(
+            loc.cancel,
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.redAccent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(
+            loc.confirmDelete,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmDelete != true) return;
+
+  // ✅ تحديد طريقة تسجيل الدخول
+  final providerId = currentUser.providerData.isNotEmpty
+      ? currentUser.providerData.first.providerId
+      : null;
+
+  try {
+    // 🟢 التحقق الأمني قبل الحذف
+    if (providerId == 'password') {
+      final TextEditingController passController = TextEditingController();
+      final password = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+          title: Text(
+            loc.reenterPassword,
+            style: TextStyle(
+              color: isDark ? Colors.orangeAccent : Colors.deepOrange,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: TextField(
+            controller: passController,
+            obscureText: true,
+            decoration: InputDecoration(
+              labelText: loc.password,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(loc.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, passController.text.trim()),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+              child: Text(loc.confirm),
+            ),
+          ],
+        ),
       );
-    } catch (e) {
-      debugPrint('delete error: $e');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc.reloginToDelete)),
+
+      if (password == null || password.isEmpty) return;
+
+      final cred = EmailAuthProvider.credential(
+        email: currentUser.email!,
+        password: password,
       );
+      await currentUser.reauthenticateWithCredential(cred);
+    } else if (providerId == 'google.com') {
+      final googleProvider = GoogleAuthProvider();
+      await currentUser.reauthenticateWithProvider(googleProvider);
     }
+
+    // ✅ بعد التحقق الناجح، نعرض عدّ تنازلي قبل الحذف
+    int secondsLeft = 5;
+    bool cancelled = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        // نستخدم StatefulBuilder لتحديث العدّ داخل الـDialog
+        return StatefulBuilder(
+          builder: (context, setState) {
+            Future.delayed(const Duration(seconds: 1), () {
+              if (secondsLeft > 0 && mounted && !cancelled) {
+                setState(() => secondsLeft--);
+              } else if (secondsLeft == 0 && !cancelled) {
+                Navigator.pop(context); // إغلاق النافذة بعد العدّ
+              }
+            });
+
+            return AlertDialog(
+              backgroundColor:
+                  isDark ? const Color(0xFF2C2C2C) : Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              title: Text(
+                "⏳ ${loc.deletingSoon}",
+                style: TextStyle(
+                  color: isDark ? Colors.orangeAccent : Colors.deepOrange,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "${loc.accountWillBeDeleted} ($secondsLeft)",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  LinearProgressIndicator(
+                    value: (5 - secondsLeft) / 5,
+                    backgroundColor:
+                        isDark ? Colors.white24 : Colors.orange.withOpacity(0.2),
+                    color: Colors.redAccent,
+                    minHeight: 6,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    cancelled = true;
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    loc.cancelDelete,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    // لو المستخدم لغى العدّ، نوقف العملية
+    if (cancelled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(loc.deletionCancelled),
+          backgroundColor: Colors.orangeAccent,
+        ),
+      );
+      return;
+    }
+
+    // 🔥 حذف الحساب فعليًا بعد انتهاء العدّ
+    await currentUser.delete();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(loc.accountDeletedSuccess),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SignInPanel(themeNotifier: widget.themeNotifier),
+      ),
+      (r) => false,
+    );
+  } catch (e) {
+    debugPrint('❌ Delete account error: $e');
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${loc.reauthFailed}: $e'),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
   }
+}
+
 
   Widget _sectionTitle(String text) {
     return Padding(
@@ -360,13 +633,20 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           const SizedBox(height: 10),
                           OutlinedButton.icon(
-  onPressed: () {
-    Navigator.push(
+  onPressed: () async {
+    // ننتظر لما المستخدم يرجع من صفحة التعديل
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => EditProfilePage(themeNotifier: widget.themeNotifier),
       ),
     );
+
+    // لو رجع بنتيجة تدل على نجاح التعديل، نعيد تحميل البيانات
+    if (result == true) {
+      await _loadUserAndStats();
+      if (mounted) setState(() {});
+    }
   },
   icon: const Icon(Icons.edit_outlined),
   label: Text(loc.edit),
@@ -378,6 +658,8 @@ class _ProfilePageState extends State<ProfilePage> {
     ),
   ),
 ),
+
+
 
                           
                         ],

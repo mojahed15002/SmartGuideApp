@@ -195,7 +195,23 @@
 "visitorAccount": "Visitor",
 "googleAccount": "Google Account",
 "registeredAccount": "Registered Account",
-"reloginToDelete": "You must re-login to delete your account."
+"reloginToDelete": "You must re-login to delete your account.",
+
+"logoutConfirmTitle": "Are you sure you want to log out?",
+"logoutConfirmMessage": "If you log out, your data will remain saved 🙂",
+"confirmLogout": "Confirm",
+"cancel": "Cancel",
+"deleteAccountConfirmMessage": "Are you sure you want to permanently delete your account? This action cannot be undone.",
+"confirmDelete": "Confirm Deletion",
+"accountDeletedSuccess": "Account deleted successfully.",
+"reloginToDelete": "Please re-login to delete your account.",
+"reenterPassword": "Enter your password to confirm account deletion",
+"reauthFailed": "Re-authentication failed. Please try again.",
+"confirm": "Confirm",
+"deletingSoon": "Your account will be deleted soon...",
+"accountWillBeDeleted": "Your account will be deleted in",
+"cancelDelete": "Cancel Deletion",
+"deletionCancelled": "Account deletion cancelled"
 
 
 }
