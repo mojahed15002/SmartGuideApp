@@ -575,7 +575,7 @@ Future<void> _signOut() async {
       child: Scaffold(
         appBar: AppBar(
           title: Text(loc.profile),
-          backgroundColor: Colors.orange,
+          
         ),
         drawer: CustomDrawer(themeNotifier: widget.themeNotifier),
         body: _isLoading

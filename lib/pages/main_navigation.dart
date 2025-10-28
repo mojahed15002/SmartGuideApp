@@ -7,6 +7,7 @@ import 'favorites_page.dart';
 import 'profile_page.dart';
 import 'choice_page.dart';
 import 'custom_drawer.dart';
+import 'near_me_page.dart';
 
 
 class MainNavigation extends StatefulWidget {
@@ -76,43 +77,25 @@ void _onDrawerItemSelected(String item) {
     }
   }
 
-  Widget _buildBody() {
-    switch (_currentIndex) {
-      case 0:
-        return ChoicePage(
-          themeNotifier: widget.themeNotifier,
-          
-        ); // 🏠 الرئيسية
-      case 1:
-        if (_locError != null) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                _locError!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
-          );
-        }
-        if (_initialPosition == null) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        return MapPage(
-          position: _initialPosition!,               // ✅ Position (مش LatLng)
-          themeNotifier: widget.themeNotifier,
-          enableLiveTracking: true,                  // اختياري
-        );
-      case 2:
-        return FavoritesPage(themeNotifier: widget.themeNotifier); // ❤️
-      
-      case 3:
-        return ProfilePage(themeNotifier: widget.themeNotifier);  // ⚙️
-      default:
-        return const SizedBox.shrink();
-    }
+ Widget _buildBody() {
+  switch (_currentIndex) {
+    case 0:
+      return ChoicePage(themeNotifier: widget.themeNotifier); // 🏠 الرئيسية
+
+    case 1:
+      return FavoritesPage(themeNotifier: widget.themeNotifier); // ❤️ المفضلة
+
+    case 2:
+      return NearMePage(themeNotifier: widget.themeNotifier); // 📍 القريبة مني
+
+    case 3:
+      return ProfilePage(themeNotifier: widget.themeNotifier); // 👤 الملف الشخصي
+
+    default:
+      return const SizedBox.shrink();
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -123,14 +106,38 @@ void _onDrawerItemSelected(String item) {
   ),
       body: _buildBody(),
 
-      // 🔸 الزر العائم (الخريطة)
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.orange,
-        elevation: 6,
-        onPressed: () => setState(() => _currentIndex = 1),
-        child: const Icon(Icons.map, color: Colors.white, size: 28),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+floatingActionButton: FloatingActionButton(
+  backgroundColor: Colors.deepOrangeAccent,
+  elevation: 8,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(20),
+  ),
+  onPressed: () {
+    if (_initialPosition != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MapPage(
+            position: _initialPosition!,
+            themeNotifier: widget.themeNotifier,
+            enableLiveTracking: true,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('لم يتم تحديد موقعك بعد!'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  },
+  child: const Icon(Icons.map, color: Colors.white, size: 28),
+),
+
+floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
 
       // 🔹 الشريط السفلي
       bottomNavigationBar: BottomNavBar(

@@ -67,7 +67,7 @@ class NearMePage extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               onTap: () {
                 
-                  Navigator.pushReplacement(
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => NearbyPlacesListPage(

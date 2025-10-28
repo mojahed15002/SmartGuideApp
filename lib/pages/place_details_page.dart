@@ -161,7 +161,19 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
     final double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      appBar: AppBar(title: Text("تفاصيل ${widget.title}"), actions: []),
+      appBar: AppBar(
+  title: Text(
+    "تفاصيل ${widget.title}",
+    style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+  ),
+  leading: IconButton(
+    icon: const Icon(Icons.arrow_back_ios_new, color: Color.fromARGB(255, 0, 0, 0)),
+    onPressed: () {
+      Navigator.pop(context); // ⬅️ بيرجع المستخدم للصفحة السابقة (CityPlacesPage)
+    },
+  ),
+),
+
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: ListView(
@@ -189,7 +201,7 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
 
                 return GestureDetector(
                   onTap: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => FullScreenGallery(

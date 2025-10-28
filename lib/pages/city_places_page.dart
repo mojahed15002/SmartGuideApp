@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import '../theme_notifier.dart';
 import 'place_details_page.dart';
-import 'custom_drawer.dart';
+
 import '../l10n/gen/app_localizations.dart';
 
 class CityPlacesPage extends StatefulWidget {
@@ -301,9 +301,17 @@ class _CityPlacesPageState extends State<CityPlacesPage>
       textDirection: direction,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(loc.citiesTitle),
-        ),
-        drawer: CustomDrawer(themeNotifier: widget.themeNotifier),
+  title: Text(loc.citiesTitle),
+  leading: IconButton(
+    icon: const Icon(Icons.arrow_back_ios_new, color: Color.fromARGB(255, 0, 0, 0)),
+    onPressed: () {
+      Navigator.pop(context); // ⬅️ بيرجع خطوة للخلف
+    },
+  ),
+  
+),
+
+        
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Padding(
@@ -364,7 +372,7 @@ class _CityPlacesPageState extends State<CityPlacesPage>
                                     GestureDetector(
                                       onTap: () {
                                         if (!mounted) return;
-                                        Navigator.pushReplacement(
+                                        Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) =>

@@ -113,7 +113,17 @@ class _NearbyPlacesListPageState extends State<NearbyPlacesListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.categoryLabel)),
+      appBar: AppBar(
+  title: Text(widget.categoryLabel),
+  leading: IconButton(
+    icon: const Icon(Icons.arrow_back_ios_new, color: Color.fromARGB(255, 0, 0, 0)),
+    onPressed: () {
+      Navigator.pop(context); // ⬅️ بيرجع للصفحة السابقة (NearMePage)
+    },
+  ),
+ 
+),
+
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
