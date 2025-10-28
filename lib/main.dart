@@ -18,6 +18,7 @@ import 'pages/near_me_page.dart';
 import 'pages/favorites_page.dart';
 import 'pages/logs_page.dart';
 import 'pages/settings_page.dart';
+import 'pages/all_comments_page.dart';
 
 // ✅ الإضافة الجديدة
   
@@ -134,6 +135,10 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
   StreamSubscription<Uri?>? _sub;
   late final AppLinks _appLinks;
 
+  // ✅ إضافات مطلوبة: اشتراك wrapper بالستريم + قفل منع الفتح المكرر
+  StreamSubscription<Uri>? _deepStreamSub; // ✅
+  bool _navInProgress = false;             // ✅
+
   @override
   void initState() {
     super.initState();
@@ -150,42 +155,128 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
         debugPrint("❌ خطأ أثناء استقبال الرابط: $err");
       });
 
-      if (_pendingDeepLink != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && context.mounted) {
-            _handleIncomingLink(_pendingDeepLink!);
-            _pendingDeepLink = null;
-          }
-        });
-      }
+      // ✅ اشتراك إضافي مضمون من الـ Wrapper نفسه
+      _deepStreamSub = deepLinkStreamController.stream.listen((uri) {
+        if (!_isValidPlaceLink(uri)) {
+          debugPrint('ℹ️ (wrapper) تجاهل رابط غير صالح للمكان.');
+          return;
+        }
+        _openDeepLinkNow(uri); // يفتح مباشرة (ويسجّل ضيف عند الحاجة)
+      }, onError: (err) {
+        debugPrint('❌ (wrapper) خطأ في ستريم الروابط: $err');
+      });
+
+if (_pendingDeepLink != null) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (mounted && context.mounted) {
+      final uri = Uri.parse(_pendingDeepLink!);
+      // ⛔️ لا تفتح إلا إذا الرابط رابط مكان صالح
+if (_isValidPlaceLink(uri)) {
+  debugPrint('📦 تم العثور على رابط مؤجل صالح، سيتم فتحه لاحقًا داخل WelcomePage');
+  DeepLinkStore.set(uri);
+} else {
+  debugPrint('ℹ️ initialUri ليست رابط مكان صالح — تم تجاهلها.');
+}
+      _pendingDeepLink = null;
+    }
+  });
+}
+      
     } catch (e) {
       debugPrint("❌ فشل في تهيئة الروابط: $e");
     }
   }
 
-  void _handleIncomingLink(String link) {
-    try {
-      final uri = Uri.parse(link);
-      debugPrint('✅ وصل رابط: $uri');
+void _handleIncomingLink(String link) {
+  try {
+    final uri = Uri.parse(link);
+    debugPrint('✅ وصل رابط: $uri');
 
-      if (FirebaseAuth.instance.currentUser == null) {
-        DeepLinkStore.set(uri);
-        debugPrint('🕒 خزنّا الرابط مؤقتاً لفتحه بعد تسجيل الدخول');
+    // ⛔️ إذا مش رابط مكان صالح، تجاهله
+    if (!_isValidPlaceLink(uri)) {
+      debugPrint('ℹ️ تم تجاهل رابط غير متعلق بصفحة مكان.');
+      return;
+    }
+
+    // ✅ مهم: خزّن الرابط دائمًا حتى لو كان المستخدم مسجّل
+    DeepLinkStore.set(uri);
+
+if (FirebaseAuth.instance.currentUser == null) {
+  // لا يوجد مستخدم: خزّن الرابط وسيفتح لاحقًا بعد تسجيل الدخول أو كضيف
+  debugPrint('🕒 لا يوجد مستخدم — سيتم فتح الرابط بعد تسجيل الدخول');
+  DeepLinkStore.set(uri);
+  return;
+}
+
+    // يوجد مستخدم: ابعثه للصفحات المفتوحة (WelcomePage راح تسمع)
+    if (mounted && context.mounted) {
+      deepLinkStreamController.add(uri);
+    }
+  } catch (e) {
+    debugPrint('❌ خطأ في تحليل الرابط: $e');
+  }
+}
+
+
+// ✅ جديد: نتحقق أن الرابط هو رابط "مكان" فعلاً
+bool _isValidPlaceLink(Uri uri) {
+  final hasId = uri.queryParameters.containsKey('id'); // مطلوب
+  final isGithub =
+      uri.scheme == 'https' &&
+      uri.host == 'mojahed15002.github.io' &&
+      uri.path.startsWith('/SmartGuideApp/place'); // نضيّق للمسار /place
+  final isCustom =
+      uri.scheme == 'smartcityguide' &&
+      uri.host == 'place';
+
+  return hasId && (isGithub || isCustom);
+}
+
+
+  // ✅ جديد: دالة موحّدة تضمن تسجيل ضيف ثم فتح الرابط مباشرة + قفل
+Future<void> _openDeepLinkNow(Uri uri) async {
+  try {
+    if (_navInProgress) {
+      debugPrint('⚠️ تم تجاهل فتح مكرر للرابط: $uri');
+      return;
+    }
+    _navInProgress = true;
+
+    final auth = FirebaseAuth.instance;
+    if (auth.currentUser == null) {
+      await auth.signInAnonymously();
+      debugPrint("👤 تم تسجيل الدخول كضيف من MyAppWrapper لفتح الرابط");
+    }
+
+    // ✅ تأجيل التنفيذ حتى يتم بناء الواجهة فعليًا
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!mounted || !context.mounted) {
+        _navInProgress = false;
         return;
       }
 
-      // ✅ أضفنا حماية إضافية لتفادي الخطأ بعد تبديل الثيم
-      if (mounted && context.mounted) {
-        deepLinkStreamController.add(uri);
-      }
-    } catch (e) {
-      debugPrint('❌ خطأ في تحليل الرابط: $e');
-    }
+      openPlaceFromUri(
+        context: context,
+        themeNotifier: widget.themeNotifier,
+        uri: uri,
+      );
+
+      Future.delayed(const Duration(seconds: 2), () {
+        _navInProgress = false;
+      });
+    });
+  } catch (e) {
+    _navInProgress = false;
+    debugPrint("❌ فشل _openDeepLinkNow: $e");
   }
+}
+
 
   @override
   void dispose() {
     _sub?.cancel();
+    _deepStreamSub?.cancel(); // ✅ إلغاء الاشتراك الإضافي
     super.dispose();
   }
 
@@ -234,11 +325,42 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
             '/logs': (context) => LogsPage(themeNotifier: widget.themeNotifier),
             '/login': (context) => SignInPanel(themeNotifier: widget.themeNotifier),
             '/settings': (context) => SettingsPage(themeNotifier: widget.themeNotifier),
+            '/all_comments': (context) {
+  final placeId = ModalRoute.of(context)!.settings.arguments as String;
+  return AllCommentsPage(placeId: placeId);
+},
+
           },
           home: StreamBuilder<User?>(
             stream: FirebaseAuth.instance.authStateChanges(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              // ✅ جديد: لو لا يوجد مستخدم لكن لدينا رابط مؤجل، افتحه الآن بتسجيل ضيف
+final Uri? pendingBeforeLogin = (() {
+  final fromStore = DeepLinkStore.take();
+  if (fromStore != null && _isValidPlaceLink(fromStore)) return fromStore;
+
+  if (_pendingDeepLink != null) {
+    try {
+      final u = Uri.parse(_pendingDeepLink!);
+      if (_isValidPlaceLink(u)) return u;
+    } catch (_) {}
+  }
+  return null;
+})();
+
+              if (!snapshot.hasData && pendingBeforeLogin != null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && context.mounted) {
+                    _openDeepLinkNow(pendingBeforeLogin);
+                    _pendingDeepLink = null;
+                  }
+                });
                 return const Scaffold(
                   body: Center(child: CircularProgressIndicator()),
                 );
@@ -292,19 +414,18 @@ class _MyAppWrapperState extends State<MyAppWrapper> {
                 });
 
                 if (_pendingDeepLink != null) {
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    final uri = Uri.parse(_pendingDeepLink!);
-    openPlaceFromUri(
-      context: context,
-      themeNotifier: widget.themeNotifier,
-      uri: uri,
-    );
-    _pendingDeepLink = null;
-  });
-}
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    final uri = Uri.parse(_pendingDeepLink!);
+                    openPlaceFromUri(
+                      context: context,
+                      themeNotifier: widget.themeNotifier,
+                      uri: uri,
+                    );
+                    _pendingDeepLink = null;
+                  });
+                }
 
-return WelcomePage(themeNotifier: widget.themeNotifier);
-
+                return WelcomePage(themeNotifier: widget.themeNotifier);
               }
 
               return SignInPanel(themeNotifier: widget.themeNotifier);
@@ -315,4 +436,3 @@ return WelcomePage(themeNotifier: widget.themeNotifier);
     );
   }
 }
-

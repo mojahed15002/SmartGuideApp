@@ -41,9 +41,8 @@
     <data
         android:scheme="https"
         android:host="mojahed15002.github.io"
-        android:pathPrefix="/SmartGuideApp" />
+        android:pathPrefix="/SmartGuideApp/place" />
 </intent-filter>
-
 
             <!-- ✅ دعم الصيغة المحلية للتطبيق -->
             <intent-filter>
@@ -56,15 +55,15 @@
             </intent-filter>
 
         </activity>
-
+    <meta-data
+        android:name="com.google.android.geo.API_KEY"
+        android:value="AIzaSyAAOlFLJHi1AeL2Ek8jDohUkjEihk9Ms1o"/>
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
 
-    <meta-data
-        android:name="com.google.android.geo.API_KEY"
-        android:value="AIzaSyAAOlFLJHi1AeL2Ek8jDohUkjEihk9Ms1o"/>
+
 
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

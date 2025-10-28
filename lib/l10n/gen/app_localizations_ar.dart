@@ -263,7 +263,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get guestLogin => 'الدخول كضيف';
 
   @override
-  String get guest => 'أيها الزائر';
+  String get guest => 'ضيف';
 
   @override
   String get guestLoginError => 'فشل تسجيل الدخول كضيف';
@@ -437,11 +437,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cityJenin => 'جنين';
 
   @override
-  String get logoutConfirmTitle => 'هل أنت متأكد من تسجيل الخروج؟';
+  String get logoutConfirmTitle => 'تأكيد تسجيل الخروج';
 
   @override
   String get logoutConfirmMessage =>
-      'في حال سجلت الخروج، ستبقى بياناتك محفوظة 🙂';
+      'هل أنت متأكد أنك تريد تسجيل الخروج؟\n\nفي حال قمت بتسجيل الخروج، ستبقى معلومات هذا الحساب محفوظة ولن يتم حذفها.';
 
   @override
   String get confirmLogout => 'تأكيد';
@@ -585,9 +585,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get registeredAccount => 'حساب مسجل';
 
   @override
-  String get reloginToDelete => 'يرجى تسجيل الدخول مجددًا لحذف الحساب.';
-
-  @override
   String get deleteAccountConfirmMessage =>
       'هل أنت متأكد أنك تريد حذف حسابك نهائيًا؟ بعد الحذف لن تتمكن من استعادة بياناتك.';
 
@@ -596,6 +593,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get accountDeletedSuccess => 'تم حذف الحساب بنجاح.';
+
+  @override
+  String get reloginToDelete => 'يرجى تسجيل الدخول مجددًا لحذف الحساب.';
 
   @override
   String get reenterPassword => 'أدخل كلمة المرور لتأكيد حذف الحساب';
@@ -614,4 +614,73 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get deletionCancelled => 'تم إلغاء حذف الحساب';
+
+  @override
+  String get viewSavedTripBanner => 'عرض مسار رحلة محفوظة 🔸';
+
+  @override
+  String get addComment => '💬 أضف تعليقك:';
+
+  @override
+  String get writeCommentHint => 'اكتب رأيك حول هذا المكان...';
+
+  @override
+  String get sendComment => 'إرسال التعليق';
+
+  @override
+  String get sending => 'جاري الإرسال...';
+
+  @override
+  String get commentAdded => '✅ تم إرسال التعليق بنجاح';
+
+  @override
+  String get commentFailed => 'حدث خطأ أثناء إرسال التعليق';
+
+  @override
+  String get noCommentsYet => 'لا توجد تعليقات بعد';
+
+  @override
+  String get pleaseLoginToComment => 'يرجى تسجيل الدخول لكتابة تعليق';
+
+  @override
+  String get byUser => 'بواسطة المستخدم';
+
+  @override
+  String get rateThisPlace => '⭐ قيّم هذا المكان:';
+
+  @override
+  String get averageRating => 'متوسط التقييم';
+
+  @override
+  String get yourRating => 'تقييمك الحالي';
+
+  @override
+  String get ratings => 'تقييم';
+
+  @override
+  String get ratingSubmitted => 'تم تسجيل تقييمك';
+
+  @override
+  String get detailsOf => 'تفاصيل';
+
+  @override
+  String get defaultDescription => 'هذا وصف افتراضي لـ';
+
+  @override
+  String get inCity => 'في';
+
+  @override
+  String get viewAllComments => 'عرض جميع التعليقات';
+
+  @override
+  String get allComments => 'جميع التعليقات';
+
+  @override
+  String get justNow => 'الآن';
+
+  @override
+  String get minutesAgo => 'دقيقة مضت';
+
+  @override
+  String get hoursAgo => 'ساعة مضت';
 }

@@ -14,6 +14,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:geocoding/geocoding.dart';
 import 'custom_drawer.dart';
+import '../l10n/gen/app_localizations.dart';
 
 class MapPage extends StatefulWidget {
   final Position position;
@@ -21,6 +22,9 @@ class MapPage extends StatefulWidget {
   final latlng.LatLng? destination;
   final bool enableTap;
   final bool enableLiveTracking;
+  // ✅ جديد: لدعم عرض الرحلات المحفوظة من Firestore
+  final latlng.LatLng? start;
+  final List<latlng.LatLng>? savedPath;
 
   const MapPage({
     super.key,
@@ -29,6 +33,9 @@ class MapPage extends StatefulWidget {
     this.destination,
     this.enableTap = true,
     this.enableLiveTracking = false,
+        this.start,        // ✅ جديد
+    this.savedPath,    // ✅ جديد
+
   });
 
   @override
@@ -53,6 +60,10 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   latlng.LatLng? _currentLocation;
   DateTime? _lastRouteUpdate;
 
+Color _routeColor = Colors.orange;
+bool _showSavedTripBanner = true;
+
+
   String _selectedMode = "driving-car";
   final Map<String, String> transportModes = {
     "🚶 مشي": "foot-walking",
@@ -72,6 +83,18 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     _destination = widget.destination;
+    
+    // ✅ في حال الرحلة من Firestore (يوجد مسار محفوظ)
+    if (widget.savedPath != null && widget.savedPath!.isNotEmpty) {
+      routePoints = widget.savedPath!;
+      _loading = false;
+      _destination ??= routePoints.last;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _mapController.move(widget.start ?? routePoints.first, 14.5);
+      });
+      return; // 🟢 نخرج لأننا لسنا بحاجة لحساب المسار من جديد
+    }
 
     if (_destination != null) {
       _getRoute(_destination!);
@@ -167,48 +190,70 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   }
 
   // ✅ حفظ الرحلة داخل Firestore
+  // ✅ حفظ الرحلة داخل Firestore
   Future<void> _saveTripLogToFirebase() async {
-  try {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null || _destination == null) return;
-
-    // 🔹 نحاول نحصل على اسم المكان من الإحداثيات
-    String placeName = "موقع غير معروف";
     try {
-      final placemarks = await placemarkFromCoordinates(
-        _destination!.latitude,
-        _destination!.longitude,
-      );
-      if (placemarks.isNotEmpty) {
-        final p = placemarks.first;
-        placeName = [
-          p.locality,
-          p.subLocality,
-          p.administrativeArea,
-          p.street
-        ].where((e) => e != null && e.isNotEmpty).join(' - ');
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null || _destination == null) return;
+
+      // 🔹 نحاول نحصل على اسم المكان من الإحداثيات
+      String placeName = "موقع غير معروف";
+      try {
+        final placemarks = await placemarkFromCoordinates(
+          _destination!.latitude,
+          _destination!.longitude,
+        );
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          placeName = [
+            p.locality,
+            p.subLocality,
+            p.administrativeArea,
+            p.street
+          ].where((e) => e != null && e.isNotEmpty).join(' - ');
+        }
+      } catch (e) {
+        debugPrint("⚠️ فشل في تحديد اسم المكان: $e");
+      }
+
+      // ✅ تجهيز بيانات البداية والمسار
+      final startLatLng = _currentLocation ??
+          latlng.LatLng(widget.position.latitude, widget.position.longitude);
+
+      // نحول نقاط المسار إلى List<Map<String,double>>
+      final pathList = routePoints
+          .map((p) => {
+                'latitude': p.latitude,
+                'longitude': p.longitude,
+              })
+          .toList();
+
+      // 🔹 حفظ السجل في Firestore (إضافة start و path)
+      await FirebaseFirestore.instance.collection('travel_logs').add({
+        'user_id': user.uid,
+        'start': {
+          'latitude': startLatLng.latitude,
+          'longitude': startLatLng.longitude,
+        },
+        'destination': {
+          'latitude': _destination!.latitude,
+          'longitude': _destination!.longitude,
+        },
+        'path': pathList,
+        'place_name': placeName,
+        'time': DateTime.now().toIso8601String(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✅ تم حفظ الرحلة في السجلات")),
+        );
       }
     } catch (e) {
-      debugPrint("⚠️ فشل في تحديد اسم المكان: $e");
+      debugPrint("⚠️ فشل حفظ السجل: $e");
     }
-
-    // 🔹 حفظ السجل في Firestore
-    await FirebaseFirestore.instance.collection('travel_logs').add({
-      'user_id': user.uid,
-      'destination': _destination.toString(),
-      'place_name': placeName,
-      'time': DateTime.now().toIso8601String(),
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✅ تم حفظ الرحلة في السجلات")),
-      );
-    }
-  } catch (e) {
-    debugPrint("⚠️ فشل حفظ السجل: $e");
   }
-}
+
 
   void _stopLiveTracking() {
     _positionStream?.cancel();
@@ -256,70 +301,87 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     }
   }
 
-  Future<void> _getRoute(latlng.LatLng destination) async {
-    setState(() {
-      _loading = true;
-      _error = null;
-      routePoints = [];
-      _summaryDistanceMeters = null;
-      _summaryDurationSeconds = null;
-    });
+// ✅ النسخة النهائية من _getRoute() باستخدام OSRM + تلوين الخط حسب وسيلة النقل
+Future<void> _getRoute(latlng.LatLng destination) async {
+  setState(() {
+    _loading = true;
+    _error = null;
+    routePoints = [];
+    _summaryDistanceMeters = null;
+    _summaryDurationSeconds = null;
+  });
 
-    const apiKey =
-        "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjVlZTQ1YWY4YjIzMDQxYmZiZjUzNDhmZjhhOTU5MTc5IiwiaCI6Im11cm11cjY0In0=";
-
+  try {
+    // 📍 نقطة البداية (الموقع الحالي أو الافتراضي)
     final startLatLng = _currentLocation ??
         latlng.LatLng(widget.position.latitude, widget.position.longitude);
     final start = "${startLatLng.longitude},${startLatLng.latitude}";
     final end = "${destination.longitude},${destination.latitude}";
 
+    // 🚗 اختيار وسيلة النقل بناءً على _selectedMode
+    String mode = "driving";
+    if (_selectedMode.contains("foot")) mode = "foot";
+    if (_selectedMode.contains("cycling")) mode = "bike";
+
+    // 🌍 طلب OSRM (مجاني ولا يحتاج مفتاح)
     final url = Uri.parse(
-      "https://api.openrouteservice.org/v2/directions/$_selectedMode?start=$start&end=$end",
+      "https://router.project-osrm.org/route/v1/$mode/$start;$end?overview=full&geometries=geojson",
     );
 
-    try {
-      final response = await http.get(url, headers: {
-        'Authorization': apiKey,
-        'Accept': 'application/json, application/geo+json'
-      });
+    final response = await http.get(url);
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final coords = data["features"][0]["geometry"]["coordinates"] as List;
-        final points = coords
-            .map((c) =>
-                latlng.LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()))
-            .toList();
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
 
-        double? distance;
-        double? duration;
-        try {
-          final summary = data["features"][0]["properties"]["summary"];
-          if (summary != null) {
-            distance = (summary["distance"] as num).toDouble();
-            duration = (summary["duration"] as num).toDouble();
-          }
-        } catch (_) {}
-
+      if (data["routes"] == null || data["routes"].isEmpty) {
         setState(() {
-          routePoints = points;
-          _summaryDistanceMeters = distance;
-          _summaryDurationSeconds = duration;
+          _error = "⚠️ لم يتم العثور على مسار صالح.";
           _loading = false;
         });
-      } else {
-        setState(() {
-          _error = "خطأ من خادم ORS: ${response.statusCode}";
-          _loading = false;
-        });
+        return;
       }
-    } catch (e) {
+
+      // 🧭 تحويل نقاط المسار
+      final coords = data["routes"][0]["geometry"]["coordinates"] as List;
+      final points = coords
+          .map((c) => latlng.LatLng(
+                (c[1] as num).toDouble(),
+                (c[0] as num).toDouble(),
+              ))
+          .toList();
+
+      // 📏 استخراج المسافة والمدة
+      final distance = (data["routes"][0]["distance"] as num?)?.toDouble();
+      final duration = (data["routes"][0]["duration"] as num?)?.toDouble();
+
+      // 🎨 تحديد لون الخط حسب وسيلة النقل
+      Color routeColor = Colors.orange; // افتراضي للسيارة
+      if (mode == "foot") routeColor = Colors.blueAccent;
+      if (mode == "bike") routeColor = Colors.green;
+
       setState(() {
-        _error = "خطأ في الاتصال: $e";
+        routePoints = points;
+        _summaryDistanceMeters = distance;
+        _summaryDurationSeconds = duration;
+        _loading = false;
+
+        // ✅ نضيف اللون كمعلومة مؤقتة لاستخدامها في رسم Polyline
+        _routeColor = routeColor;
+      });
+    } else {
+      setState(() {
+        _error = "⚠️ خطأ من خادم OSRM: ${response.statusCode}";
         _loading = false;
       });
     }
+  } catch (e) {
+    setState(() {
+      _error = "⚠️ خطأ في الاتصال: $e";
+      _loading = false;
+    });
   }
+}
+
 
   String _getUrlTemplate() {
     switch (_currentStyle) {
@@ -500,18 +562,86 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                           ),
                       ],
                     ),
-                    if (routePoints.isNotEmpty)
-                      fm.PolylineLayer(
-                        polylines: [
-                          fm.Polyline(
-                            points: routePoints,
-                            color: Colors.orange,
-                            strokeWidth: 4,
-                          ),
-                        ],
-                      ),
+if (routePoints.isNotEmpty)
+  fm.PolylineLayer(
+    polylines: [
+      fm.Polyline(
+        points: routePoints,
+        color: _routeColor, // 🎨 بدل الثابت القديم
+        strokeWidth: 4,
+      ),
+    ],
+  ),
                   ],
                 ),
+
+// ✅ Banner يظهر فقط عند عرض رحلة محفوظة
+if (_showSavedTripBanner && widget.savedPath != null && widget.savedPath!.isNotEmpty)
+  Positioned(
+    top: 20,
+    left: 0,
+    right: 0,
+    child: Center(
+      child: Container(
+        constraints: const BoxConstraints(
+          maxWidth: 350, // 🔹 عرض أقصى ثابت — مناسب لجميع الأجهزة
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade600,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.route, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                AppLocalizations.of(context)!.viewSavedTripBanner,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _showSavedTripBanner = false;
+                });
+              },
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white24,
+                ),
+                padding: const EdgeInsets.all(4),
+                child: const Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ),
+
+
                 // 🔘 زر التتبع الحي أعلى يسار الشاشة
                 Positioned(
                   top: 16,

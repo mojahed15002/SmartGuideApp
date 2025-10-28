@@ -953,19 +953,19 @@ abstract class AppLocalizations {
   /// No description provided for @logoutConfirmTitle.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure you want to log out?'**
+  /// **'Logout Confirmation'**
   String get logoutConfirmTitle;
 
   /// No description provided for @logoutConfirmMessage.
   ///
   /// In en, this message translates to:
-  /// **'If you log out, your data will remain saved 🙂'**
+  /// **'Are you sure you want to log out?\n\nYour account information will remain saved and will not be deleted.'**
   String get logoutConfirmMessage;
 
   /// No description provided for @confirmLogout.
   ///
   /// In en, this message translates to:
-  /// **'Confirm'**
+  /// **'Confirm Logout'**
   String get confirmLogout;
 
   /// No description provided for @logoutError.
@@ -1238,12 +1238,6 @@ abstract class AppLocalizations {
   /// **'Registered Account'**
   String get registeredAccount;
 
-  /// No description provided for @reloginToDelete.
-  ///
-  /// In en, this message translates to:
-  /// **'Please re-login to delete your account.'**
-  String get reloginToDelete;
-
   /// No description provided for @deleteAccountConfirmMessage.
   ///
   /// In en, this message translates to:
@@ -1261,6 +1255,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account deleted successfully.'**
   String get accountDeletedSuccess;
+
+  /// No description provided for @reloginToDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Please re-login to delete your account.'**
+  String get reloginToDelete;
 
   /// No description provided for @reenterPassword.
   ///
@@ -1297,6 +1297,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account deletion cancelled'**
   String get deletionCancelled;
+
+  /// No description provided for @viewSavedTripBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'عرض مسار رحلة محفوظة 🔸'**
+  String get viewSavedTripBanner;
+
+  /// No description provided for @addComment.
+  ///
+  /// In en, this message translates to:
+  /// **'💬 Add your comment:'**
+  String get addComment;
+
+  /// No description provided for @writeCommentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your opinion about this place...'**
+  String get writeCommentHint;
+
+  /// No description provided for @sendComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Send comment'**
+  String get sendComment;
+
+  /// No description provided for @sending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending...'**
+  String get sending;
+
+  /// No description provided for @commentAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Comment sent successfully'**
+  String get commentAdded;
+
+  /// No description provided for @commentFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send comment'**
+  String get commentFailed;
+
+  /// No description provided for @noCommentsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No comments yet'**
+  String get noCommentsYet;
+
+  /// No description provided for @pleaseLoginToComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in to write a comment'**
+  String get pleaseLoginToComment;
+
+  /// No description provided for @byUser.
+  ///
+  /// In en, this message translates to:
+  /// **'By user'**
+  String get byUser;
+
+  /// No description provided for @rateThisPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'⭐ Rate this place:'**
+  String get rateThisPlace;
+
+  /// No description provided for @averageRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Average rating'**
+  String get averageRating;
+
+  /// No description provided for @yourRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Your rating'**
+  String get yourRating;
+
+  /// No description provided for @ratings.
+  ///
+  /// In en, this message translates to:
+  /// **'ratings'**
+  String get ratings;
+
+  /// No description provided for @ratingSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your rating submitted'**
+  String get ratingSubmitted;
+
+  /// No description provided for @detailsOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Details of'**
+  String get detailsOf;
+
+  /// No description provided for @defaultDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a default description for'**
+  String get defaultDescription;
+
+  /// No description provided for @inCity.
+  ///
+  /// In en, this message translates to:
+  /// **'in'**
+  String get inCity;
+
+  /// No description provided for @viewAllComments.
+  ///
+  /// In en, this message translates to:
+  /// **'View all comments'**
+  String get viewAllComments;
+
+  /// No description provided for @allComments.
+  ///
+  /// In en, this message translates to:
+  /// **'All comments'**
+  String get allComments;
+
+  /// No description provided for @justNow.
+  ///
+  /// In en, this message translates to:
+  /// **'الآن'**
+  String get justNow;
+
+  /// No description provided for @minutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'دقيقة مضت'**
+  String get minutesAgo;
+
+  /// No description provided for @hoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'ساعة مضت'**
+  String get hoursAgo;
 }
 
 class _AppLocalizationsDelegate

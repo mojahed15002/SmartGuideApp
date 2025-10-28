@@ -74,6 +74,7 @@ class _WelcomePageState extends State<WelcomePage>
     }
   }
 
+
   @override
   void initState() {
     super.initState();
@@ -89,6 +90,20 @@ class _WelcomePageState extends State<WelcomePage>
       // ✅ لو حساب Google فيه صورة، نعرضها فوراً
       photoUrl = user!.photoURL;
     }
+    
+// ✅ إذا وُجد رابط مؤجل بعد تسجيل الدخول أو كضيف، افتحه مباشرة
+WidgetsBinding.instance.addPostFrameCallback((_) async {
+  final uri = DeepLinkStore.take();
+  if (uri != null && mounted) {
+    debugPrint("🚀 فتح رابط مؤجل مباشرة بعد بناء WelcomePage: $uri");
+    await Future.delayed(const Duration(milliseconds: 600));
+    openPlaceFromUri(
+      context: context,
+      themeNotifier: widget.themeNotifier,
+      uri: uri,
+    );
+  }
+});
 
     // 🎬 إعداد الانيميشن
     _animController = AnimationController(
@@ -120,11 +135,11 @@ class _WelcomePageState extends State<WelcomePage>
       });
     });
 
-    // ✅✅ الإضافة الجديدة والمضمونة:
-    // إذا كان هناك رابط مؤجل (مثلاً التطبيق فُتح من رابط GitHub وهو مغلق)
+    // ✅✅ الإضافة المصيرية: افتح الرابط المؤجل حتى لو المستخدم مش مسجل دخول
+    // لأن openPlaceFromUri نفسها بتتكفل بتسجيل دخول ضيف إن لزم.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final uri = DeepLinkStore.take();
-      if (uri != null && FirebaseAuth.instance.currentUser != null && mounted) {
+      if (uri != null && mounted) { // ⬅️ أزلنا شرط currentUser
         debugPrint("🚀 تم العثور على رابط مؤجل، يتم فتحه الآن: $uri");
         await Future.delayed(const Duration(milliseconds: 500)); // تأخير بسيط لضمان تحميل الواجهة
         openPlaceFromUri(

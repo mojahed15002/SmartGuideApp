@@ -105,7 +105,7 @@ class _LogsPageState extends State<LogsPage> {
     }
   }
 
-  // ✅ عرض الوجهة على الخريطة
+  // ✅ عرض الوجهة على الخريطة (السابق)
   Future<void> _openMap(dynamic destinationData) async {
     try {
       double? lat;
@@ -140,25 +140,99 @@ class _LogsPageState extends State<LogsPage> {
       final position = await Geolocator.getCurrentPosition();
 
       if (!mounted) return;
-   
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MapPage(
-              position: position,
-              destination: destination,
-              enableTap: false,
-              enableLiveTracking: true,
-              themeNotifier: widget.themeNotifier,
-            ),
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MapPage(
+            position: position,
+            destination: destination,
+            enableTap: false,
+            enableLiveTracking: true,
+            themeNotifier: widget.themeNotifier,
           ),
-        );
-      
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("${AppLocalizations.of(context)!.mapError}: $e"),
         ),
+      );
+    }
+  }
+
+  // ✅ جديد: عرض الرحلة المحفوظة (start + destination + path)
+  Future<void> _openSavedTrip(Map<String, dynamic> log) async {
+    try {
+      latlng.LatLng? start;
+      latlng.LatLng? destination;
+      List<latlng.LatLng>? savedPath;
+
+      final s = log['start'];
+      if (s is Map && s['latitude'] != null && s['longitude'] != null) {
+        start = latlng.LatLng(
+          (s['latitude'] as num).toDouble(),
+          (s['longitude'] as num).toDouble(),
+        );
+      }
+
+      final d = log['destination'];
+      if (d is Map && d['latitude'] != null && d['longitude'] != null) {
+        destination = latlng.LatLng(
+          (d['latitude'] as num).toDouble(),
+          (d['longitude'] as num).toDouble(),
+        );
+      } else if (d is String) {
+        final regex = RegExp(
+          r'LatLng\(latitude[:=]\s*([-]?\d+\.\d+),\s*longitude[:=]\s*([-]?\d+\.\d+)\)',
+        );
+        final match = regex.firstMatch(d);
+        if (match != null) {
+          destination = latlng.LatLng(
+            double.parse(match.group(1)!),
+            double.parse(match.group(2)!),
+          );
+        }
+      }
+
+      final p = log['path'];
+      if (p is List) {
+        savedPath = p.whereType<Map>().map<latlng.LatLng>((m) {
+          final lat = (m['latitude'] as num).toDouble();
+          final lng = (m['longitude'] as num).toDouble();
+          return latlng.LatLng(lat, lng);
+        }).toList();
+        if (savedPath.isEmpty) savedPath = null;
+      }
+
+      final position = await Geolocator.getCurrentPosition();
+
+      if (destination == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.cannotLocateDestination)),
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MapPage(
+            position: position,
+            themeNotifier: widget.themeNotifier,
+            destination: destination,
+            enableTap: false,
+            enableLiveTracking: false,
+            start: start,
+            savedPath: savedPath,
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("${AppLocalizations.of(context)!.mapError}: $e")),
       );
     }
   }
@@ -231,7 +305,7 @@ class _LogsPageState extends State<LogsPage> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
             onPressed: () {
               Navigator.pop(context);
-              _openMap(destination);
+              _openSavedTrip(log); // ✅ بدلاً من _openMap(destination)
             },
             icon: const Icon(Icons.map, color: Colors.white),
             label: Text(
@@ -336,7 +410,7 @@ class _LogsPageState extends State<LogsPage> {
                           vertical: 8,
                         ),
                       ),
-                      onPressed: () => _openMap(destination),
+                      onPressed: () => _openSavedTrip(log), // ✅ الجديد
                       icon: const Icon(Icons.map, color: Colors.white),
                       label: Text(
                         AppLocalizations.of(context)!.viewOnMap,

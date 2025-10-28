@@ -73,24 +73,27 @@ Future<void> openPlaceFromUri({
     final url = placeData['url'] ?? '';
     final heroTag = placeData['hero'] ?? 'hero_$id';
 
-    // ✅ نفتح الصفحة بعد التأكد من جاهزية الواجهة
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (!context.mounted) return;
+// ✅ نفتح الصفحة بعد التأكد من جاهزية الواجهة والـ Navigator بشكل مضمون
+WidgetsBinding.instance.addPostFrameCallback((_) async {
+  // نعطي فرصة قصيرة إضافية على بعض الأجهزة البطيئة
+  await Future.delayed(const Duration(milliseconds: 300));
+  if (!context.mounted) return;
 
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => PlaceDetailsPage(
-            title: title,
-            cityName: cityName,
-            images: images,
-            url: url,
-            themeNotifier: themeNotifier,
-            heroTag: heroTag,
-          ),
-        ),
-        (route) => false,
-      );
-    });
+  // استخدام الـ rootNavigator لضمان وجود Navigator صالح حتى لو تغيّر الـ context
+  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+    MaterialPageRoute(
+      builder: (_) => PlaceDetailsPage(
+        title: title,
+        cityName: cityName,
+        images: images,
+        url: url,
+        themeNotifier: themeNotifier,
+        heroTag: heroTag,
+      ),
+    ),
+    (route) => false,
+  );
+});
   } catch (e) {
     debugPrint("❌ خطأ أثناء تنفيذ openPlaceFromUri: $e");
   }

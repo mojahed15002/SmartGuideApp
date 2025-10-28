@@ -438,14 +438,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cityJenin => 'Jenin';
 
   @override
-  String get logoutConfirmTitle => 'Are you sure you want to log out?';
+  String get logoutConfirmTitle => 'Logout Confirmation';
 
   @override
   String get logoutConfirmMessage =>
-      'If you log out, your data will remain saved 🙂';
+      'Are you sure you want to log out?\n\nYour account information will remain saved and will not be deleted.';
 
   @override
-  String get confirmLogout => 'Confirm';
+  String get confirmLogout => 'Confirm Logout';
 
   @override
   String get logoutError => 'An error occurred while logging out.';
@@ -586,9 +586,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get registeredAccount => 'Registered Account';
 
   @override
-  String get reloginToDelete => 'Please re-login to delete your account.';
-
-  @override
   String get deleteAccountConfirmMessage =>
       'Are you sure you want to permanently delete your account? This action cannot be undone.';
 
@@ -597,6 +594,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountDeletedSuccess => 'Account deleted successfully.';
+
+  @override
+  String get reloginToDelete => 'Please re-login to delete your account.';
 
   @override
   String get reenterPassword =>
@@ -616,4 +616,73 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deletionCancelled => 'Account deletion cancelled';
+
+  @override
+  String get viewSavedTripBanner => 'عرض مسار رحلة محفوظة 🔸';
+
+  @override
+  String get addComment => '💬 Add your comment:';
+
+  @override
+  String get writeCommentHint => 'Write your opinion about this place...';
+
+  @override
+  String get sendComment => 'Send comment';
+
+  @override
+  String get sending => 'Sending...';
+
+  @override
+  String get commentAdded => '✅ Comment sent successfully';
+
+  @override
+  String get commentFailed => 'Failed to send comment';
+
+  @override
+  String get noCommentsYet => 'No comments yet';
+
+  @override
+  String get pleaseLoginToComment => 'Please log in to write a comment';
+
+  @override
+  String get byUser => 'By user';
+
+  @override
+  String get rateThisPlace => '⭐ Rate this place:';
+
+  @override
+  String get averageRating => 'Average rating';
+
+  @override
+  String get yourRating => 'Your rating';
+
+  @override
+  String get ratings => 'ratings';
+
+  @override
+  String get ratingSubmitted => 'Your rating submitted';
+
+  @override
+  String get detailsOf => 'Details of';
+
+  @override
+  String get defaultDescription => 'This is a default description for';
+
+  @override
+  String get inCity => 'in';
+
+  @override
+  String get viewAllComments => 'View all comments';
+
+  @override
+  String get allComments => 'All comments';
+
+  @override
+  String get justNow => 'الآن';
+
+  @override
+  String get minutesAgo => 'دقيقة مضت';
+
+  @override
+  String get hoursAgo => 'ساعة مضت';
 }
