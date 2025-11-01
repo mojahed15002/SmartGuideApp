@@ -83,6 +83,7 @@ WidgetsBinding.instance.addPostFrameCallback((_) async {
   Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
     MaterialPageRoute(
       builder: (_) => PlaceDetailsPage(
+         id: id,
         title: title,
         cityName: cityName,
         images: images,

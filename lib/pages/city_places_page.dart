@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import '../theme_notifier.dart';
 import 'place_details_page.dart';
-
+import '../category_filter.dart';
 import '../l10n/gen/app_localizations.dart';
 
 class CityPlacesPage extends StatefulWidget {
@@ -29,12 +29,17 @@ class _CityPlacesPageState extends State<CityPlacesPage>
 
   List<Map<String, dynamic>> _places = [];
   List<Map<String, dynamic>> _filteredPlaces = [];
+  List<String> _suggestions = [];
   bool _isLoading = true;
+
+List<String> _selectedCategories = []; // ✅ التصنيفات المختارة
 
   final TextEditingController _searchController = TextEditingController();
   List<String> _searchHistory = [];
 
   final Map<String, double> _uiUserRatings = {};
+
+final Map<String, int> _categoryCounts = {};
 
   late AnimationController _animController;
   double _heartScale = 1.0;
@@ -80,6 +85,8 @@ class _CityPlacesPageState extends State<CityPlacesPage>
           .doc(user.uid)
           .get();
 
+
+
       if (doc.exists && doc.data() != null && doc['history'] is List) {
         final firebaseHistory = List<String>.from(doc['history']);
         for (var item in localHistory) {
@@ -92,6 +99,7 @@ class _CityPlacesPageState extends State<CityPlacesPage>
     } catch (e) {
       debugPrint("⚠️ فشل تحميل سجل البحث: $e");
     }
+    
   }
 
   Future<void> _saveSearch(String query) async {
@@ -119,6 +127,7 @@ class _CityPlacesPageState extends State<CityPlacesPage>
       }
       await ref.set({'history': _searchHistory});
     }
+
   }
 
   Future<void> _deleteSearchItem(String query) async {
@@ -183,32 +192,29 @@ class _CityPlacesPageState extends State<CityPlacesPage>
       final List<Map<String, dynamic>> data =
           snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
 
-      setState(() {
-        _places = data;
-        _filteredPlaces = data;
-        _isLoading = false;
-      });
+setState(() {
+  _places = data;
+  _filteredPlaces = data;
+  _isLoading = false;
+
+  // ✅ حساب عدد الأماكن لكل تصنيف
+  _categoryCounts.clear();
+  for (var place in _places) {
+    List<String> cats = List<String>.from(place["categories"] ?? []);
+    for (var c in cats) {
+      _categoryCounts[c] = (_categoryCounts[c] ?? 0) + 1;
+    }
+  }
+});
     } catch (e) {
       debugPrint("❌ فشل تحميل الأماكن: $e");
       setState(() => _isLoading = false);
     }
   }
 
-  void _filterPlaces(String query) {
-    if (query.isEmpty) {
-      setState(() => _filteredPlaces = _places);
-      return;
-    }
 
-    final results = _places.where((place) {
-      final titleAr = (place['title_ar'] ?? '').toString().toLowerCase();
-      final titleEn = (place['title_en'] ?? '').toString().toLowerCase();
-      return titleAr.contains(query.toLowerCase()) ||
-          titleEn.contains(query.toLowerCase());
-    }).toList();
 
-    setState(() => _filteredPlaces = results);
-  }
+
 
   Future<void> _toggleFavorite(String placeId) async {
     final prefs = await SharedPreferences.getInstance();
@@ -290,6 +296,56 @@ class _CityPlacesPageState extends State<CityPlacesPage>
     Share.share(shareText);
   }
 
+  void _applyFilters() {
+  final query = _searchController.text.trim().toLowerCase();
+
+// ✅ بناء الاقتراحات حسب النص المكتوب
+_suggestions = _places
+    .where((place) {
+      final titleAr = (place['title_ar'] ?? '').toString().toLowerCase();
+      final titleEn = (place['title_en'] ?? '').toString().toLowerCase();
+      return titleAr.contains(query) || titleEn.contains(query);
+    })
+    .map((place) => (place['title_ar'] ?? place['title_en']).toString())
+    .toList(); 
+    setState(() {});
+
+
+  List<Map<String, dynamic>> results = _places;
+
+  // ✅ فلترة حسب البحث
+  if (query.isNotEmpty) {
+    results = results.where((place) {
+      final titleAr = (place['title_ar'] ?? '').toString().toLowerCase();
+      final titleEn = (place['title_en'] ?? '').toString().toLowerCase();
+      return titleAr.contains(query) || titleEn.contains(query);
+    }).toList();
+  }
+
+  // ✅ فلترة حسب التصنيف
+  if (_selectedCategories.isNotEmpty && !_selectedCategories.contains("all")) {
+    results = results.where((place) {
+      final List<String> placeCats =
+          List<String>.from(place["categories"] ?? []);
+      return _selectedCategories.any((cat) => placeCats.contains(cat));
+    }).toList();
+  }
+  
+// ✅ إعادة حساب الاعداد حسب القائمة المعروضة الآن
+_categoryCounts.clear();
+for (var place in results) {
+  List<String> cats = List<String>.from(place["categories"] ?? []);
+  for (var c in cats) {
+    _categoryCounts[c] = (_categoryCounts[c] ?? 0) + 1;
+  }
+}
+
+  setState(() {
+    _filteredPlaces = results;
+  });
+}
+
+
   @override
   Widget build(BuildContext context) {
     final themeNotifier = widget.themeNotifier;
@@ -320,13 +376,26 @@ class _CityPlacesPageState extends State<CityPlacesPage>
                   children: [
                     TextField(
                       controller: _searchController,
-                      onChanged: (query) async {
-                        _filterPlaces(query);
-                        if (query.isEmpty) {
-                          _loadSearchHistory();
-                          return;
-                        }
-                      },
+onChanged: (query) async {
+  if (query.isEmpty) {
+    await _loadSearchHistory(); 
+    _applyFilters();
+  } else {
+    _applyFilters();
+  }
+  setState(() {});
+},
+
+onSubmitted: (query) async {
+  query = query.trim();
+  if (query.isNotEmpty) {
+    await _saveSearch(query);
+    await _loadSearchHistory();
+    _applyFilters();
+    setState(() {});
+  }
+},
+
                       decoration: InputDecoration(
                         hintText: loc.searchHint,
                         prefixIcon: const Icon(Icons.search),
@@ -336,6 +405,72 @@ class _CityPlacesPageState extends State<CityPlacesPage>
                       ),
                     ),
                     const SizedBox(height: 10),
+
+                    // ✅ عرض سجل البحث إذا مربع البحث فاضي
+if (_searchController.text.isEmpty && _searchHistory.isNotEmpty)
+  SizedBox(
+    height: 50,
+    child: ListView(
+      scrollDirection: Axis.horizontal,
+      children: _searchHistory.map((q) {
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: GestureDetector(
+            onTap: () {
+              _searchController.text = q;
+              _applyFilters();
+            },
+            child: Chip(
+              label: Text(q),
+              deleteIcon: const Icon(Icons.close, size: 16),
+              onDeleted: () => _deleteSearchItem(q),
+            ),
+          ),
+        );
+      }).toList(),
+    ),
+  ),
+
+// ✅ اقتراحات كتابة البحث
+if (_searchController.text.isNotEmpty && _suggestions.isNotEmpty)
+  SizedBox(
+    height: 50,
+    child: ListView(
+      scrollDirection: Axis.horizontal,
+      children: _suggestions.take(8).map((s) {
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: GestureDetector(
+            onTap: () {
+              _searchController.text = s;
+              _applyFilters();
+              FocusScope.of(context).unfocus(); // اغلاق الكيبورد
+            },
+            child: Chip(
+              label: Text(s),
+            ),
+          ),
+        );
+      }).toList(),
+    ),
+  ),
+
+
+                    // ✅ فلتر التصنيفات
+CategoryFilter(
+  selectedCategories: _selectedCategories,
+  onChanged: (cats) {
+    setState(() {
+      _selectedCategories = cats;
+    });
+_applyFilters();
+  },
+  categoryCounts: _categoryCounts, // 👈 أرسل الأرقام
+),
+
+const SizedBox(height: 10),
+
+
                     Expanded(
                       child: _filteredPlaces.isEmpty
                           ? Center(
@@ -377,6 +512,7 @@ class _CityPlacesPageState extends State<CityPlacesPage>
                                           MaterialPageRoute(
                                             builder: (context) =>
                                                 PlaceDetailsPage(
+                                                   id: id,
                                               title: title,
                                               cityName: cityName,
                                               images: images,

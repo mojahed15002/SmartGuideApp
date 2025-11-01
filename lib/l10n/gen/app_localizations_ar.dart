@@ -683,4 +683,107 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get hoursAgo => 'ساعة مضت';
+
+  @override
+  String get showAll => 'عرض الجميع';
+
+  @override
+  String get searchNearbyTitle => 'البحث في الأماكن القريبة';
+
+  @override
+  String get reset => 'إعادة';
+
+  @override
+  String get distanceRange => 'نطاق البحث';
+
+  @override
+  String get noNearbyPlaces => 'لا يوجد أماكن قريبة ضمن النطاق المحدد';
+
+  @override
+  String get searchRadius => 'نطاق البحث';
+
+  @override
+  String get km => 'كم';
+
+  @override
+  String get map => 'خريطة';
+
+  @override
+  String get noNearbyResults => 'لا يوجد أماكن قريبة ضمن النطاق المحدد';
+
+  @override
+  String get locationPermissionDenied => 'يرجى منح إذن الوصول للموقع.';
+
+  @override
+  String get unnamedPlace => 'مكان بدون اسم';
+
+  @override
+  String get mapTitle => 'الخريطة';
+
+  @override
+  String get mapStyleStreets => 'شوارع افتراضية مع عناوين';
+
+  @override
+  String get mapStyleSatellite => 'صورة فضائية (تضاريس واقعية)';
+
+  @override
+  String get modeWalk => '🚶 مشي';
+
+  @override
+  String get modeCar => '🚗 سيارة';
+
+  @override
+  String get modeBike => '🚴 دراجة';
+
+  @override
+  String get distanceLabel => 'المسافة';
+
+  @override
+  String get mapTapHint => 'اضغط على أي موقع في الخريطة لتعيين وجهة';
+
+  @override
+  String get tripSaved => '✅ تم حفظ الرحلة';
+
+  @override
+  String get arrivedTitle => '🎉 تهانينا!';
+
+  @override
+  String get arrivedMessage =>
+      'لقد وصلت إلى وجهتك بنجاح.\nهل ترغب في حفظ الرحلة؟';
+
+  @override
+  String get liveTrackingEnabled => '🟢 تم تفعيل التتبع الحي';
+
+  @override
+  String get liveTrackingDisabled => '🔴 تم إيقاف التتبع الحي';
+
+  @override
+  String get enableLocationPermission => 'يرجى تفعيل إذن الموقع من الإعدادات';
+
+  @override
+  String get locationFailed => 'تعذر تحديد الموقع';
+
+  @override
+  String get noValidRoute => '⚠️ لم يتم العثور على مسار صالح.';
+
+  @override
+  String get serverRouteError => '⚠️ خطأ من خادم التوجيه.';
+
+  @override
+  String get connectionError => '⚠️ خطأ في الاتصال.';
+
+  @override
+  String get unknownLocation => 'موقع غير معروف';
+
+  @override
+  String get reviews => 'مراجعات';
+
+  @override
+  String get mapUnknownPlace => 'موقع على الخريطة';
+
+  @override
+  String get stopLiveTracking => 'إيقاف التتبع الحي';
+
+  @override
+  String get startLiveTracking => 'تفعيل التتبع الحي';
 }

@@ -1435,6 +1435,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ساعة مضت'**
   String get hoursAgo;
+
+  /// No description provided for @showAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show All'**
+  String get showAll;
+
+  /// No description provided for @searchNearbyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Nearby Places'**
+  String get searchNearbyTitle;
+
+  /// No description provided for @reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get reset;
+
+  /// No description provided for @distanceRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Radius'**
+  String get distanceRange;
+
+  /// No description provided for @noNearbyPlaces.
+  ///
+  /// In en, this message translates to:
+  /// **'No nearby places within selected range'**
+  String get noNearbyPlaces;
+
+  /// No description provided for @searchRadius.
+  ///
+  /// In en, this message translates to:
+  /// **'Search radius'**
+  String get searchRadius;
+
+  /// No description provided for @km.
+  ///
+  /// In en, this message translates to:
+  /// **'km'**
+  String get km;
+
+  /// No description provided for @map.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get map;
+
+  /// No description provided for @noNearbyResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No nearby places within selected radius'**
+  String get noNearbyResults;
+
+  /// No description provided for @locationPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Please grant location access permission.'**
+  String get locationPermissionDenied;
+
+  /// No description provided for @unnamedPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Unnamed place'**
+  String get unnamedPlace;
+
+  /// No description provided for @mapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get mapTitle;
+
+  /// No description provided for @mapStyleStreets.
+  ///
+  /// In en, this message translates to:
+  /// **'Street map with labels'**
+  String get mapStyleStreets;
+
+  /// No description provided for @mapStyleSatellite.
+  ///
+  /// In en, this message translates to:
+  /// **'Satellite view (real terrain)'**
+  String get mapStyleSatellite;
+
+  /// No description provided for @modeWalk.
+  ///
+  /// In en, this message translates to:
+  /// **'🚶 Walk'**
+  String get modeWalk;
+
+  /// No description provided for @modeCar.
+  ///
+  /// In en, this message translates to:
+  /// **'🚗 Car'**
+  String get modeCar;
+
+  /// No description provided for @modeBike.
+  ///
+  /// In en, this message translates to:
+  /// **'🚴 Bike'**
+  String get modeBike;
+
+  /// No description provided for @distanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get distanceLabel;
+
+  /// No description provided for @mapTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap anywhere on the map to set destination'**
+  String get mapTapHint;
+
+  /// No description provided for @tripSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Trip saved'**
+  String get tripSaved;
+
+  /// No description provided for @arrivedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 Congratulations!'**
+  String get arrivedTitle;
+
+  /// No description provided for @arrivedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have arrived at your destination.\nDo you want to save this trip?'**
+  String get arrivedMessage;
+
+  /// No description provided for @liveTrackingEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'🟢 Live tracking enabled'**
+  String get liveTrackingEnabled;
+
+  /// No description provided for @liveTrackingDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'🔴 Live tracking stopped'**
+  String get liveTrackingDisabled;
+
+  /// No description provided for @enableLocationPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enable location permission in settings'**
+  String get enableLocationPermission;
+
+  /// No description provided for @locationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to get location'**
+  String get locationFailed;
+
+  /// No description provided for @noValidRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ No valid route found.'**
+  String get noValidRoute;
+
+  /// No description provided for @serverRouteError.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ Routing server error.'**
+  String get serverRouteError;
+
+  /// No description provided for @connectionError.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ Connection error.'**
+  String get connectionError;
+
+  /// No description provided for @unknownLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown location'**
+  String get unknownLocation;
+
+  /// No description provided for @reviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews'**
+  String get reviews;
+
+  /// No description provided for @mapUnknownPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Location on map'**
+  String get mapUnknownPlace;
+
+  /// No description provided for @stopLiveTracking.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Live Tracking'**
+  String get stopLiveTracking;
+
+  /// No description provided for @startLiveTracking.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Live Tracking'**
+  String get startLiveTracking;
 }
 
 class _AppLocalizationsDelegate

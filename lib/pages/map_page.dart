@@ -1,6 +1,3 @@
-/// ملف مستخرج تلقائيًا من main.dart
-/// يحتوي الكلاس: MapPage
-library;
 
 import 'package:flutter/material.dart';
 import '../theme_notifier.dart';
@@ -15,11 +12,13 @@ import 'dart:async';
 import 'package:geocoding/geocoding.dart';
 import 'custom_drawer.dart';
 import '../l10n/gen/app_localizations.dart';
+import 'place_details_page.dart';
 
 class MapPage extends StatefulWidget {
   final Position position;
   final ThemeNotifier themeNotifier;
   final latlng.LatLng? destination;
+  final Map<String, dynamic>? placeInfo;
   final bool enableTap;
   final bool enableLiveTracking;
   // ✅ جديد: لدعم عرض الرحلات المحفوظة من Firestore
@@ -33,17 +32,21 @@ class MapPage extends StatefulWidget {
     this.destination,
     this.enableTap = true,
     this.enableLiveTracking = false,
-        this.start,        // ✅ جديد
+    this.start,        // ✅ جديد
     this.savedPath,    // ✅ جديد
-
+    this.placeInfo,
   });
 
   @override
   State<MapPage> createState() => _MapPageState();
 }
 
+
 class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   final fm.MapController _mapController = fm.MapController();
+
+
+  List<fm.Marker> _placeMarkers = [];
 
   List<latlng.LatLng> routePoints = [];
   bool _loading = true;
@@ -63,13 +66,89 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 Color _routeColor = Colors.orange;
 bool _showSavedTripBanner = true;
 
+final Map<String, IconData> categoryIcons = {
+  'restaurant': Icons.restaurant,
+  'cafe': Icons.local_cafe,
+  'clothes': Icons.shopping_bag,
+  'sweets': Icons.cake,
+  'hotel': Icons.hotel,
+  'tourism': Icons.museum,
+};
+
+Widget _buildCategoryMarker(List<dynamic>? categories) {
+  String cat = "default";
+
+  if (categories != null && categories.isNotEmpty) {
+    cat = categories.first.toString().toLowerCase();
+  }
+
+  IconData icon = categoryIcons[cat] ?? Icons.location_on;
+
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white,
+      shape: BoxShape.circle,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black26,
+          blurRadius: 6,
+          offset: Offset(0, 3),
+        )
+      ]
+    ),
+    padding: EdgeInsets.all(6),
+    child: Icon(
+      icon,
+      color: Colors.orange,
+      size: 28,
+    ),
+  );
+}
+
+
+Future<Map<String, dynamic>?> _findPlaceByCoordinates(
+  latlng.LatLng point,
+  BuildContext context,
+) async {
+  try {
+    final snap = await FirebaseFirestore.instance.collection('places').get();
+
+    // هل اللغة الحالية عربية؟
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    for (var doc in snap.docs) {
+      final data = doc.data();
+      final lat = (data['latitude'] as num).toDouble();
+      final lng = (data['longitude'] as num).toDouble();
+
+      final dist = distance(
+        latlng.LatLng(lat, lng),
+        point,
+      );
+
+      if (dist < 40) {
+        return {
+          "id": doc.id,
+          "name": isArabic ? data['title_ar'] : data['title_en'],
+          "city": isArabic ? data['city_ar'] : data['city_en'],
+          "images": List<String>.from(data['images'] ?? []),
+          "url": data['url'] ?? "",
+        };
+      }
+    }
+  } catch (e) {
+    debugPrint("❌ Error searching Firestore: $e");
+  }
+  return null;
+}
+
 
   String _selectedMode = "driving-car";
-  final Map<String, String> transportModes = {
-    "🚶 مشي": "foot-walking",
-    "🚗 سيارة": "driving-car",
-    "🚴 دراجة": "cycling-regular",
-  };
+Map<String, String> get transportModes => {
+  AppLocalizations.of(context)!.modeWalk: "foot-walking",
+  AppLocalizations.of(context)!.modeCar: "driving-car",
+  AppLocalizations.of(context)!.modeBike: "cycling-regular",
+};
 
   String _currentStyle = "streets";
   latlng.LatLng? _destination;
@@ -78,12 +157,15 @@ bool _showSavedTripBanner = true;
   double? _summaryDurationSeconds;
 
   final distance = const latlng.Distance(); // ✅ لحساب المسافة
+  Map<String, dynamic>? _selectedPlace;
 
   @override
   void initState() {
     super.initState();
     _destination = widget.destination;
-    
+    _selectedPlace = widget.placeInfo; // ✅ تظهر أول ما يدخل الخريطة
+    print("📍 placeInfo received: ${widget.placeInfo}");
+
     // ✅ في حال الرحلة من Firestore (يوجد مسار محفوظ)
     if (widget.savedPath != null && widget.savedPath!.isNotEmpty) {
       routePoints = widget.savedPath!;
@@ -118,11 +200,51 @@ bool _showSavedTripBanner = true;
     });
 
     _initLocation();
+_loadPlaceMarkers();
 
     if (widget.enableLiveTracking) {
       _startLiveTracking();
     }
   }
+
+Future<void> _loadPlaceMarkers() async {
+  final snap = await FirebaseFirestore.instance.collection('places').get();
+  final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+  List<fm.Marker> markers = [];
+
+  for (var doc in snap.docs) {
+    var data = doc.data();
+    var lat = data['latitude'];
+    var lng = data['longitude'];
+
+    markers.add(
+      fm.Marker(
+        width: 60,
+        height: 60,
+        point: latlng.LatLng(lat, lng),
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedPlace = {
+                "id": doc.id,
+"name": isArabic ? data['title_ar'] : data['title_en'],
+"city": isArabic ? data['city_ar'] : data['city_en'],
+                "images": List<String>.from(data['images'] ?? []),
+                "url": data['url'] ?? "",
+              };
+            });
+          },
+          child: _buildCategoryMarker(data['categories']),
+        ),
+      ),
+    );
+  }
+
+  setState(() {
+    _placeMarkers = markers;
+  });
+}
+
 
   // ✅ تفعيل التتبع الحي للموقع
   void _startLiveTracking() {
@@ -166,23 +288,21 @@ bool _showSavedTripBanner = true;
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text("🎉 تهانينا!"),
-            content: const Text("لقد وصلت إلى وجهتك بنجاح.\nهل ترغب في حفظ الرحلة؟"),
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  await _saveTripLogToFirebase();
-                },
-                child: const Text("نعم"),
-              ),
-              TextButton(
-              onPressed: () {
-                Navigator.pop(context); // فقط إغلاق النافذة
-              },
-              child: const Text("لا"),
-            ),
-            ],
+title: Text(AppLocalizations.of(context)!.arrivedTitle),
+content: Text(AppLocalizations.of(context)!.arrivedMessage),
+actions: [
+  TextButton(
+    onPressed: () async {
+      Navigator.pop(context);
+      await _saveTripLogToFirebase();
+    },
+    child: Text(AppLocalizations.of(context)!.yes),
+  ),
+  TextButton(
+    onPressed: () => Navigator.pop(context),
+    child: Text(AppLocalizations.of(context)!.no),
+  ),
+],
           ),
         );
       }
@@ -197,7 +317,7 @@ bool _showSavedTripBanner = true;
       if (user == null || _destination == null) return;
 
       // 🔹 نحاول نحصل على اسم المكان من الإحداثيات
-      String placeName = "موقع غير معروف";
+String placeName = AppLocalizations.of(context)!.unknownLocation;
       try {
         final placemarks = await placemarkFromCoordinates(
           _destination!.latitude,
@@ -263,14 +383,14 @@ bool _showSavedTripBanner = true;
   void _toggleLiveTracking() {
     if (_isTracking) {
       _stopLiveTracking();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("🔴 تم إيقاف التتبع الحي")),
-      );
+ScaffoldMessenger.of(context).showSnackBar(
+  SnackBar(content: Text(AppLocalizations.of(context)!.liveTrackingDisabled)),
+);
     } else {
       _startLiveTracking();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("🟢 تم تفعيل التتبع الحي")),
-      );
+ScaffoldMessenger.of(context).showSnackBar(
+  SnackBar(content: Text(AppLocalizations.of(context)!.liveTrackingEnabled)),
+);
     }
   }
 
@@ -279,7 +399,7 @@ bool _showSavedTripBanner = true;
       LocationPermission permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        setState(() => _error = "يرجى تفعيل إذن الموقع من الإعدادات");
+setState(() => _error = AppLocalizations.of(context)!.enableLocationPermission);
         return;
       }
 
@@ -297,7 +417,7 @@ bool _showSavedTripBanner = true;
         _mapController.move(userLocation, 16.0);
       });
     } catch (e) {
-      setState(() => _error = "تعذر تحديد الموقع: $e");
+setState(() => _error = "${AppLocalizations.of(context)!.locationFailed}: $e");
     }
   }
 
@@ -335,7 +455,7 @@ Future<void> _getRoute(latlng.LatLng destination) async {
 
       if (data["routes"] == null || data["routes"].isEmpty) {
         setState(() {
-          _error = "⚠️ لم يتم العثور على مسار صالح.";
+_error = AppLocalizations.of(context)!.noValidRoute;
           _loading = false;
         });
         return;
@@ -370,13 +490,13 @@ Future<void> _getRoute(latlng.LatLng destination) async {
       });
     } else {
       setState(() {
-        _error = "⚠️ خطأ من خادم OSRM: ${response.statusCode}";
+_error = AppLocalizations.of(context)!.serverRouteError;
         _loading = false;
       });
     }
   } catch (e) {
     setState(() {
-      _error = "⚠️ خطأ في الاتصال: $e";
+_error = AppLocalizations.of(context)!.connectionError;
       _loading = false;
     });
   }
@@ -411,6 +531,11 @@ Future<void> _getRoute(latlng.LatLng destination) async {
     return "$secs ث";
   }
 
+String _getLocalizedTileUrl(BuildContext context) {
+  return "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+}
+
+
   @override
   Widget build(BuildContext context) {
     final userLocation = _currentLocation ??
@@ -418,299 +543,510 @@ Future<void> _getRoute(latlng.LatLng destination) async {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("الخريطة (${_currentStyle.toUpperCase()})"),
+title: Text("${AppLocalizations.of(context)!.mapTitle} (${_currentStyle.toUpperCase()})"),
         
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) => setState(() => _currentStyle = value),
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                  value: "streets",
-                  child: Text("شوارع افتراضية مع عناوين")),
-              PopupMenuItem(
-                  value: "satellite",
-                  child: Text("صورة فضائية (تضاريس واقعية)")),
-            ],
+itemBuilder: (context) => [
+  PopupMenuItem(
+      value: "streets",
+      child: Text(AppLocalizations.of(context)!.mapStyleStreets)),
+  PopupMenuItem(
+      value: "satellite",
+      child: Text(AppLocalizations.of(context)!.mapStyleSatellite)),
+],
           )
         ],
       ),
       drawer: CustomDrawer(
           themeNotifier: widget.themeNotifier,), // ⬅️ هذا السطر المهم
-      floatingActionButton: widget.enableTap
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 12),
-                FloatingActionButton.extended(
-                  heroTag: "centerBtn",
-                  backgroundColor: Colors.orange,
-                  icon: const Icon(Icons.my_location),
-                  label: const Text("مركّز إلى موقعي"),
-                  onPressed: () {
-                    final loc = _currentLocation ??
-                        latlng.LatLng(widget.position.latitude,
-                            widget.position.longitude);
-                    _mapController.move(loc, 16.0);
-                  },
-                ),
-              ],
-            )
-          : null,
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: DropdownButton<String>(
-              value: _selectedMode,
-              items: transportModes.entries
-                  .map((entry) =>
-                      DropdownMenuItem(value: entry.value, child: Text(entry.key)))
-                  .toList(),
-              onChanged: (value) {
-                if (value != null && _destination != null) {
-                  setState(() => _selectedMode = value);
-                  _getRoute(_destination!);
-                } else {
-                  setState(() => _selectedMode = value ?? _selectedMode);
-                }
-              },
-            ),
+
+body: Stack(
+  children: [
+    // الطبقة الأساسية: العناصر العلوية + الخريطة
+    Column(
+      children: [
+        // Dropdown وسيلة النقل
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: DropdownButton<String>(
+            value: _selectedMode,
+            items: transportModes.entries
+                .map((entry) =>
+                    DropdownMenuItem(value: entry.value, child: Text(entry.key)))
+                .toList(),
+            onChanged: (value) {
+              if (value != null && _destination != null) {
+                setState(() => _selectedMode = value);
+                _getRoute(_destination!);
+              } else {
+                setState(() => _selectedMode = value ?? _selectedMode);
+              }
+            },
           ),
-          if (_summaryDistanceMeters != null || _summaryDurationSeconds != null)
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-              child: Card(
-                color: Theme.of(context).cardColor,
-                child: Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline, color: Colors.orange),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          "المسافة: ${_summaryDistanceMeters != null ? _formatDistance(_summaryDistanceMeters!) : 'غير متوفر'}  •  الوقت: ${_summaryDurationSeconds != null ? _formatDuration(_summaryDurationSeconds!) : 'غير متوفر'}",
-                          style: const TextStyle(fontSize: 16),
-                        ),
+        ),
+
+        // بطاقة ملخص المسافة/الوقت
+        if (_summaryDistanceMeters != null || _summaryDurationSeconds != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+            child: Card(
+              color: Theme.of(context).cardColor,
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.orange),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+"${AppLocalizations.of(context)!.distanceLabel}: ${_summaryDistanceMeters != null ? _formatDistance(_summaryDistanceMeters!) : AppLocalizations.of(context)!.notAvailable}"
+" • "
+"${AppLocalizations.of(context)!.timeLabel}: ${_summaryDurationSeconds != null ? _formatDuration(_summaryDurationSeconds!) : AppLocalizations.of(context)!.notAvailable}",                        style: const TextStyle(fontSize: 16),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () {
-                          setState(() {
-                            _summaryDistanceMeters = null;
-                            _summaryDurationSeconds = null;
-                            routePoints = [];
-                            _destination = null;
-                          });
-                        },
-                      )
-                    ],
-                  ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        setState(() {
+                          _summaryDistanceMeters = null;
+                          _summaryDurationSeconds = null;
+                          routePoints = [];
+                          _destination = null;
+                        });
+                      },
+                    )
+                  ],
                 ),
               ),
             ),
-          Expanded(
-            child: Stack(
+          ),
+
+
+        // الخريطة تملأ ما تبقى
+        Expanded(
+          child: fm.FlutterMap(
+            mapController: _mapController,
+            options: fm.MapOptions(
+              center: userLocation,
+              zoom: 14,
+              maxZoom: _currentStyle == "satellite" ? 18 : 22,
+              onPositionChanged: (pos, hasGesture) {
+                if (hasGesture && _isTracking) {
+                  _stopLiveTracking();
+                }
+              },
+onTap: widget.enableTap
+    ? (tapPosition, point) async {
+        _destination = point;
+        _error = null;
+        _showTip = false;
+
+        // 🔍 حاول نلاقي المكان في Firestore
+final found = await _findPlaceByCoordinates(point, context);
+
+        setState(() {
+          _selectedPlace = found; // لو لقيه، بنعرضه، لو لا → null
+        });
+
+        _getRoute(point);
+      }
+                  : null,
+            ),
+            children: [
+fm.TileLayer(
+  urlTemplate: _getLocalizedTileUrl(context),
+  userAgentPackageName: 'com.example.smartguideapp',
+),
+fm.MarkerLayer(
+  markers: [
+    // ✅ ماركرات الأماكن من Firestore
+    ..._placeMarkers,
+
+    // ✅ موقع المستخدم
+    if (_currentLocation != null)
+      fm.Marker(
+        point: _currentLocation!,
+        width: 60,
+        height: 60,
+        child: const Icon(Icons.person_pin_circle,
+            color: Colors.blue, size: 40),
+      ),
+
+    // ✅ ماركر الوجهة الحمراء
+    if (_destination != null)
+      fm.Marker(
+        point: _destination!,
+        width: 60,
+        height: 60,
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedPlace = {
+                "id": widget.placeInfo?['id'],
+                "name": widget.placeInfo?['name'],
+                "city": widget.placeInfo?['city'],
+                "images": widget.placeInfo?['images'],
+                "url": widget.placeInfo?['url'],
+              };
+            });
+          },
+          child: const Icon(
+            Icons.location_pin,
+            color: Colors.red,
+            size: 40,
+          ),
+        ),
+      ),
+  ],
+),
+
+              if (routePoints.isNotEmpty)
+                fm.PolylineLayer(
+                  polylines: [
+                    fm.Polyline(
+                      points: routePoints,
+                      color: _routeColor,
+                      strokeWidth: 4,
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ],
+    ),
+
+    // ===== هنا العناصر العائمة فوق كل شيء (Overlay) =====
+
+    // Banner يظهر فقط عند عرض رحلة محفوظة
+    if (_showSavedTripBanner && widget.savedPath != null && widget.savedPath!.isNotEmpty)
+      Positioned(
+        top: 20,
+        left: 0,
+        right: 0,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 350),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade600,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                fm.FlutterMap(
-                  mapController: _mapController,
-                  options: fm.MapOptions(
-                    center: userLocation,
-                    zoom: 14,
-                    maxZoom:
-                        _currentStyle == "satellite" ? 18 : 22,
-                    onPositionChanged: (pos, hasGesture) {
-                      if (hasGesture && _isTracking) {
-                        _stopLiveTracking();
-                      }
-                    },
-                    onTap: widget.enableTap
-                        ? (tapPosition, point) {
-                            setState(() {
-                              _destination = point;
-                              _error = null;
-                              _showTip = false;
-                            });
-                            _getRoute(point);
-                          }
-                        : null,
+                const Icon(Icons.route, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    AppLocalizations.of(context)!.viewSavedTripBanner,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  children: [
-                    fm.TileLayer(
-                      urlTemplate: _getUrlTemplate(),
-                      userAgentPackageName:
-                          'com.example.smartguideapp',
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showSavedTripBanner = false;
+                    });
+                  },
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white24,
                     ),
-                    fm.MarkerLayer(
-                      markers: [
-                        if (_currentLocation != null)
-                          fm.Marker(
-                            point: _currentLocation!,
-                            width: 60,
-                            height: 60,
-                            child: const Icon(Icons.person_pin_circle,
-                                color: Colors.blue, size: 40),
-                          ),
-                        if (_destination != null)
-                          fm.Marker(
-                            point: _destination!,
-                            width: 60,
-                            height: 60,
-                            child: const Icon(Icons.location_pin,
-                                color: Colors.red, size: 40),
-                          ),
-                      ],
+                    padding: const EdgeInsets.all(4),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 20,
                     ),
-if (routePoints.isNotEmpty)
-  fm.PolylineLayer(
-    polylines: [
-      fm.Polyline(
-        points: routePoints,
-        color: _routeColor, // 🎨 بدل الثابت القديم
-        strokeWidth: 4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+
+if (_selectedPlace != null && _selectedPlace!['name'] != null)
+  Positioned(
+    bottom: 10,
+    left: 10,
+    right: 10,
+    child: _buildMapPlaceCard(_selectedPlace!),
+  ),
+
+
+// زر التتبع الحي + زر توسيط الموقع
+Positioned(
+  top: 16,
+  left: 16,
+  child: Row(
+    children: [
+      FloatingActionButton(
+        heroTag: "liveTrackTop",
+        backgroundColor: _isTracking ? Colors.green : Colors.grey,
+        onPressed: _toggleLiveTracking,
+tooltip: _isTracking 
+  ? AppLocalizations.of(context)!.stopLiveTracking 
+  : AppLocalizations.of(context)!.startLiveTracking,
+        child: Icon(_isTracking ? Icons.gps_fixed : Icons.gps_off),
+      ),
+      const SizedBox(width: 12), // مسافة بينهم
+      FloatingActionButton(
+        heroTag: "centerBtn",
+        backgroundColor: Colors.orange,
+        onPressed: () {
+          final loc = _currentLocation ??
+              latlng.LatLng(widget.position.latitude, widget.position.longitude);
+          _mapController.move(loc, 16.0);
+        },
+        child: const Icon(Icons.my_location),
       ),
     ],
   ),
-                  ],
-                ),
+),
 
-// ✅ Banner يظهر فقط عند عرض رحلة محفوظة
-if (_showSavedTripBanner && widget.savedPath != null && widget.savedPath!.isNotEmpty)
-  Positioned(
-    top: 20,
-    left: 0,
-    right: 0,
-    child: Center(
-      child: Container(
-        constraints: const BoxConstraints(
-          maxWidth: 350, // 🔹 عرض أقصى ثابت — مناسب لجميع الأجهزة
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.orange.shade600,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.route, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                AppLocalizations.of(context)!.viewSavedTripBanner,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _showSavedTripBanner = false;
-                });
-              },
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white24,
-                ),
-                padding: const EdgeInsets.all(4),
-                child: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-            ),
-          ],
+
+
+    // مؤشرات التحميل/الأخطاء/التلميح
+    if (_loading) const Center(child: CircularProgressIndicator()),
+    if (_error != null)
+      Positioned(
+        top: 80,
+        left: 16,
+        right: 16,
+        child: Card(
+          color: Colors.red.shade100,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(_error!),
+          ),
         ),
       ),
-    ),
-  ),
+    if (_showTip && widget.enableTap)
+      Positioned(
+        top: 10,
+        right: 100,
+        child: FadeTransition(
+          opacity: ReverseAnimation(_fadeAnimation),
+          child: Card(
+            elevation: 6,
+            color: Colors.white.withOpacity(0.95),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child:  Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.touch_app, color: Colors.orange),
+                  SizedBox(width: 6),
+Text(
+  AppLocalizations.of(context)!.mapTapHint,
+  style: TextStyle(fontSize: 13.5, color: Colors.black87),
+),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+  ],
+),
+    );
+  }
 
+Widget _buildPlaceCard(Map<String, dynamic> p) {
+  return Card(
+    elevation: 6,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    child: Padding(
+      padding: const EdgeInsets.all(10),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: p['images'] != null && p['images'].isNotEmpty
+                ? Image.asset(
+                    p['images'][0],
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                  )
+                : const Icon(Icons.image_not_supported, size: 60),
+          ),
+          const SizedBox(width: 12),
 
-                // 🔘 زر التتبع الحي أعلى يسار الشاشة
-                Positioned(
-                  top: 16,
-                  left: 16,
-                  child: FloatingActionButton(
-                    heroTag: "liveTrackTop",
-                    backgroundColor:
-                        _isTracking ? Colors.green : Colors.grey,
-                    onPressed: _toggleLiveTracking,
-                    tooltip: _isTracking
-                        ? "إيقاف التتبع الحي"
-                        : "تفعيل التتبع الحي",
-                    child:
-                        Icon(_isTracking ? Icons.gps_fixed : Icons.gps_off),
-                  ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(p['name'] ?? "",
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(
+                  p['city'] ?? "",
+                  style: const TextStyle(fontSize: 13),
                 ),
-                if (_loading)
-                  const Center(child: CircularProgressIndicator()),
-                if (_error != null)
-                  Positioned(
-                    top: 80,
-                    left: 16,
-                    right: 16,
-                    child: Card(
-                      color: Colors.red.shade100,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(_error!),
-                      ),
-                    ),
-                  ),
-                if (_showTip && widget.enableTap)
-                  Positioned(
-                    top: 10,
-                    right: 100,
-                    child: FadeTransition(
-                      opacity: ReverseAnimation(_fadeAnimation),
-                      child: Card(
-                        elevation: 6,
-                        color: Colors.white.withOpacity(0.95),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.touch_app, color: Colors.orange),
-                              SizedBox(width: 6),
-                              Text(
-                                "اضغط أي مكان في الخريطة لتعيين وجهة. اختر وسيلة النقل لإعادة حساب المسار.",
-                                style: TextStyle(
-                                    fontSize: 13.5, color: Colors.black87),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
+
+          IconButton(
+            icon: const Icon(Icons.directions, color: Colors.orange),
+            onPressed: () {
+              if (_destination != null) {
+                _getRoute(_destination!);
+              }
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: Colors.blue),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PlaceDetailsPage(
+                    id: p['id'],
+                    title: p['name'],
+                    cityName: p['city'],
+                    images: List<String>.from(p['images'] ?? []),
+                    url: p['url'],
+                    themeNotifier: widget.themeNotifier,
+                    heroTag: p['id'],
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
+    ),
+  );
+}
+
+Widget _buildMapPlaceCard(Map<String, dynamic> p) {
+final name = p['name'] ?? AppLocalizations.of(context)!.mapUnknownPlace;
+  final city = p['city'] ?? "";
+  final rating = p['rating']?.toDouble() ?? 4.5;
+  final reviews = p['reviews'] ?? 12;
+
+  Widget placeImage;
+  if (p['images'] != null && p['images'].isNotEmpty) {
+    placeImage = Image.asset(
+      p['images'][0],
+      width: 70,
+      height: 70,
+      fit: BoxFit.cover,
+    );
+  } else {
+    placeImage = Container(
+      width: 70,
+      height: 70,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: Colors.grey[300],
+      ),
+      child: const Icon(Icons.place, color: Colors.black54),
     );
   }
+
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.15),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        ClipRRect(borderRadius: BorderRadius.circular(10), child: placeImage),
+        const SizedBox(width: 12),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name,
+                  style: const TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.bold)),
+              if (city.isNotEmpty)
+                Text(city,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+              const SizedBox(height: 4),
+
+              Row(
+                children: [
+                  const Icon(Icons.star, color: Colors.orange, size: 18),
+                  Text("$rating ",
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text("($reviews ${AppLocalizations.of(context)!.reviews})",
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                ],
+              )
+            ],
+          ),
+        ),
+
+        Column(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.navigation, color: Colors.orange),
+              onPressed: () => _getRoute(_destination!),
+            ),
+            IconButton(
+              icon: const Icon(Icons.info_outline, color: Colors.blue),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PlaceDetailsPage(
+                      id: p['id'],
+                      title: name,
+                      cityName: city,
+                      images: List<String>.from(p['images'] ?? []),
+                      url: p['url'],
+                      themeNotifier: widget.themeNotifier,
+                      heroTag: p['id'],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        )
+      ],
+    ),
+  );
+}
+
+
 
   @override
   void dispose() {

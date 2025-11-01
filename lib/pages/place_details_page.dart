@@ -19,21 +19,27 @@ import '../l10n/gen/app_localizations.dart';
 
 
 class PlaceDetailsPage extends StatefulWidget {
+  final String id;
   final String title;
   final String cityName;
   final List<String> images;
   final String url;
   final ThemeNotifier themeNotifier;
   final String heroTag;
+  final double? lat;   // ⬅️ إضافة خطوط الدلالة
+  final double? lng;
 
   const PlaceDetailsPage({
     super.key,
+    required this.id,
     required this.title,
     required this.cityName,
     required this.images,
     required this.url,
     required this.themeNotifier,
     required this.heroTag,
+    this.lat,
+    this.lng,
   });
 
   @override
@@ -52,7 +58,7 @@ class _PlaceDetailsPageState extends State<PlaceDetailsPage> {
   final TextEditingController _commentController = TextEditingController();
   bool _isSendingComment = false;
 
-  String get placeId => widget.heroTag; // استخدم heroTag كـ id (هو نفسه place id عادة)
+String get placeId => widget.id;
 
   @override
   void initState() {

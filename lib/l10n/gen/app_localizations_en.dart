@@ -685,4 +685,109 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hoursAgo => 'ساعة مضت';
+
+  @override
+  String get showAll => 'Show All';
+
+  @override
+  String get searchNearbyTitle => 'Search Nearby Places';
+
+  @override
+  String get reset => 'Reset';
+
+  @override
+  String get distanceRange => 'Search Radius';
+
+  @override
+  String get noNearbyPlaces => 'No nearby places within selected range';
+
+  @override
+  String get searchRadius => 'Search radius';
+
+  @override
+  String get km => 'km';
+
+  @override
+  String get map => 'Map';
+
+  @override
+  String get noNearbyResults => 'No nearby places within selected radius';
+
+  @override
+  String get locationPermissionDenied =>
+      'Please grant location access permission.';
+
+  @override
+  String get unnamedPlace => 'Unnamed place';
+
+  @override
+  String get mapTitle => 'Map';
+
+  @override
+  String get mapStyleStreets => 'Street map with labels';
+
+  @override
+  String get mapStyleSatellite => 'Satellite view (real terrain)';
+
+  @override
+  String get modeWalk => '🚶 Walk';
+
+  @override
+  String get modeCar => '🚗 Car';
+
+  @override
+  String get modeBike => '🚴 Bike';
+
+  @override
+  String get distanceLabel => 'Distance';
+
+  @override
+  String get mapTapHint => 'Tap anywhere on the map to set destination';
+
+  @override
+  String get tripSaved => '✅ Trip saved';
+
+  @override
+  String get arrivedTitle => '🎉 Congratulations!';
+
+  @override
+  String get arrivedMessage =>
+      'You have arrived at your destination.\nDo you want to save this trip?';
+
+  @override
+  String get liveTrackingEnabled => '🟢 Live tracking enabled';
+
+  @override
+  String get liveTrackingDisabled => '🔴 Live tracking stopped';
+
+  @override
+  String get enableLocationPermission =>
+      'Please enable location permission in settings';
+
+  @override
+  String get locationFailed => 'Failed to get location';
+
+  @override
+  String get noValidRoute => '⚠️ No valid route found.';
+
+  @override
+  String get serverRouteError => '⚠️ Routing server error.';
+
+  @override
+  String get connectionError => '⚠️ Connection error.';
+
+  @override
+  String get unknownLocation => 'Unknown location';
+
+  @override
+  String get reviews => 'Reviews';
+
+  @override
+  String get mapUnknownPlace => 'Location on map';
+
+  @override
+  String get stopLiveTracking => 'Stop Live Tracking';
+
+  @override
+  String get startLiveTracking => 'Start Live Tracking';
 }

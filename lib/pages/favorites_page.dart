@@ -153,6 +153,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => PlaceDetailsPage(
+                                     id: id,
                                     title: title,
                                     cityName: city,
                                     images: images,
