@@ -786,4 +786,39 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get startLiveTracking => 'تفعيل التتبع الحي';
+
+  @override
+  String get startTrip => 'بدء الرحلة';
+
+  @override
+  String get tripStarted => 'تم بدء الرحلة ✅ وتم تفعيل التتبع الحي!';
+
+  @override
+  String get ar_correct_direction => '✅ الاتجاه صحيح';
+
+  @override
+  String get ar_turn_left => '↩️ اتجه يسارًا';
+
+  @override
+  String get ar_turn_right => '↪️ اتجه يمينًا';
+
+  @override
+  String get ar_acquiring_heading => 'جارٍ تحديد الاتجاه…';
+
+  @override
+  String get ar_title => 'التوجيه عبر الكاميرا';
+
+  @override
+  String ar_align_indicator(Object degrees) {
+    return 'انحراف $degrees°';
+  }
+
+  @override
+  String get start => 'ابدأ';
+
+  @override
+  String get arDirection => 'توجيه AR';
+
+  @override
+  String get tripStartedMessage => 'تم بدء الرحلة';
 }

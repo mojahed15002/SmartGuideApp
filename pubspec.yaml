@@ -35,6 +35,9 @@ dependencies:
   app_links: ^6.4.0
   geocoding: ^2.1.1
   image_picker: ^1.1.2
+  camera: ^0.10.5+9
+  flutter_compass: ^0.8.0
+  vibration: ^1.7.5
   
   
 dev_dependencies:

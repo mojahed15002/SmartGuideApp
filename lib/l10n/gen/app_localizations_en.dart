@@ -790,4 +790,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get startLiveTracking => 'Start Live Tracking';
+
+  @override
+  String get startTrip => 'Start Trip';
+
+  @override
+  String get tripStarted => 'Trip started, live tracking activated!';
+
+  @override
+  String get ar_correct_direction => '✅ Correct direction';
+
+  @override
+  String get ar_turn_left => '↩️ Turn left';
+
+  @override
+  String get ar_turn_right => '↪️ Turn right';
+
+  @override
+  String get ar_acquiring_heading => 'Acquiring heading…';
+
+  @override
+  String get ar_title => 'AR Navigation';
+
+  @override
+  String ar_align_indicator(Object degrees) {
+    return 'Deviation $degrees°';
+  }
+
+  @override
+  String get start => 'Start';
+
+  @override
+  String get arDirection => 'AR Direction';
+
+  @override
+  String get tripStartedMessage => 'Trip started';
 }

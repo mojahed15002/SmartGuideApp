@@ -261,6 +261,24 @@
 "reviews": "Reviews",
 "mapUnknownPlace": "Location on map",
 "stopLiveTracking": "Stop Live Tracking",
-"startLiveTracking": "Start Live Tracking"
+"startLiveTracking": "Start Live Tracking",
+"startTrip": "Start Trip",
+"tripStarted": "Trip started, live tracking activated!",
+"ar_correct_direction": "✅ Correct direction",
+"ar_turn_left": "↩️ Turn left",
+"ar_turn_right": "↪️ Turn right",
+"ar_acquiring_heading": "Acquiring heading…",
+"ar_title": "AR Navigation",
+"ar_align_indicator": "Deviation {degrees}°",
+  "@ar_align_indicator": {
+    "placeholders": {
+      "degrees": {}
+    }
+  },
+"start": "Start",
+"arDirection": "AR Direction",
+"tripStartedMessage": "Trip started"
+
+
 
 }

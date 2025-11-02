@@ -1639,6 +1639,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start Live Tracking'**
   String get startLiveTracking;
+
+  /// No description provided for @startTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Trip'**
+  String get startTrip;
+
+  /// No description provided for @tripStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip started, live tracking activated!'**
+  String get tripStarted;
+
+  /// No description provided for @ar_correct_direction.
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Correct direction'**
+  String get ar_correct_direction;
+
+  /// No description provided for @ar_turn_left.
+  ///
+  /// In en, this message translates to:
+  /// **'↩️ Turn left'**
+  String get ar_turn_left;
+
+  /// No description provided for @ar_turn_right.
+  ///
+  /// In en, this message translates to:
+  /// **'↪️ Turn right'**
+  String get ar_turn_right;
+
+  /// No description provided for @ar_acquiring_heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Acquiring heading…'**
+  String get ar_acquiring_heading;
+
+  /// No description provided for @ar_title.
+  ///
+  /// In en, this message translates to:
+  /// **'AR Navigation'**
+  String get ar_title;
+
+  /// No description provided for @ar_align_indicator.
+  ///
+  /// In en, this message translates to:
+  /// **'Deviation {degrees}°'**
+  String ar_align_indicator(Object degrees);
+
+  /// No description provided for @start.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get start;
+
+  /// No description provided for @arDirection.
+  ///
+  /// In en, this message translates to:
+  /// **'AR Direction'**
+  String get arDirection;
+
+  /// No description provided for @tripStartedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip started'**
+  String get tripStartedMessage;
 }
 
 class _AppLocalizationsDelegate

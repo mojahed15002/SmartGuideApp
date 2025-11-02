@@ -13,6 +13,8 @@ import 'package:geocoding/geocoding.dart';
 import 'custom_drawer.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'place_details_page.dart';
+import 'ar_direction_page.dart';
+import 'dart:ui';
 
 class MapPage extends StatefulWidget {
   final Position position;
@@ -43,6 +45,13 @@ class MapPage extends StatefulWidget {
 
 
 class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
+
+  // 🔎 متغيرات البحث
+bool _isSearching = false;
+String _searchInput = "";
+List<Map<String, dynamic>> _searchResults = [];
+TextEditingController _searchController = TextEditingController();
+
   final fm.MapController _mapController = fm.MapController();
 
 
@@ -74,6 +83,35 @@ final Map<String, IconData> categoryIcons = {
   'hotel': Icons.hotel,
   'tourism': Icons.museum,
 };
+
+Future<List<Map<String, dynamic>>> searchLocations(String query) async {
+final url = Uri.parse(
+  "https://nominatim.openstreetmap.org/search"
+  "?q=$query&format=json&addressdetails=1&limit=5&accept-language=ar"
+);
+
+final response = await http.get(
+  url,
+  headers: {
+    "User-Agent": "SmartCityGuide-App",
+    "Access-Control-Allow-Origin": "*",
+  }
+);
+
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body) as List;
+    return data.map((item) {
+      return {
+        "name": item["display_name"],
+        "lat": double.parse(item["lat"]),
+        "lon": double.parse(item["lon"]),
+      };
+    }).toList();
+  } else {
+    return [];
+  }
+}
+
 
 Widget _buildCategoryMarker(List<dynamic>? categories) {
   String cat = "default";
@@ -133,6 +171,9 @@ Future<Map<String, dynamic>?> _findPlaceByCoordinates(
           "city": isArabic ? data['city_ar'] : data['city_en'],
           "images": List<String>.from(data['images'] ?? []),
           "url": data['url'] ?? "",
+          "latitude": lat,       // ✅ إضافتهم هنا
+          "longitude": lng,      // ✅
+
         };
       }
     }
@@ -159,12 +200,12 @@ Map<String, String> get transportModes => {
   final distance = const latlng.Distance(); // ✅ لحساب المسافة
   Map<String, dynamic>? _selectedPlace;
 
+
   @override
   void initState() {
     super.initState();
     _destination = widget.destination;
     _selectedPlace = widget.placeInfo; // ✅ تظهر أول ما يدخل الخريطة
-    print("📍 placeInfo received: ${widget.placeInfo}");
 
     // ✅ في حال الرحلة من Firestore (يوجد مسار محفوظ)
     if (widget.savedPath != null && widget.savedPath!.isNotEmpty) {
@@ -231,6 +272,9 @@ Future<void> _loadPlaceMarkers() async {
 "city": isArabic ? data['city_ar'] : data['city_en'],
                 "images": List<String>.from(data['images'] ?? []),
                 "url": data['url'] ?? "",
+                "latitude": data['latitude'],        // ✅ مهم
+                "longitude": data['longitude'],      // ✅ مهم
+
               };
             });
           },
@@ -284,6 +328,7 @@ Future<void> _loadPlaceMarkers() async {
     final double dist = distance(currentPos, _destination!);
     if (dist <= 30) {
       _tripCompleted = true; // منع تكرار التنبيه
+      _stopLiveTracking();
       if (mounted) {
         showDialog(
           context: context,
@@ -540,30 +585,108 @@ String _getLocalizedTileUrl(BuildContext context) {
   Widget build(BuildContext context) {
     final userLocation = _currentLocation ??
         latlng.LatLng(widget.position.latitude, widget.position.longitude);
+        final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      appBar: AppBar(
-title: Text("${AppLocalizations.of(context)!.mapTitle} (${_currentStyle.toUpperCase()})"),
-        
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) => setState(() => _currentStyle = value),
-itemBuilder: (context) => [
-  PopupMenuItem(
-      value: "streets",
-      child: Text(AppLocalizations.of(context)!.mapStyleStreets)),
-  PopupMenuItem(
-      value: "satellite",
-      child: Text(AppLocalizations.of(context)!.mapStyleSatellite)),
-],
-          )
-        ],
+appBar: AppBar(
+  title: _isSearching
+      ? TextField(
+          controller: _searchController,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: AppLocalizations.of(context)!.searchHint,
+            border: InputBorder.none,
+          ),
+          onChanged: (value) async {
+            setState(() => _searchInput = value);
+            if (value.length > 2) {
+              _searchResults = await searchLocations(value);
+              setState(() {});
+            } else {
+              _searchResults = [];
+            }
+          },
+        )
+      : Text(AppLocalizations.of(context)!.mapTitle),
+actions: [
+  // 🔍 زر البحث
+  IconButton(
+    icon: Icon(_isSearching ? Icons.close : Icons.search),
+    onPressed: () {
+      setState(() {
+        if (_isSearching) {
+          _searchResults = [];
+          _searchInput = "";
+          _searchController.clear();
+        }
+        _isSearching = !_isSearching;
+      });
+    },
+  ),
+
+  // 🗺️ زر تغيير شكل الخريطة (streets / satellite)
+  PopupMenuButton<String>(
+    onSelected: (value) => setState(() => _currentStyle = value),
+    itemBuilder: (context) => [
+      PopupMenuItem(
+        value: "streets",
+        child: Text(AppLocalizations.of(context)!.mapStyleStreets),
       ),
+      PopupMenuItem(
+        value: "satellite",
+        child: Text(AppLocalizations.of(context)!.mapStyleSatellite),
+      ),
+    ],
+  ),
+],
+  
+),
+
       drawer: CustomDrawer(
           themeNotifier: widget.themeNotifier,), // ⬅️ هذا السطر المهم
 
 body: Stack(
   children: [
+    if (_searchResults.isNotEmpty)
+  Container(
+    color: Colors.white,
+    child: Column(
+      children: _searchResults.map((place) {
+        return ListTile(
+          leading: Icon(Icons.location_on, color: Colors.orange),
+          title: Text(place["name"], maxLines: 1, overflow: TextOverflow.ellipsis),
+          onTap: () {
+            FocusScope.of(context).unfocus();
+
+            final lat = place["lat"];
+            final lon = place["lon"];
+
+            setState(() {
+              _destination = latlng.LatLng(lat, lon);
+
+              _selectedPlace = {
+                "id": null,
+                "name": place["name"],
+                "city": "",
+                "images": [],
+                "url": "",
+                "latitude": lat,
+                "longitude": lon,
+              };
+
+              _searchResults = [];
+              _isSearching = false;
+              _searchController.clear();
+            });
+
+            _mapController.move(_destination!, 16);
+            _getRoute(_destination!);
+          },
+        );
+      }).toList(),
+    ),
+  ),
+
     // الطبقة الأساسية: العناصر العلوية + الخريطة
     Column(
       children: [
@@ -624,6 +747,7 @@ body: Stack(
           ),
 
 
+
         // الخريطة تملأ ما تبقى
         Expanded(
           child: fm.FlutterMap(
@@ -644,19 +768,34 @@ onTap: widget.enableTap
         _showTip = false;
 
         // 🔍 حاول نلاقي المكان في Firestore
-final found = await _findPlaceByCoordinates(point, context);
+        final found = await _findPlaceByCoordinates(point, context);
 
         setState(() {
-          _selectedPlace = found; // لو لقيه، بنعرضه، لو لا → null
+          if (found != null) {
+            _selectedPlace = found; // ✅ مكان مسجل
+          } else {
+            // ✅ مكان غير معروف
+            _selectedPlace = {
+              "id": null,
+"name": AppLocalizations.of(context)!.unknownLocation,
+              "city": "",
+              "images": [],
+              "url": "",
+              "latitude": point.latitude,
+              "longitude": point.longitude,
+            };
+          }
         });
 
         _getRoute(point);
       }
-                  : null,
+    : null,
             ),
             children: [
 fm.TileLayer(
-  urlTemplate: _getLocalizedTileUrl(context),
+urlTemplate: _currentStyle == "satellite"
+    ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+    : "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
   userAgentPackageName: 'com.example.smartguideapp',
 ),
 fm.MarkerLayer(
@@ -681,17 +820,27 @@ fm.MarkerLayer(
         width: 60,
         height: 60,
         child: GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedPlace = {
-                "id": widget.placeInfo?['id'],
-                "name": widget.placeInfo?['name'],
-                "city": widget.placeInfo?['city'],
-                "images": widget.placeInfo?['images'],
-                "url": widget.placeInfo?['url'],
-              };
-            });
-          },
+onTap: () async {
+  // إذا المكان موجود بقاعدة البيانات
+  if (widget.placeInfo != null && widget.placeInfo?['id'] != null) {
+    setState(() => _selectedPlace = widget.placeInfo);
+  } else {
+    // مكان غير معروف
+    setState(() {
+      _selectedPlace = {
+        "id": null,
+        "name": Localizations.localeOf(context).languageCode == "ar"
+            ? "موقع غير معروف"
+            : "Unknown Location",
+        "city": "",
+        "images": [],
+        "url": "",
+        "latitude": _destination!.latitude,
+        "longitude": _destination!.longitude,
+      };
+    });
+  }
+},
           child: const Icon(
             Icons.location_pin,
             color: Colors.red,
@@ -784,13 +933,45 @@ fm.MarkerLayer(
         ),
       ),
 
-if (_selectedPlace != null && _selectedPlace!['name'] != null)
+if (_selectedPlace != null && _selectedPlace!['name'] != null) ...[
+  // ✅ البطاقة
   Positioned(
-    bottom: 10,
+    bottom: bottomPadding + 10,
     left: 10,
     right: 10,
-    child: _buildMapPlaceCard(_selectedPlace!),
+child: Stack(
+  clipBehavior: Clip.none,
+  children: [
+    _buildSmartPlaceCard(_selectedPlace!),
+
+    Positioned(
+      top: -14,
+      right: -10,
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedPlace = null),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: EdgeInsets.all(6),
+          child: Icon(Icons.close, size: 20, color: Colors.black87),
+        ),
+      ),
+    ),
+  ],
+),
   ),
+
+  // ✅ زر الإغلاق فوق البطاقة
+],
 
 
 // زر التتبع الحي + زر توسيط الموقع
@@ -871,179 +1052,188 @@ Text(
       ),
   ],
 ),
+    
     );
   }
 
-Widget _buildPlaceCard(Map<String, dynamic> p) {
-  return Card(
-    elevation: 6,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-    child: Padding(
-      padding: const EdgeInsets.all(10),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: p['images'] != null && p['images'].isNotEmpty
-                ? Image.asset(
-                    p['images'][0],
-                    width: 70,
-                    height: 70,
-                    fit: BoxFit.cover,
-                  )
-                : const Icon(Icons.image_not_supported, size: 60),
-          ),
-          const SizedBox(width: 12),
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(p['name'] ?? "",
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(
-                  p['city'] ?? "",
-                  style: const TextStyle(fontSize: 13),
-                ),
-              ],
-            ),
-          ),
+Widget _buildSmartPlaceCard(Map<String, dynamic> p) {
+  final loc = AppLocalizations.of(context)!;
 
-          IconButton(
-            icon: const Icon(Icons.directions, color: Colors.orange),
-            onPressed: () {
-              if (_destination != null) {
-                _getRoute(_destination!);
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.info_outline, color: Colors.blue),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => PlaceDetailsPage(
-                    id: p['id'],
-                    title: p['name'],
-                    cityName: p['city'],
-                    images: List<String>.from(p['images'] ?? []),
-                    url: p['url'],
-                    themeNotifier: widget.themeNotifier,
-                    heroTag: p['id'],
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-Widget _buildMapPlaceCard(Map<String, dynamic> p) {
-final name = p['name'] ?? AppLocalizations.of(context)!.mapUnknownPlace;
-  final city = p['city'] ?? "";
+  final bool isKnown = p["id"] != null;
+  final String name = p['name'] ?? loc.unknownLocation;
+  final String city = p['city'] ?? "";
+  final double? lat = (p['latitude'] as num?)?.toDouble();
+  final double? lng = (p['longitude'] as num?)?.toDouble();
+  final images = p['images'] ?? [];
   final rating = p['rating']?.toDouble() ?? 4.5;
   final reviews = p['reviews'] ?? 12;
 
-  Widget placeImage;
-  if (p['images'] != null && p['images'].isNotEmpty) {
-    placeImage = Image.asset(
-      p['images'][0],
-      width: 70,
-      height: 70,
-      fit: BoxFit.cover,
-    );
-  } else {
-    placeImage = Container(
-      width: 70,
-      height: 70,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.grey[300],
-      ),
-      child: const Icon(Icons.place, color: Colors.black54),
-    );
-  }
-
-  return Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.15),
-          blurRadius: 8,
-          offset: const Offset(0, 3),
-        ),
-      ],
-    ),
-    child: Row(
+return ClipRRect(
+  borderRadius: BorderRadius.circular(16),
+  child: BackdropFilter(
+    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+    child: Stack(
       children: [
-        ClipRRect(borderRadius: BorderRadius.circular(10), child: placeImage),
-        const SizedBox(width: 12),
-
-        Expanded(
+        // جسم البطاقة
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.92),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 8,
+                offset: Offset(0, 3),
+              ),
+            ],
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(name,
-                  style: const TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.bold)),
-              if (city.isNotEmpty)
-                Text(city,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-              const SizedBox(height: 4),
-
+              // 📍 اسم المكان + صورة
               Row(
                 children: [
-                  const Icon(Icons.star, color: Colors.orange, size: 18),
-                  Text("$rating ",
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text("($reviews ${AppLocalizations.of(context)!.reviews})",
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: images.isNotEmpty
+                        ? Image.asset(
+                            images[0],
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            width: 60,
+                            height: 60,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.place, color: Colors.orange),
+                          ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (isKnown && city.isNotEmpty)
+                          Text(
+                            city,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 13,
+                            ),
+                          ),
+                        if (isKnown)
+                          Row(
+                            children: [
+                              const Icon(Icons.star,
+                                  size: 18, color: Colors.orange),
+                              Text("$rating "),
+                              Text(
+                                "($reviews ${loc.reviews})",
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
                 ],
-              )
+              ),
+
+              const SizedBox(height: 8),
+
+              // 🧭 أزرار التحكم
+              Row(
+                children: [
+                  // AR button
+                  IconButton(
+                    tooltip: loc.arDirection,
+                    icon: const Icon(Icons.camera_alt,
+                        color: Colors.orange, size: 26),
+                    onPressed: () {
+                      if (lat == null || lng == null) return; // ✅ حماية null
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ARDirectionPage(
+                            destLat: lat!,
+                            destLng: lng!,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // Navigation button
+                  IconButton(
+                    icon: const Icon(Icons.navigation,
+                        color: Colors.orange, size: 28),
+                    onPressed: () async {
+                      if (lat == null || lng == null) return; // ✅ حماية null
+                      setState(() {
+                        _destination = latlng.LatLng(lat!, lng!);
+                      });
+                      _getRoute(_destination!);
+                      _mapController.move(_destination!, 15.5);
+                    },
+                  ),
+
+                  const Spacer(),
+
+                  // ✅ Start trip button
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      if (lat == null || lng == null) return; // ✅ حماية null
+                      setState(() {
+                        _destination = latlng.LatLng(lat!, lng!);
+                        _isTracking = true;
+                        _showTip = false;
+                      });
+
+                      _startLiveTracking();
+                      await _getRoute(_destination!);
+
+                      if (_currentLocation != null) {
+                        _mapController.move(_currentLocation!, 17);
+                      }
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(loc.tripStarted)),
+                      );
+                    },
+                    icon: const Icon(Icons.play_arrow),
+                    label: Text(loc.start),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
 
-        Column(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.navigation, color: Colors.orange),
-              onPressed: () => _getRoute(_destination!),
-            ),
-            IconButton(
-              icon: const Icon(Icons.info_outline, color: Colors.blue),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PlaceDetailsPage(
-                      id: p['id'],
-                      title: name,
-                      cityName: city,
-                      images: List<String>.from(p['images'] ?? []),
-                      url: p['url'],
-                      themeNotifier: widget.themeNotifier,
-                      heroTag: p['id'],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-        )
       ],
     ),
-  );
+  ),
+);
+
 }
 
 
