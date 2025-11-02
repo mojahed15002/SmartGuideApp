@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import '../utils/geo_utils.dart';
-import 'package:vibration/vibration.dart';
+import 'package:flutter/services.dart';
 import '../l10n/gen/app_localizations.dart';
 
 class ARDirectionPage extends StatefulWidget {
@@ -141,9 +141,7 @@ class _ARDirectionPageState extends State<ARDirectionPage>
 if (deltaDeg != null && deltaDeg.abs() < 8) {
   final now = DateTime.now();
   if (_lastHapticAt == null || now.difference(_lastHapticAt!).inMilliseconds > 1200) {
-    Vibration.hasVibrator().then((hasVib) {
-      if (hasVib ?? false) Vibration.vibrate(duration: 80);
-    });
+    HapticFeedback.mediumImpact(); // أو lightImpact() إذا بدك أضعف
     _lastHapticAt = now;
   }
 }
