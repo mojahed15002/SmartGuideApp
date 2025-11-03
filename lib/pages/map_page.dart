@@ -15,6 +15,7 @@ import '../l10n/gen/app_localizations.dart';
 import 'place_details_page.dart';
 import 'ar_direction_page.dart';
 import 'dart:ui';
+import '../smart_place_card.dart';
 
 class MapPage extends StatefulWidget {
   final Position position;
@@ -50,7 +51,10 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
 bool _isSearching = false;
 String _searchInput = "";
 List<Map<String, dynamic>> _searchResults = [];
-TextEditingController _searchController = TextEditingController();
+final TextEditingController _searchController = TextEditingController();
+List<dynamic> _searchHistory = [];
+Set<String> _favoritePlaces = {};
+User? user;
 
   final fm.MapController _mapController = fm.MapController();
 
@@ -112,6 +116,21 @@ final response = await http.get(
   }
 }
 
+Future<void> _loadSearchHistory() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  final doc = await FirebaseFirestore.instance
+      .collection('search_history')
+      .doc(user.uid)
+      .get();
+
+  if (doc.exists && doc.data() != null && doc['history'] != null) {
+    setState(() {
+      _searchHistory = List.from(doc['history'].reversed); // أحدث أولاً
+    });
+  }
+}
 
 Widget _buildCategoryMarker(List<dynamic>? categories) {
   String cat = "default";
@@ -204,8 +223,13 @@ Map<String, String> get transportModes => {
   @override
   void initState() {
     super.initState();
+    user = FirebaseAuth.instance.currentUser;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _loadFavorites();
+  });
+
     _destination = widget.destination;
-    _selectedPlace = widget.placeInfo; // ✅ تظهر أول ما يدخل الخريطة
+    _selectedPlace = widget.placeInfo;
 
     // ✅ في حال الرحلة من Firestore (يوجد مسار محفوظ)
     if (widget.savedPath != null && widget.savedPath!.isNotEmpty) {
@@ -248,6 +272,66 @@ _loadPlaceMarkers();
     }
   }
 
+Future<void> _loadFavorites() async {
+  if (user == null) return;
+
+  try {
+    final snap = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uid)
+        .get();
+
+    if (snap.exists && snap.data() != null) {
+      setState(() {
+        _favoritePlaces = Set<String>.from(snap.data()!['favorites'] ?? []);
+      });
+    }
+  } catch (e) {
+    debugPrint("❌ Error loading favorites: $e");
+  }
+}
+
+
+Future<void> _toggleFavorite(String placeId) async {
+  if (user == null) return;
+
+  final docRef = FirebaseFirestore.instance.collection('users').doc(user!.uid);
+  final snap = await docRef.get();
+
+  // لو ما في حقل favorites بننشئه
+  if (!snap.exists || !snap.data()!.containsKey('favorites')) {
+    await docRef.set({
+      "favorites": [placeId]
+    }, SetOptions(merge: true));
+
+    setState(() {
+      _favoritePlaces.add(placeId);
+    });
+    return;
+  }
+
+  // إذا المكان موجود، نحذفه
+  if (_favoritePlaces.contains(placeId)) {
+    await docRef.update({
+      "favorites": FieldValue.arrayRemove([placeId])
+    });
+
+    setState(() {
+      _favoritePlaces.remove(placeId);
+    });
+  } else {
+    // إذا مش موجود، نضيفه
+    await docRef.update({
+      "favorites": FieldValue.arrayUnion([placeId])
+    });
+
+    setState(() {
+      _favoritePlaces.add(placeId);
+    });
+  }
+}
+
+
 Future<void> _loadPlaceMarkers() async {
   final snap = await FirebaseFirestore.instance.collection('places').get();
   final isArabic = Localizations.localeOf(context).languageCode == 'ar';
@@ -287,6 +371,20 @@ Future<void> _loadPlaceMarkers() async {
   setState(() {
     _placeMarkers = markers;
   });
+}
+Future<void> _deleteHistoryItem(Map entry) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  final docRef = FirebaseFirestore.instance
+      .collection('search_history')
+      .doc(user.uid);
+
+  await docRef.update({
+    "history": FieldValue.arrayRemove([entry])
+  });
+
+  _loadSearchHistory(); // تحديث الشاشة
 }
 
 
@@ -354,7 +452,6 @@ actions: [
     }
   }
 
-  // ✅ حفظ الرحلة داخل Firestore
   // ✅ حفظ الرحلة داخل Firestore
   Future<void> _saveTripLogToFirebase() async {
     try {
@@ -589,37 +686,16 @@ String _getLocalizedTileUrl(BuildContext context) {
 
     return Scaffold(
 appBar: AppBar(
-  title: _isSearching
-      ? TextField(
-          controller: _searchController,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: AppLocalizations.of(context)!.searchHint,
-            border: InputBorder.none,
-          ),
-          onChanged: (value) async {
-            setState(() => _searchInput = value);
-            if (value.length > 2) {
-              _searchResults = await searchLocations(value);
-              setState(() {});
-            } else {
-              _searchResults = [];
-            }
-          },
-        )
-      : Text(AppLocalizations.of(context)!.mapTitle),
+title: Text(AppLocalizations.of(context)!.mapTitle),
 actions: [
   // 🔍 زر البحث
+if (!_isSearching)
   IconButton(
-    icon: Icon(_isSearching ? Icons.close : Icons.search),
+    icon: const Icon(Icons.search),
     onPressed: () {
       setState(() {
-        if (_isSearching) {
-          _searchResults = [];
-          _searchInput = "";
-          _searchController.clear();
-        }
-        _isSearching = !_isSearching;
+        _loadSearchHistory();
+        _isSearching = true;
       });
     },
   ),
@@ -647,49 +723,12 @@ actions: [
 
 body: Stack(
   children: [
-    if (_searchResults.isNotEmpty)
-  Container(
-    color: Colors.white,
-    child: Column(
-      children: _searchResults.map((place) {
-        return ListTile(
-          leading: Icon(Icons.location_on, color: Colors.orange),
-          title: Text(place["name"], maxLines: 1, overflow: TextOverflow.ellipsis),
-          onTap: () {
-            FocusScope.of(context).unfocus();
-
-            final lat = place["lat"];
-            final lon = place["lon"];
-
-            setState(() {
-              _destination = latlng.LatLng(lat, lon);
-
-              _selectedPlace = {
-                "id": null,
-                "name": place["name"],
-                "city": "",
-                "images": [],
-                "url": "",
-                "latitude": lat,
-                "longitude": lon,
-              };
-
-              _searchResults = [];
-              _isSearching = false;
-              _searchController.clear();
-            });
-
-            _mapController.move(_destination!, 16);
-            _getRoute(_destination!);
-          },
-        );
-      }).toList(),
-    ),
-  ),
-
+    
     // الطبقة الأساسية: العناصر العلوية + الخريطة
-    Column(
-      children: [
+Column(
+  children: [
+    if (!_isSearching)
+      SizedBox(height: 8),
         // Dropdown وسيلة النقل
         Padding(
           padding: const EdgeInsets.all(8.0),
@@ -867,6 +906,7 @@ onTap: () async {
       ],
     ),
 
+
     // ===== هنا العناصر العائمة فوق كل شيء (Overlay) =====
 
     // Banner يظهر فقط عند عرض رحلة محفوظة
@@ -942,7 +982,80 @@ if (_selectedPlace != null && _selectedPlace!['name'] != null) ...[
 child: Stack(
   clipBehavior: Clip.none,
   children: [
-    _buildSmartPlaceCard(_selectedPlace!),
+SmartPlaceCardWidget(
+  place: _selectedPlace!,
+  themeNotifier: widget.themeNotifier,
+  isFavorite: _selectedPlace!["id"] != null &&
+      _favoritePlaces.contains(_selectedPlace!["id"]),
+  onFavoriteToggle: _selectedPlace!["id"] == null
+      ? null
+      : () async {
+          await _toggleFavorite(_selectedPlace!["id"]);
+          if (mounted) setState(() {});
+        },
+  onDetails: (_selectedPlace!["id"] == null)
+      ? null
+      : () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PlaceDetailsPage(
+                id: _selectedPlace!["id"],
+                title: _selectedPlace!["name"],
+                cityName: _selectedPlace!["city"],
+                images: List<String>.from(_selectedPlace!["images"] ?? []),
+                url: _selectedPlace!["url"] ?? "",
+                themeNotifier: widget.themeNotifier,
+                heroTag: _selectedPlace!["id"],
+              ),
+            ),
+          );
+        },
+  onAR: () {
+    final lat = (_selectedPlace!['latitude'] as num?)?.toDouble();
+    final lng = (_selectedPlace!['longitude'] as num?)?.toDouble();
+    if (lat == null || lng == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ARDirectionPage(destLat: lat, destLng: lng),
+      ),
+    );
+  },
+  onNavigate: () async {
+    final lat = (_selectedPlace!['latitude'] as num?)?.toDouble();
+    final lng = (_selectedPlace!['longitude'] as num?)?.toDouble();
+    if (lat == null || lng == null) return;
+    setState(() {
+      _destination = latlng.LatLng(lat, lng);
+    });
+    await _getRoute(_destination!);
+    _mapController.move(_destination!, 15.5);
+  },
+  onStart: () async {
+    final lat = (_selectedPlace!['latitude'] as num?)?.toDouble();
+    final lng = (_selectedPlace!['longitude'] as num?)?.toDouble();
+    if (lat == null || lng == null) return;
+
+    setState(() {
+      _destination = latlng.LatLng(lat, lng);
+      _isTracking = true;
+      _showTip = false;
+    });
+
+    _startLiveTracking();
+    await _getRoute(_destination!);
+
+    if (_currentLocation != null) {
+      _mapController.move(_currentLocation!, 17);
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.tripStarted)),
+    );
+  },
+),
+
 
     Positioned(
       top: -14,
@@ -1004,237 +1117,171 @@ tooltip: _isTracking
   ),
 ),
 
-
-
-    // مؤشرات التحميل/الأخطاء/التلميح
-    if (_loading) const Center(child: CircularProgressIndicator()),
-    if (_error != null)
-      Positioned(
-        top: 80,
-        left: 16,
-        right: 16,
-        child: Card(
-          color: Colors.red.shade100,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(_error!),
-          ),
-        ),
-      ),
-    if (_showTip && widget.enableTap)
-      Positioned(
-        top: 10,
-        right: 100,
-        child: FadeTransition(
-          opacity: ReverseAnimation(_fadeAnimation),
-          child: Card(
-            elevation: 6,
-            color: Colors.white.withOpacity(0.95),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child:  Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+// ✅ Google Maps Search Overlay
+if (_isSearching)
+  Positioned(
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    child: Container(
+      color: Colors.white,
+      child: Column(
+        children: [
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.all(12),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.touch_app, color: Colors.orange),
-                  SizedBox(width: 6),
-Text(
-  AppLocalizations.of(context)!.mapTapHint,
-  style: TextStyle(fontSize: 13.5, color: Colors.black87),
-),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(context)!.searchHint,
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) async {
+                        setState(() => _searchInput = value);
+
+                        if (value.trim().isEmpty) {
+                          setState(() => _searchResults = []);
+                          return;
+                        }
+
+                        if (value.length > 2) {
+                          try {
+                            final results = await searchLocations(value);
+                            if (mounted) {
+                              setState(() => _searchResults = results);
+                            }
+                          } catch (e) {
+                            debugPrint("Search error: $e");
+                          }
+                        } else {
+                          setState(() => _searchResults = []);
+                        }
+                      },
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () {
+                      setState(() {
+                        _isSearching = false;
+                        _searchResults = [];
+                        _searchController.clear();
+                      });
+                    },
+                  ),
                 ],
               ),
             ),
           ),
-        ),
-      ),
-  ],
-),
-    
-    );
-  }
-
-
-Widget _buildSmartPlaceCard(Map<String, dynamic> p) {
-  final loc = AppLocalizations.of(context)!;
-
-  final bool isKnown = p["id"] != null;
-  final String name = p['name'] ?? loc.unknownLocation;
-  final String city = p['city'] ?? "";
-  final double? lat = (p['latitude'] as num?)?.toDouble();
-  final double? lng = (p['longitude'] as num?)?.toDouble();
-  final images = p['images'] ?? [];
-  final rating = p['rating']?.toDouble() ?? 4.5;
-  final reviews = p['reviews'] ?? 12;
-
-return ClipRRect(
-  borderRadius: BorderRadius.circular(16),
-  child: BackdropFilter(
-    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-    child: Stack(
-      children: [
-        // جسم البطاقة
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 8,
-                offset: Offset(0, 3),
+Expanded(
+  child: _searchResults.isEmpty && _searchInput.isEmpty
+      // ✅ عرض سجل البحث لما ما يكون فيه كتابة
+      ? ListView.builder(
+          itemCount: _searchHistory.length,
+          itemBuilder: (_, index) {
+            final h = _searchHistory[index];
+            return ListTile(
+              leading: Icon(Icons.history, color: Colors.grey),
+              title: Text(h["query"]),
+              subtitle: Text(h["timestamp"].toString().split("T").first),
+              trailing: IconButton(
+                icon: Icon(Icons.close),
+                onPressed: () => _deleteHistoryItem(h), // ✅ حذف عنصر
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 📍 اسم المكان + صورة
-              Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: images.isNotEmpty
-                        ? Image.asset(
-                            images[0],
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                          )
-                        : Container(
-                            width: 60,
-                            height: 60,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.place, color: Colors.orange),
-                          ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (isKnown && city.isNotEmpty)
-                          Text(
-                            city,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 13,
-                            ),
-                          ),
-                        if (isKnown)
-                          Row(
-                            children: [
-                              const Icon(Icons.star,
-                                  size: 18, color: Colors.orange),
-                              Text("$rating "),
-                              Text(
-                                "($reviews ${loc.reviews})",
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+onTap: () async {
+  final lat = h["lat"];
+  final lon = h["lng"];
 
-              const SizedBox(height: 8),
+  setState(() {
+    _destination = latlng.LatLng(lat, lon);
 
-              // 🧭 أزرار التحكم
-              Row(
-                children: [
-                  // AR button
-                  IconButton(
-                    tooltip: loc.arDirection,
-                    icon: const Icon(Icons.camera_alt,
-                        color: Colors.orange, size: 26),
-                    onPressed: () {
-                      if (lat == null || lng == null) return; // ✅ حماية null
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ARDirectionPage(
-                            destLat: lat!,
-                            destLng: lng!,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+    // ✅ تعبئة معلومات المكان للبطاقة
+    _selectedPlace = {
+      "id": null,
+      "name": h["query"], // اسم المكان من السجل
+      "city": "",
+      "images": [],
+      "url": "",
+      "latitude": lat,
+      "longitude": lon,
+    };
 
-                  // Navigation button
-                  IconButton(
-                    icon: const Icon(Icons.navigation,
-                        color: Colors.orange, size: 28),
-                    onPressed: () async {
-                      if (lat == null || lng == null) return; // ✅ حماية null
-                      setState(() {
-                        _destination = latlng.LatLng(lat!, lng!);
-                      });
-                      _getRoute(_destination!);
-                      _mapController.move(_destination!, 15.5);
-                    },
-                  ),
+    _isSearching = false;
+    _searchResults = [];
+    _searchController.clear();
+  });
 
-                  const Spacer(),
-
-                  // ✅ Start trip button
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      if (lat == null || lng == null) return; // ✅ حماية null
-                      setState(() {
-                        _destination = latlng.LatLng(lat!, lng!);
-                        _isTracking = true;
-                        _showTip = false;
-                      });
-
-                      _startLiveTracking();
-                      await _getRoute(_destination!);
-
-                      if (_currentLocation != null) {
-                        _mapController.move(_currentLocation!, 17);
-                      }
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(loc.tripStarted)),
-                      );
-                    },
-                    icon: const Icon(Icons.play_arrow),
-                    label: Text(loc.start),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-      ],
-    ),
-  ),
-);
-
+  _mapController.move(_destination!, 16);
+  _getRoute(_destination!);
 }
+            );
+          },
+        )
+      // ✅ عرض نتائج البحث من الإنترنت
+      : ListView.builder(
+          itemCount: _searchResults.length,
+          itemBuilder: (context, index) {
+            final place = _searchResults[index];
+return ListTile(
+  leading: Icon(Icons.location_on, color: Colors.orange),
+  title: Text(place["name"]),
+  onTap: () async {
+    final lat = place["lat"];
+    final lon = place["lon"];
+
+    setState(() {
+      _destination = latlng.LatLng(lat, lon);
+      _isSearching = false;
+      _searchResults = [];
+      _searchController.clear();
+    });
+
+    _mapController.move(_destination!, 16);
+    _getRoute(_destination!);
+
+    // ✅ Save map search history in same Firestore array
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final docRef = FirebaseFirestore.instance
+            .collection('search_history')
+            .doc(user.uid);
+
+        await docRef.set({
+          "history": FieldValue.arrayUnion([
+            {
+              "query": place["name"],
+              "lat": lat,
+              "lng": lon,
+              "type": "map_search",
+              "timestamp": DateTime.now().toIso8601String(),
+            }
+          ])
+        }, SetOptions(merge: true));
+      }
+    } catch (e) {
+      debugPrint("❌ Failed saving map search: $e");
+    }
+  },
+);
+          },
+        ),
+  ),
+
+        ],
+      ), // Column (inside search overlay)
+    ),
+  ), // Positioned search overlay
+], // Stack children
+), // Stack
+); // Scaffold
+  }
 
 
 

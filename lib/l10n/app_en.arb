@@ -277,8 +277,16 @@
   },
 "start": "Start",
 "arDirection": "AR Direction",
-"tripStartedMessage": "Trip started"
-
-
+"tripStartedMessage": "Trip started",
+"details": "Details",
+"favoritesLabel": "Favorites",
+  "checkpoints": "Checkpoints",
+  "report": "Report",
+  "open": "Open",
+  "busy": "Busy",
+  "closed": "Closed",
+  "submit": "Submit",
+"add": "Add",
+"added": "Added"
 
 }

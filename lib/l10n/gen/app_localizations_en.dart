@@ -825,4 +825,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripStartedMessage => 'Trip started';
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get favoritesLabel => 'Favorites';
+
+  @override
+  String get checkpoints => 'Checkpoints';
+
+  @override
+  String get report => 'Report';
+
+  @override
+  String get open => 'Open';
+
+  @override
+  String get busy => 'Busy';
+
+  @override
+  String get closed => 'Closed';
+
+  @override
+  String get submit => 'Submit';
+
+  @override
+  String get add => 'Add';
+
+  @override
+  String get added => 'Added';
 }

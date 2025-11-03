@@ -7,6 +7,10 @@ import '../theme_notifier.dart';
 import 'map_page.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'place_details_page.dart';
+import 'dart:ui';
+import 'ar_direction_page.dart';
+import '../smart_place_card.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NearbyPlacesListPage extends StatefulWidget {
   final String category;       // restaurant, cafe, ...
@@ -32,6 +36,8 @@ class _NearbyPlacesListPageState extends State<NearbyPlacesListPage> {
 bool _isSearching = false;
 String _searchQuery = "";
 final TextEditingController _searchController = TextEditingController();
+Set<String> _favoritePlaces = {};
+User? _user;
 
   // نحفظ «كل» النتائج هنا مرة واحدة، ثم نفلتر محليًا حسب نصف القطر
   List<_PlaceItem> _allItems = [];
@@ -47,6 +53,9 @@ final TextEditingController _searchController = TextEditingController();
   @override
   void initState() {
     super.initState();
+    _user = FirebaseAuth.instance.currentUser;
+_loadFavorites();
+
     _init();
   }
 
@@ -120,6 +129,45 @@ temp.add(
     }
   }
 
+Future<void> _loadFavorites() async {
+  if (_user == null) return;
+  try {
+    final snap = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_user!.uid)
+        .get();
+
+    if (snap.exists && snap.data() != null) {
+      setState(() {
+        _favoritePlaces = Set<String>.from(snap.data()!['favorites'] ?? []);
+      });
+    }
+  } catch (e) {
+    print("Error loading favorites: $e");
+  }
+}
+
+Future<void> _toggleFavorite(String placeId) async {
+  if (_user == null) return;
+
+  final docRef = FirebaseFirestore.instance.collection('users').doc(_user!.uid);
+  final snap = await docRef.get();
+
+  if (!snap.exists || !snap.data()!.containsKey('favorites')) {
+    await docRef.set({"favorites": [placeId]}, SetOptions(merge: true));
+    setState(() => _favoritePlaces.add(placeId));
+    return;
+  }
+
+  if (_favoritePlaces.contains(placeId)) {
+    await docRef.update({"favorites": FieldValue.arrayRemove([placeId])});
+    setState(()=> _favoritePlaces.remove(placeId));
+  } else {
+    await docRef.update({"favorites": FieldValue.arrayUnion([placeId])});
+    setState(()=> _favoritePlaces.add(placeId));
+  }
+}
+
 void _applyRadiusFilter() {
   final kmLimit = _radiusKm;
 
@@ -152,6 +200,7 @@ void _applyRadiusFilter() {
     if (min > 0) return walking ? "$min د" : "$min د ${sec}s";
     return "$sec ث";
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -262,122 +311,109 @@ label: Text(loc.reset),
                               separatorBuilder: (_, __) => const SizedBox(height: 8),
                               itemBuilder: (context, i) {
                                 final it = _items[i];
-return InkWell(
-onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => PlaceDetailsPage(
-        id: it.id,
-        title: it.name,
-        cityName: it.cityName,
-        images: it.images,
-        url: it.url,
-        themeNotifier: widget.themeNotifier,
-        heroTag: it.id,
-      ),
-    ),
-  );
-},
+return Padding(
+  padding: const EdgeInsets.only(bottom: 8),
+child: SmartPlaceCardWidget(
+  place: {
+    "id": it.id,
+    "name": it.name,
+    "city": it.cityName,
+    "images": it.images,
+    "latitude": it.latLng.latitude,
+    "longitude": it.latLng.longitude,
+  },
+  themeNotifier: widget.themeNotifier,
+  isFavorite: _favoritePlaces.contains(it.id),
 
-  child: Card(
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: (it.images.isNotEmpty)
-                ? Image.asset(
-                    it.images.first,
-                    width: 90,
-                    height: 90,
-                    fit: BoxFit.cover,
-                  )
-                : Icon(Icons.image_not_supported, size: 60, color: Colors.grey),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  it.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 6),
+  onFavoriteToggle: () async {
+    await _toggleFavorite(it.id);
+  },
 
-                Row(
-                  children: [
-                    Icon(Icons.place, size: 16, color: Colors.orange),
-                    const SizedBox(width: 4),
-                    Text(_fmtDistance(it.meters)),
-                    const SizedBox(width: 10),
-                    Icon(Icons.directions_walk, size: 16, color: Colors.green),
-                    Text(" ${_fmtEta(it.meters, walking: true)}"),
-                    const SizedBox(width: 10),
-                    Icon(Icons.directions_car, size: 16, color: Colors.blue),
-                    Text(" ${_fmtEta(it.meters, walking: false)}"),
-                  ],
-                ),
-              ],
-            ),
-          ),
-ElevatedButton(
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.orange,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
-  ),
-  child: const Icon(Icons.map, color: Colors.white),
-  onPressed: () {
+  onDetails: () {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MapPage(
-          position: Position(
-            latitude: _pos!.latitude,
-            longitude: _pos!.longitude,
-            timestamp: _pos!.timestamp,
-            accuracy: _pos!.accuracy,
-            altitude: _pos!.altitude,
-            heading: _pos!.heading,
-            speed: _pos!.speed,
-            speedAccuracy: _pos!.speedAccuracy,
-            altitudeAccuracy: _pos!.altitudeAccuracy,
-            headingAccuracy: _pos!.headingAccuracy,
-          ),
-          destination: it.latLng,
-          enableTap: false,
-          enableLiveTracking: false,
+        builder: (_) => PlaceDetailsPage(
+          id: it.id,
+          title: it.name,
+          cityName: it.cityName,
+          images: it.images,
+          url: it.url,
           themeNotifier: widget.themeNotifier,
-            // ✅ نمرر بيانات المكان للخريطة
-  placeInfo: {
-    'id': it.id,
-    'name': it.name,
-    'city': it.cityName,
-    'images': it.images,
-    'url': it.url,
-  },
-
+          heroTag: it.id,
         ),
       ),
     );
   },
-)
 
-        ],
+  onNavigate: () {
+    if (_pos == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapPage(
+position: _pos ?? Position(
+  latitude: 0,
+  longitude: 0,
+  timestamp: DateTime.now(),
+  accuracy: 1,
+  altitude: 0,
+  heading: 0,
+  speed: 0,
+  speedAccuracy: 1,
+  altitudeAccuracy: 1,
+  headingAccuracy: 1,
+),
+          destination: it.latLng,
+          themeNotifier: widget.themeNotifier,
+          placeInfo: {
+            "id": it.id,
+            "name": it.name,
+            "city": it.cityName,
+            "images": it.images,
+            "latitude": it.latLng.latitude,
+            "longitude": it.latLng.longitude,
+          },
+        ),
       ),
-    ),
-  ),
+    );
+  },
+
+  onAR: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ARDirectionPage(
+          destLat: it.latLng.latitude,
+          destLng: it.latLng.longitude,
+        ),
+      ),
+    );
+  },
+
+  onStart: () {
+    if (_pos == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MapPage(
+          position: _pos!,
+          destination: it.latLng,
+          enableLiveTracking: true,
+          themeNotifier: widget.themeNotifier,
+          placeInfo: {
+            "id": it.id,
+            "name": it.name,
+            "city": it.cityName,
+            "images": it.images,
+            "latitude": it.latLng.latitude,
+            "longitude": it.latLng.longitude,
+          },
+        ),
+      ),
+    );
+  },
+),
 );
                               },
                             ),

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../theme_notifier.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'checkpoints_page.dart';
 
 class CustomDrawer extends StatelessWidget {
   final ThemeNotifier themeNotifier;
@@ -100,6 +101,17 @@ class CustomDrawer extends StatelessWidget {
           ),
 
           const Divider(),
+
+          // الحواجز
+ListTile(
+  leading: Icon(Icons.shield, color: Colors.orange),
+  title: Text("الحواجز"),
+  onTap: () {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => const CheckpointsPage(),
+    ));
+  },
+),
 
           // 🌙 الوضع الليلي (زر القمر)
           SwitchListTile(

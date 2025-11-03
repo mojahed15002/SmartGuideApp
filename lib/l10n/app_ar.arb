@@ -277,7 +277,15 @@
   },
 "start": "ابدأ",
 "arDirection": "توجيه AR",
-"tripStartedMessage": "تم بدء الرحلة"
-
-
+"tripStartedMessage": "تم بدء الرحلة",
+"details": "التفاصيل",
+"favoritesLabel": "المفضلة",
+  "checkpoints": "الحواجز",
+  "report": "إبلاغ",
+  "open": "مفتوح",
+  "busy": "مكتظ",
+  "closed": "مغلق",
+  "submit": "إرسال",
+"add": "إضافة",
+"added": "تمت الإضافة"
 }

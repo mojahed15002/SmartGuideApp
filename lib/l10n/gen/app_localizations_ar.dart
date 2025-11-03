@@ -821,4 +821,34 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripStartedMessage => 'تم بدء الرحلة';
+
+  @override
+  String get details => 'التفاصيل';
+
+  @override
+  String get favoritesLabel => 'المفضلة';
+
+  @override
+  String get checkpoints => 'الحواجز';
+
+  @override
+  String get report => 'إبلاغ';
+
+  @override
+  String get open => 'مفتوح';
+
+  @override
+  String get busy => 'مكتظ';
+
+  @override
+  String get closed => 'مغلق';
+
+  @override
+  String get submit => 'إرسال';
+
+  @override
+  String get add => 'إضافة';
+
+  @override
+  String get added => 'تمت الإضافة';
 }

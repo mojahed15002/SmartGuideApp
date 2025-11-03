@@ -175,7 +175,7 @@ if (deltaDeg != null) {
 child: Icon(
   Icons.navigation,
   size: 120,
-  color: (deltaDeg!.abs() < 8) ? Colors.greenAccent : Colors.orangeAccent,
+  color: (deltaDeg.abs() < 8) ? Colors.greenAccent : Colors.orangeAccent,
 ),
                 ),
               ),
