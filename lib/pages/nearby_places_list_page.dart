@@ -7,7 +7,6 @@ import '../theme_notifier.dart';
 import 'map_page.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'place_details_page.dart';
-import 'dart:ui';
 import 'ar_direction_page.dart';
 import '../smart_place_card.dart';
 import 'package:firebase_auth/firebase_auth.dart';

@@ -34,6 +34,19 @@ class _ReportCheckpointStatusPageState extends State<ReportCheckpointStatusPage>
         .collection('checkpoints')
         .doc(widget.checkpointId);
 
+// ✅ تأكد إنشاء وثيقة الحاجز لو مش موجودة قبل إضافة أي تقرير
+final doc = await docRef.get();
+if (!doc.exists) {
+  await docRef.set({
+    "name": widget.checkpointName,
+    "status": "unknown",
+    "statusUpdatedAt": DateTime.now(),
+    "lat": null,
+    "lng": null,
+    "createdAt": DateTime.now(),
+  }, SetOptions(merge: true));
+}
+
     // 1️⃣ احفظ بلاغ المستخدم
     try {
       // هل المستخدم بلغ من قبل؟
@@ -56,6 +69,10 @@ class _ReportCheckpointStatusPageState extends State<ReportCheckpointStatusPage>
         "status": selectedStatus,
         "time": DateTime.now(),
       });
+// ✅ تحديث آخر وقت بلاغ
+await docRef.set({
+  "lastReportAt": DateTime.now(),
+}, SetOptions(merge: true));
 
       // 2️⃣ حساب الأصوات لكل حالة
       final reportsSnap = await docRef.collection("reports").get();
@@ -71,31 +88,36 @@ class _ReportCheckpointStatusPageState extends State<ReportCheckpointStatusPage>
         if (s == "closed") closedCount++;
       }
 
-      // 3️⃣ تحديد الحالة حسب الأغلبية
-      String newStatus = "unknown";
-      int highest = openCount;
+// 3️⃣ تحديد الحالة حسب الأغلبية (بدون افتراض مسبق)
+String newStatus = "unknown";
+int highest = 0;
 
-      newStatus = "open";
+if (openCount >= highest) {
+  highest = openCount;
+  newStatus = "open";
+}
+if (busyCount > highest) {
+  highest = busyCount;
+  newStatus = "busy";
+}
+if (closedCount > highest) {
+  highest = closedCount;
+  newStatus = "closed";
+}
 
-      if (busyCount > highest) {
-        newStatus = "busy";
-        highest = busyCount;
-      }
-      if (closedCount > highest) {
-        newStatus = "closed";
-        highest = closedCount;
-      }
-
-      // شرط: إذا أقل من 3 بلاغات لنفس الحالة → لا نعتمدها
-      if (highest >= 3) {
-        await docRef.update({"status": newStatus});
-      }
+// شرط: إذا أقل من 3 بلاغات لنفس الحالة → لا نعتمدها
+if (highest >= 3) {
+  await docRef.set({
+    "status": newStatus,
+    "statusUpdatedAt": DateTime.now(),
+  }, SetOptions(merge: true));
+}
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("✅ تم إرسال التبليغ")),
       );
 
-      Navigator.pop(context);
+Navigator.pop(context, true); // ✅ نرجع true يعني تم الإبلاغ
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("❌ خطأ: $e")),
@@ -119,34 +141,28 @@ class _ReportCheckpointStatusPageState extends State<ReportCheckpointStatusPage>
               children: [
                 const SizedBox(height: 10),
 
-                ListTile(
-                  title: Text(loc.open ?? "Open"),
-                  leading: Radio(
-                    value: "open",
-                    groupValue: selectedStatus,
-                    onChanged: (val) => setState(() => selectedStatus = val),
-                  ),
-                ),
-                ListTile(
-                  title: Text(loc.busy ?? "Busy"),
-                  leading: Radio(
-                    value: "busy",
-                    groupValue: selectedStatus,
-                    onChanged: (val) => setState(() => selectedStatus = val),
-                  ),
-                ),
-                ListTile(
-                  title: Text(loc.closed ?? "Closed"),
-                  leading: Radio(
-                    value: "closed",
-                    groupValue: selectedStatus,
-                    onChanged: (val) => setState(() => selectedStatus = val),
-                  ),
-                ),
+RadioListTile<String>(
+  title: Text(loc.open),
+  value: "open",
+  groupValue: selectedStatus,
+  onChanged: (val) => setState(() => selectedStatus = val),
+),
+RadioListTile<String>(
+  title: Text(loc.busy),
+  value: "busy",
+  groupValue: selectedStatus,
+  onChanged: (val) => setState(() => selectedStatus = val),
+),
+RadioListTile<String>(
+  title: Text(loc.closed),
+  value: "closed",
+  groupValue: selectedStatus,
+  onChanged: (val) => setState(() => selectedStatus = val),
+),
 
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: sendReport,
+onPressed: selectedStatus == null ? null : sendReport,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                   ),

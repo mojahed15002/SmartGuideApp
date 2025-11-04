@@ -108,7 +108,9 @@ ListTile(
   title: Text("الحواجز"),
   onTap: () {
     Navigator.push(context, MaterialPageRoute(
-      builder: (_) => const CheckpointsPage(),
+      builder: (_) => CheckpointsPage(
+        themeNotifier: themeNotifier,
+      ),
     ));
   },
 ),

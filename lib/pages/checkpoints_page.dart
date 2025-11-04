@@ -6,31 +6,50 @@ import 'package:http/http.dart' as http;
 import '../l10n/gen/app_localizations.dart';
 import 'report_checkpoint_page.dart'; // تأكد من اسم صفحة التبليغ
 import 'package:firebase_auth/firebase_auth.dart';
+import 'map_page.dart'; 
+import '../theme_notifier.dart';
+import 'dart:async';
+import '../checkpoint_card.dart';
 
 class CheckpointsPage extends StatefulWidget {
-  const CheckpointsPage({super.key});
+  final ThemeNotifier themeNotifier;
+
+  const CheckpointsPage({
+    super.key,
+    required this.themeNotifier,
+  });
 
   @override
   State<CheckpointsPage> createState() => _CheckpointsPageState();
+  
 }
 
 class _CheckpointsPageState extends State<CheckpointsPage> {
+  ThemeNotifier get themeNotifier => widget.themeNotifier;
   Position? _position;
   bool _loading = true;
   double _radiusKm = 5.0;
+  Timer? _autoRefreshTimer;
 
   List<dynamic> _osmCheckpoints = []; // نقاط من OSM
-  Map<String, dynamic> _dbCheckpoints = {}; // من Firestore
-  Map<String, dynamic> _userCheckpointNames = {}; // ✅ أسماء نقاط حسب المستخدم
+  final Map<String, dynamic> _dbCheckpoints = {}; // من Firestore
+  final Map<String, dynamic> _userCheckpointNames = {}; // ✅ أسماء نقاط حسب المستخدم
+  final Map<String, int> _reportsCount = {};
 
 @override
 void initState() {
   super.initState();
   _initLocation();
+  // ✅ تحديث تلقائي للحالة والعداد كل 30 دقيقة
+  _autoRefreshTimer = Timer.periodic(const Duration(minutes: 30), (timer) async {
+    if (!mounted) return;                
+    await _loadFirestoreCheckpoints();   
+    if (mounted) setState(() {});        
+  });
+
 }
 
 Future<void> _initLocation() async {
-  // ✅ تسجيل الضيف تلقائيًا لو مافي مستخدم
   if (FirebaseAuth.instance.currentUser == null) {
     await FirebaseAuth.instance.signInAnonymously();
     print("✅ Anonymous user created");
@@ -52,7 +71,6 @@ Future<void> _initLocation() async {
   _fetchOSMCheckpoints();
 }
 
-
 Future<void> _loadFirestoreCheckpoints() async {
   try {
     final snap = await FirebaseFirestore.instance
@@ -61,6 +79,51 @@ Future<void> _loadFirestoreCheckpoints() async {
 
     for (var d in snap.docs) {
       _dbCheckpoints[d.id] = d.data();
+
+      DateTime? lastUpdate = d.data().containsKey("statusUpdatedAt")
+          ? (d["statusUpdatedAt"] as Timestamp).toDate()
+          : null;
+
+      if (lastUpdate != null) {
+        final diff = DateTime.now().difference(lastUpdate);
+
+        if (diff.inMinutes >= 30 && d.data()["status"] != "unknown") {
+          await FirebaseFirestore.instance
+              .collection("checkpoints")
+              .doc(d.id)
+              .set({
+            "status": "unknown",
+            "statusUpdatedAt": DateTime.now(),
+          }, SetOptions(merge: true));
+
+          final reports = await FirebaseFirestore.instance
+              .collection("checkpoints")
+              .doc(d.id)
+              .collection("reports")
+              .get();
+
+          for (var r in reports.docs) {
+            await r.reference.delete();
+          }
+
+          _reportsCount[d.id] = 0;
+          _dbCheckpoints[d.id]["status"] = "unknown";
+          _dbCheckpoints[d.id]["statusUpdatedAt"] = DateTime.now();
+        }
+      }
+
+      if (d.data().containsKey('statusUpdatedAt')) {
+        _dbCheckpoints[d.id]['statusUpdatedAt'] =
+            (d['statusUpdatedAt'] as Timestamp).toDate();
+      }
+
+      final reportsSnap = await FirebaseFirestore.instance
+          .collection('checkpoints')
+          .doc(d.id)
+          .collection('reports')
+          .get();
+
+      _reportsCount[d.id] = reportsSnap.docs.length;
     }
 
     setState(() {});
@@ -93,342 +156,207 @@ Future<void> _loadUserCheckpointNames() async {
   }
 }
 
+Future<void> _fetchOSMCheckpoints() async {
+  if (_position == null) return;
 
-  Future<void> _fetchOSMCheckpoints() async {
-    if (_position == null) return;
-
-    final url = Uri.parse(
+  final url = Uri.parse(
       "https://overpass-api.de/api/interpreter?data=[out:json];"
-      "node[barrier=checkpoint](around:${(_radiusKm * 1000).toInt()},${_position!.latitude},${_position!.longitude});out;"
-    );
+      "node[barrier=checkpoint](around:${(_radiusKm * 1000).toInt()},${_position!.latitude},${_position!.longitude});out;");
+  final res = await http.get(url);
 
-    final res = await http.get(url);
-if (res.statusCode == 200) {
-  final data = json.decode(res.body);
+  if (res.statusCode == 200) {
+    final data = json.decode(res.body);
 
-  setState(() {
-    _osmCheckpoints = data["elements"] ?? [];
-  });
-} else {
-  print("❌ OSM Error: ${res.statusCode}");
+    setState(() {
+      _osmCheckpoints = data["elements"] ?? [];
+    });
+  }
+
+  setState(() => _loading = false);
 }
 
-setState(() => _loading = false);
-  }
+@override
+Widget build(BuildContext context) {
+  final loc = AppLocalizations.of(context)!;
 
-  Color _statusColor(String s) {
-    return {
-      "open": Colors.green,
-      "busy": Colors.orange,
-      "closed": Colors.red,
-    }[s] ?? Colors.grey;
-  }
+  return Scaffold(
+    appBar: AppBar(
+      title: Text("🚧 ${loc.checkpoints}"),
+    ),
 
-  IconData _statusIcon(String s) {
-    return {
-      "open": Icons.check_circle,
-      "busy": Icons.access_time_filled,
-      "closed": Icons.block,
-    }[s] ?? Icons.help;
-  }
+    body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    Text("${loc.searchRadius}: ${_radiusKm.toStringAsFixed(0)} كم",
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Slider(
+                      value: _radiusKm,
+                      min: 1,
+                      max: 50,
+                      divisions: 49,
+                      label: "${_radiusKm.toStringAsFixed(0)} كم",
+                      activeColor: Colors.orange,
+                      onChanged: (v) async {
+                        setState(() {
+                          _radiusKm = v;
+                          _loading = true;
+                        });
 
-  @override
-  Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("🚧 ${loc.checkpoints}"),
-      ),
-
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // ===== Slider =====
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    children: [
-                      Text("${loc.searchRadius}: ${_radiusKm.toStringAsFixed(0)} كم",
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Slider(
-                        value: _radiusKm,
-                        min: 1,
-                        max: 100,
-                        divisions: 99,
-                        label: "${_radiusKm.toStringAsFixed(0)} كم",
-                        activeColor: Colors.orange,
-onChanged: (v) async {
-  setState(() {
-    _radiusKm = v;
-    _loading = true;
-  });
-
-  await _fetchOSMCheckpoints();
-  await _loadFirestoreCheckpoints();  // ✅ نعيد تحميل بيانات الحالة من DB
-  setState(() => _loading = false);
-},
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ===== Results =====
-Expanded(
-  child: _osmCheckpoints.isEmpty
-      ? Center(
-          child: Text(
-            "لا توجد حواجز قريبة ضمن $_radiusKm كم",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-        )
-      : ListView.builder(
-          itemCount: _osmCheckpoints.length,
-          itemBuilder: (_, i) {
-            final cp = _osmCheckpoints[i];
-            final lat = cp["lat"];
-            final lon = cp["lon"];
-            final osmId = cp["id"].toString();
-            final Map<String, dynamic> tags =
-                (cp["tags"] as Map?)?.cast<String, dynamic>() ?? {};
-            final String osmName =
-                tags["name:ar"] ?? tags["name"] ?? "حاجز";
-                bool hasOSMName = tags["name"] != null || tags["name:ar"] != null;
-
-final existsInDB = _dbCheckpoints.containsKey(osmId);
-final dbData = existsInDB ? _dbCheckpoints[osmId] : null;
-
-final userCustomName = _userCheckpointNames[osmId];
-final defaultName = dbData?['name'] ?? osmName;
-final displayName = userCustomName ?? defaultName;
-
-            final status = dbData?['status'] ?? "unknown";
-
-final distanceMeters = Geolocator.distanceBetween(
-  _position!.latitude,
-  _position!.longitude,
-  lat,
-  lon,
-);
-final distanceKm = (distanceMeters / 1000).toStringAsFixed(2);
-
-return Container(
-  margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-  padding: const EdgeInsets.all(12),
-  decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(14),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black12,
-        blurRadius: 6,
-        offset: Offset(0, 2),
-      )
-    ],
-  ),
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Icon(_statusIcon(status), color: _statusColor(status), size: 28),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-child: Text(
-  displayName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                        await _fetchOSMCheckpoints();
+                        await _loadFirestoreCheckpoints();
+                        setState(() => _loading = false);
+                      },
                     ),
-                  ),
+                  ],
                 ),
+              ),
 
-                // زر تعديل الاسم (فقط للحواجز المضافة وليس من OSM)
-                if (existsInDB && !hasOSMName)
-                  IconButton(
-                    icon: const Icon(Icons.edit, size: 18, color: Colors.blueGrey),
-                    onPressed: () async {
-                      TextEditingController editCtrl =
-                          TextEditingController(text: displayName);
-
-                      await showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text("تعديل اسم الحاجز"),
-                          content: TextField(
-                            controller: editCtrl,
-                            decoration: const InputDecoration(
-                              labelText: "اسم الحاجز",
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text("إلغاء"),
-                            ),
-                            ElevatedButton(
-                              onPressed: () async {
-                                await FirebaseFirestore.instance
-                                    .collection('checkpoints')
-                                    .doc(osmId)
-                                    .set({
-                                  "name": editCtrl.text.trim(),
-                                }, SetOptions(merge: true));
-await _loadUserCheckpointNames();
-                                Navigator.pop(context);
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("✅ تم تعديل اسم الحاجز")),
-                                );
-
-                                await _loadFirestoreCheckpoints();
-                                setState(() {});
-                              },
-                              child: const Text("حفظ"),
-                            ),
-                          ],
+              Expanded(
+                child: _osmCheckpoints.isEmpty
+                    ? Center(
+                        child: Text(
+                          "لا توجد حواجز قريبة ضمن $_radiusKm كم",
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w600),
                         ),
-                      );
-                    },
-                  ),
-              ],
-            ),
-          ),
-          Text(
-            "$distanceKm كم",
-            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-          ),
-        ],
-      ),
+                      )
+                    : ListView.builder(
+                        itemCount: _osmCheckpoints.length,
+                        itemBuilder: (_, i) {
+                          final cp = _osmCheckpoints[i];
+                          final lat = cp["lat"];
+                          final lon = cp["lon"];
+                          final osmId = cp["id"].toString();
+                          final Map<String, dynamic> tags =
+                              (cp["tags"] as Map?)?.cast<String, dynamic>() ?? {};
+                          final String osmName =
+                              tags["name:ar"] ?? tags["name"] ?? "حاجز";
 
-      const SizedBox(height: 8),
+                          final existsInDB = _dbCheckpoints.containsKey(osmId);
+                          final dbData = existsInDB ? _dbCheckpoints[osmId] : null;
+                          final userCustomName = _userCheckpointNames[osmId];
+                          final defaultName = dbData?['name'] ?? osmName;
+                          final displayName = userCustomName ?? defaultName;
+                          final status = dbData?['status'] ?? "unknown";
+                          final DateTime? updatedAt = dbData?['statusUpdatedAt'];
+                          final int reportsCount = _reportsCount[osmId] ?? 0;
 
-      Row(
-        children: [
-          // ✅ إذا الحاجز موجود → زر الإبلاغ فقط
-          if (existsInDB)
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-              icon: const Icon(Icons.flag),
-              label: Text(loc.report),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ReportCheckpointStatusPage(
-                      checkpointId: osmId,
-                      checkpointName: displayName,
-                    ),
-                  ),
-                );
-              },
-            )
+                          return CheckpointCard(
+                            id: osmId,
+                            name: displayName,
+                            lat: lat,
+                            lon: lon,
+                            status: status,
+                            reports: reportsCount,
+                            statusUpdatedAt: updatedAt,
+                            showMapButton: true,
+                            showSuggestName: !existsInDB,
 
-          // ✅ إذا غير موجود ولا اسم OSM → اقتراح اسم فقط
-          else if (!hasOSMName)
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-              icon: const Icon(Icons.edit, size: 18),
-              label: const Text("اقتراح اسم",
-                  style: TextStyle(fontSize: 13)),
-              onPressed: () async {
-                TextEditingController nameCtrl = TextEditingController();
+                            onReportPressed: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ReportCheckpointStatusPage(
+                                    checkpointId: osmId,
+                                    checkpointName: displayName,
+                                  ),
+                                ),
+                              );
+                              if (result == true) {
+                                await _loadFirestoreCheckpoints();
+                                if (mounted) setState(() {});
+                              }
+                            },
 
-                await showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text("اقتراح اسم للحاجز"),
-                    content: TextField(
-                      controller: nameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: "الاسم المقترح",
-                      ),
-                    ),
-                    actions: [
-                      TextButton(
-                        child: const Text("إلغاء"),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green),
-                        child: const Text("إرسال"),
-                        onPressed: () async {
+                            onShowOnMap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => MapPage(
+                                    position: _position!,
+                                    themeNotifier: widget.themeNotifier,
+                                    targetLat: lat,
+                                    targetLon: lon,
+                                    checkpointName: displayName,
+                                  ),
+                                ),
+                              );
+                            },
 
-String uid = FirebaseAuth.instance.currentUser!.uid;
+                            onSuggestName: !existsInDB
+                                ? () async {
+                                    final nameCtrl = TextEditingController();
 
-// ✅ حفظ الاسم عند المستخدم فقط
-await FirebaseFirestore.instance
-    .collection('users')
-    .doc(uid)
-    .collection('checkpointNames')
-    .doc(osmId)
-    .set({
-  "name": nameCtrl.text.trim(),
-  "lat": lat,
-  "lon": lon,
-  "savedAt": DateTime.now(),
-});
+                                    await showDialog(
+                                      context: context,
+                                      builder: (_) => AlertDialog(
+                                        title: const Text("اقتراح اسم للحاجز"),
+                                        content: TextField(
+                                          controller: nameCtrl,
+                                          decoration: const InputDecoration(
+                                            labelText: "الاسم المقترح",
+                                          ),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context),
+                                            child: const Text("إلغاء"),
+                                          ),
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                                            onPressed: () async {
+                                              final uid = FirebaseAuth.instance.currentUser!.uid;
 
-// ✅ إرسال الاقتراح للتقييم لاحقًا
-await FirebaseFirestore.instance
-    .collection('checkpoints')
-    .doc(osmId)
-    .collection('nameSuggestions')
-    .add({
-  "suggestedName": nameCtrl.text.trim(),
-  "time": DateTime.now(),
-});
+                                              await FirebaseFirestore.instance
+                                                  .collection('users')
+                                                  .doc(uid)
+                                                  .collection('checkpointNames')
+                                                  .doc(osmId)
+                                                  .set({
+                                                "name": nameCtrl.text.trim(),
+                                                "lat": lat,
+                                                "lon": lon,
+                                                "savedAt": DateTime.now(),
+                                              });
 
-// ✅ تحديث الاسم محليًا فورًا
-_userCheckpointNames[osmId] = nameCtrl.text.trim();
+                                              await FirebaseFirestore.instance
+                                                  .collection('checkpoints')
+                                                  .doc(osmId)
+                                                  .collection('nameSuggestions')
+                                                  .add({
+                                                "suggestedName": nameCtrl.text.trim(),
+                                                "time": DateTime.now(),
+                                              });
 
-// ✅ أغلق الـ Dialog مرّة واحدة فقط
-Navigator.pop(context);
-
-// ✅ إبلاغ المستخدم
-ScaffoldMessenger.of(context).showSnackBar(
-  const SnackBar(content: Text("📌 تم حفظ الاسم لك فقط")),
-);
-
-// ✅ تحديث الواجهة
-setState(() {});
-
-// ✅ تحميل بيانات المستخدم من Firestore ليتحدث الزر
-await _loadUserCheckpointNames();
-
+                                              _userCheckpointNames[osmId] = nameCtrl.text.trim();
+                                              Navigator.pop(context);
+                                              setState(() {});
+                                              await _loadUserCheckpointNames();
+                                            },
+                                            child: const Text("إرسال"),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+                                : null,
+                          );
                         },
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
-       
-        ],
-      ),
-    ],
-  ),
-);
-         
-          },
-        ),
-)
-              
-              ],
-            ),
-    );
-  }
+              )
+            ],
+          ),
+  );
+}
+
+@override
+void dispose() {
+  _autoRefreshTimer?.cancel();
+  super.dispose();
+}
 }

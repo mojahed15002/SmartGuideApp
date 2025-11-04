@@ -14,8 +14,9 @@ import 'custom_drawer.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'place_details_page.dart';
 import 'ar_direction_page.dart';
-import 'dart:ui';
 import '../smart_place_card.dart';
+import '../checkpoint_card.dart';
+import 'report_checkpoint_page.dart';
 
 class MapPage extends StatefulWidget {
   final Position position;
@@ -24,6 +25,10 @@ class MapPage extends StatefulWidget {
   final Map<String, dynamic>? placeInfo;
   final bool enableTap;
   final bool enableLiveTracking;
+    final double? targetLat;
+  final double? targetLon;
+  final String? checkpointName;
+
   // ✅ جديد: لدعم عرض الرحلات المحفوظة من Firestore
   final latlng.LatLng? start;
   final List<latlng.LatLng>? savedPath;
@@ -38,6 +43,10 @@ class MapPage extends StatefulWidget {
     this.start,        // ✅ جديد
     this.savedPath,    // ✅ جديد
     this.placeInfo,
+        this.targetLat,
+    this.targetLon,
+    this.checkpointName,
+
   });
 
   @override
@@ -55,6 +64,11 @@ final TextEditingController _searchController = TextEditingController();
 List<dynamic> _searchHistory = [];
 Set<String> _favoritePlaces = {};
 User? user;
+List<dynamic> osmCheckpoints = [];
+final Map<String, dynamic> _dbCheckpoints = {}; 
+final Map<String, int> _reportsCount = {};
+
+final double checkpointRadiusMeters = 50000; // 50 كم
 
   final fm.MapController _mapController = fm.MapController();
 
@@ -115,6 +129,24 @@ final response = await http.get(
     return [];
   }
 }
+
+Future<void> loadOSMCheckpoints() async {
+  final url = Uri.parse(
+    "https://overpass-api.de/api/interpreter?data=[out:json];"
+    "node[barrier=checkpoint](around:$checkpointRadiusMeters,${widget.position.latitude},${widget.position.longitude});out;"
+  );
+
+  final response = await http.get(url);
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body);
+    setState(() {
+      osmCheckpoints = data["elements"] ?? [];
+    });
+  } else {
+    debugPrint("❌ Error loading OSM checkpoints: ${response.statusCode}");
+  }
+}
+
 
 Future<void> _loadSearchHistory() async {
   final user = FirebaseAuth.instance.currentUser;
@@ -223,13 +255,45 @@ Map<String, String> get transportModes => {
   @override
   void initState() {
     super.initState();
+    loadOSMCheckpoints();
+    _loadFirestoreCheckpoints();
+    _destination = widget.destination;
+    _selectedPlace = widget.placeInfo;
+
+        // ✅ إذا اجينا من صفحة الحواجز مع إحداثيات
+if (widget.targetLat != null && widget.targetLon != null) {
+  final point = latlng.LatLng(widget.targetLat!, widget.targetLon!);
+
+  // نحرّك الكاميرا على الحاجز
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _mapController.move(point, 17);
+  });
+
+  // نحدد الوجهة و نعرض البطاقة
+  setState(() {
+    _destination = point;
+    _selectedPlace = {
+      "id": null, // لسة ما عندنا info محفوظة إله
+      "name": widget.checkpointName ?? "حاجز",
+      "city": "",
+      "images": [],
+      "url": "",
+      "latitude": widget.targetLat!,
+      "longitude": widget.targetLon!,
+    };
+  });
+
+  // نجيب مسار قيادة
+  Future.microtask(() async {
+    await _getRoute(point);
+  });
+}
+
     user = FirebaseAuth.instance.currentUser;
   WidgetsBinding.instance.addPostFrameCallback((_) {
     _loadFavorites();
   });
 
-    _destination = widget.destination;
-    _selectedPlace = widget.placeInfo;
 
     // ✅ في حال الرحلة من Firestore (يوجد مسار محفوظ)
     if (widget.savedPath != null && widget.savedPath!.isNotEmpty) {
@@ -256,6 +320,8 @@ Map<String, String> get transportModes => {
     _fadeAnimation =
         CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut);
 
+
+
     Future.delayed(const Duration(seconds: 10), () {
       if (mounted) {
         _fadeController.forward().then((_) {
@@ -271,6 +337,12 @@ _loadPlaceMarkers();
       _startLiveTracking();
     }
   }
+
+@override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  _loadFirestoreCheckpoints();
+}
 
 Future<void> _loadFavorites() async {
   if (user == null) return;
@@ -677,6 +749,30 @@ String _getLocalizedTileUrl(BuildContext context) {
   return "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 }
 
+Future<void> _loadFirestoreCheckpoints() async {
+  try {
+    final snap = await FirebaseFirestore.instance
+        .collection('checkpoints')
+        .get();
+
+    for (var d in snap.docs) {
+      _dbCheckpoints[d.id] = d.data();
+
+      final reportsSnap = await FirebaseFirestore.instance
+          .collection('checkpoints')
+          .doc(d.id)
+          .collection('reports')
+          .get();
+
+      _reportsCount[d.id] = reportsSnap.docs.length;
+    }
+
+    setState(() {});
+  } catch (e) {
+    debugPrint("❌ Error loading Firestore Checkpoints: $e");
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -851,6 +947,52 @@ fm.MarkerLayer(
         child: const Icon(Icons.person_pin_circle,
             color: Colors.blue, size: 40),
       ),
+      
+// ✅ ماركرات الحواجز من OSM
+...osmCheckpoints.map((cp) {
+  final lat = (cp["lat"] as num?)?.toDouble();
+  final lon = (cp["lon"] as num?)?.toDouble();
+  if (lat == null || lon == null) return null;
+
+  final id = cp["id"].toString();
+  final Map<String, dynamic> tags =
+      (cp["tags"] as Map?)?.cast<String, dynamic>() ?? {};
+  final name = tags["name:ar"] ?? tags["name"] ?? "حاجز";
+
+  final dbData = _dbCheckpoints[id];
+  final status = dbData?["status"] ?? "unknown";
+  final color = {
+    "open": Colors.green,
+    "busy": Colors.orange,
+    "closed": Colors.red,
+  }[status] ?? Colors.grey;
+
+  return fm.Marker(
+    point: latlng.LatLng(lat, lon),
+    width: 45,
+    height: 45,
+    child: GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedPlace = {
+            "id": id,
+            "name": name,
+            "type": "checkpoint",
+            "latitude": lat,
+            "longitude": lon,
+            "status": status,
+            "reports": _reportsCount[id] ?? 0,
+          };
+        });
+      },
+      child: Icon(Icons.shield, color: color, size: 35),
+    ),
+  );
+})
+.where((m) => m != null)
+.cast<fm.Marker>()
+,
+
 
     // ✅ ماركر الوجهة الحمراء
     if (_destination != null)
@@ -887,6 +1029,19 @@ onTap: () async {
           ),
         ),
       ),
+          // ✅ ماركر الحاجز القادم من صفحة CheckpointsPage
+    if (widget.targetLat != null && widget.targetLon != null)
+      fm.Marker(
+        width: 60,
+        height: 60,
+        point: latlng.LatLng(widget.targetLat!, widget.targetLon!),
+        child: const Icon(
+          Icons.shield, // رمز حاجز
+          color: Colors.red,
+          size: 40,
+        ),
+      ),
+
   ],
 ),
 
@@ -974,116 +1129,146 @@ onTap: () async {
       ),
 
 if (_selectedPlace != null && _selectedPlace!['name'] != null) ...[
-  // ✅ البطاقة
   Positioned(
     bottom: bottomPadding + 10,
     left: 10,
     right: 10,
-child: Stack(
-  clipBehavior: Clip.none,
-  children: [
-SmartPlaceCardWidget(
-  place: _selectedPlace!,
-  themeNotifier: widget.themeNotifier,
-  isFavorite: _selectedPlace!["id"] != null &&
-      _favoritePlaces.contains(_selectedPlace!["id"]),
-  onFavoriteToggle: _selectedPlace!["id"] == null
-      ? null
-      : () async {
-          await _toggleFavorite(_selectedPlace!["id"]);
-          if (mounted) setState(() {});
-        },
-  onDetails: (_selectedPlace!["id"] == null)
-      ? null
-      : () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => PlaceDetailsPage(
-                id: _selectedPlace!["id"],
-                title: _selectedPlace!["name"],
-                cityName: _selectedPlace!["city"],
-                images: List<String>.from(_selectedPlace!["images"] ?? []),
-                url: _selectedPlace!["url"] ?? "",
-                themeNotifier: widget.themeNotifier,
-                heroTag: _selectedPlace!["id"],
-              ),
-            ),
-          );
-        },
-  onAR: () {
-    final lat = (_selectedPlace!['latitude'] as num?)?.toDouble();
-    final lng = (_selectedPlace!['longitude'] as num?)?.toDouble();
-    if (lat == null || lng == null) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ARDirectionPage(destLat: lat, destLng: lng),
-      ),
-    );
-  },
-  onNavigate: () async {
-    final lat = (_selectedPlace!['latitude'] as num?)?.toDouble();
-    final lng = (_selectedPlace!['longitude'] as num?)?.toDouble();
-    if (lat == null || lng == null) return;
-    setState(() {
-      _destination = latlng.LatLng(lat, lng);
-    });
-    await _getRoute(_destination!);
-    _mapController.move(_destination!, 15.5);
-  },
-  onStart: () async {
-    final lat = (_selectedPlace!['latitude'] as num?)?.toDouble();
-    final lng = (_selectedPlace!['longitude'] as num?)?.toDouble();
-    if (lat == null || lng == null) return;
+    child: Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // ✅ إذا حاجز OSM → نعرض CheckpointCard
+        if (_selectedPlace!["type"] == "checkpoint")
+          CheckpointCard(
+            id: _selectedPlace!["id"],
+            name: _selectedPlace!["name"],
+            lat: _selectedPlace!["latitude"],
+            lon: _selectedPlace!["longitude"],
+            status: _selectedPlace!["status"] ?? "unknown",
+            reports: _selectedPlace!["reports"] ?? 0,
+            statusUpdatedAt: null,
+            showMapButton: false,
+            showSuggestName: false,
+            onReportPressed: () async {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ReportCheckpointStatusPage(
+                    checkpointId: _selectedPlace!["id"],
+                    checkpointName: _selectedPlace!["name"],
+                  ),
+                ),
+              ).then((value) async {
+                if (value == true) {
+                  await _loadFirestoreCheckpoints();
+                  setState(() {});
+                }
+              });
+            },
+            onShowOnMap: null,
+            onSuggestName: null,
+          )
+        else
+          // ✅ مكان عادي → البطاقة العادية
+          SmartPlaceCardWidget(
+            place: _selectedPlace!,
+            themeNotifier: widget.themeNotifier,
+            isFavorite: _selectedPlace!["id"] != null &&
+                _favoritePlaces.contains(_selectedPlace!["id"]),
+            onFavoriteToggle: _selectedPlace!["id"] == null
+                ? null
+                : () async {
+                    await _toggleFavorite(_selectedPlace!["id"]);
+                    if (mounted) setState(() {});
+                  },
+            onDetails: () {
+              if (_selectedPlace!["id"] != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PlaceDetailsPage(
+                      id: _selectedPlace!["id"],
+                      title: _selectedPlace!["name"],
+                      cityName: _selectedPlace!["city"],
+                      images: List<String>.from(_selectedPlace!["images"] ?? []),
+                      url: _selectedPlace!["url"] ?? "",
+                      themeNotifier: widget.themeNotifier,
+                      heroTag: _selectedPlace!["id"],
+                    ),
+                  ),
+                );
+              }
+            },
+            onAR: () {
+              final lat = (_selectedPlace!['latitude'] as num?)?.toDouble();
+              final lng = (_selectedPlace!['longitude'] as num?)?.toDouble();
+              if (lat == null || lng == null) return;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ARDirectionPage(destLat: lat, destLng: lng),
+                ),
+              );
+            },
+            onNavigate: () async {
+              final lat = (_selectedPlace!['latitude'] as num?)?.toDouble();
+              final lng = (_selectedPlace!['longitude'] as num?)?.toDouble();
+              if (lat == null || lng == null) return;
+              setState(() {
+                _destination = latlng.LatLng(lat, lng);
+              });
+              await _getRoute(_destination!);
+              _mapController.move(_destination!, 15.5);
+            },
+            onStart: () async {
+              final lat = (_selectedPlace!['latitude'] as num?)?.toDouble();
+              final lng = (_selectedPlace!['longitude'] as num?)?.toDouble();
+              if (lat == null || lng == null) return;
 
-    setState(() {
-      _destination = latlng.LatLng(lat, lng);
-      _isTracking = true;
-      _showTip = false;
-    });
+              setState(() {
+                _destination = latlng.LatLng(lat, lng);
+                _isTracking = true;
+                _showTip = false;
+              });
 
-    _startLiveTracking();
-    await _getRoute(_destination!);
+              _startLiveTracking();
+              await _getRoute(_destination!);
 
-    if (_currentLocation != null) {
-      _mapController.move(_currentLocation!, 17);
-    }
+              if (_currentLocation != null) {
+                _mapController.move(_currentLocation!, 17);
+              }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.tripStarted)),
-    );
-  },
-),
-
-
-    Positioned(
-      top: -14,
-      right: -10,
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedPlace = null),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 6,
-                offset: Offset(0, 2),
-              ),
-            ],
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(AppLocalizations.of(context)!.tripStarted)),
+              );
+            },
           ),
-          padding: EdgeInsets.all(6),
-          child: Icon(Icons.close, size: 20, color: Colors.black87),
-        ),
-      ),
-    ),
-  ],
-),
-  ),
 
-  // ✅ زر الإغلاق فوق البطاقة
+        // ✅ زر الإغلاق للبطاقة
+        Positioned(
+          top: -14,
+          right: -10,
+          child: GestureDetector(
+            onTap: () => setState(() => _selectedPlace = null),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: EdgeInsets.all(6),
+              child: Icon(Icons.close, size: 20, color: Colors.black87),
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
 ],
 
 
