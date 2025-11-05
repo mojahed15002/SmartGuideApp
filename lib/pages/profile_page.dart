@@ -11,6 +11,9 @@ import 'custom_drawer.dart';
 import 'forgot_password_page.dart'; // لتغيير/استعادة كلمة المرور
 import '../sign_in_panel.dart';        // للعودة بعد تسجيل الخروج
 import 'edit_profile_page.dart';
+import 'current_city_page.dart';    // لعرض معلومات عن المدينة الحالية
+import 'last_destination_page.dart';
+import 'total_distance_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -119,33 +122,45 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadCurrentCity() async {
-    try {
-      LocationPermission p = await Geolocator.checkPermission();
-      if (p == LocationPermission.denied || p == LocationPermission.deniedForever) {
-        p = await Geolocator.requestPermission();
-      }
-      if (p == LocationPermission.denied || p == LocationPermission.deniedForever) {
+  try {
+    LocationPermission p = await Geolocator.checkPermission();
+    if (p == LocationPermission.denied || p == LocationPermission.deniedForever) {
+      p = await Geolocator.requestPermission();
+    }
+    if (p == LocationPermission.denied || p == LocationPermission.deniedForever) {
+      setState(() {
         currentCity = '—';
-        return;
-      }
-      final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
-      );
-      final placemarks =
-          await placemarkFromCoordinates(pos.latitude, pos.longitude);
-      if (placemarks.isNotEmpty) {
-        final pm = placemarks.first;
+      });
+      return;
+    }
+
+    final pos = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.best,
+    );
+
+    final placemarks = await placemarkFromCoordinates(pos.latitude, pos.longitude);
+
+    if (placemarks.isNotEmpty) {
+      final pm = placemarks.first;
+
+      setState(() {
         currentCity = pm.locality?.isNotEmpty == true
             ? pm.locality
             : (pm.administrativeArea ?? '—');
-      } else {
+      });
+    } else {
+      setState(() {
         currentCity = '—';
-      }
-    } catch (e) {
-      debugPrint('⚠️ City load error: $e');
-      currentCity = '—';
+      });
     }
+  } catch (e) {
+    debugPrint('⚠️ City load error: $e');
+    setState(() {
+      currentCity = '—';
+    });
   }
+}
+
 
   String _formatDistance(double meters) {
     if (meters <= 0) return '—';
@@ -682,25 +697,77 @@ Future<void> _signOut() async {
                       subtitle: '$travelCount ${loc.tripsDone}',
                     ),
                     _cardTile(
-                      icon: Icons.place,
-                      title: loc.lastDestination,
-                      subtitle: lastDestination ?? loc.noData,
-                    ),
-                    _cardTile(
-                      icon: Icons.route,
-                      title: loc.totalDistance,
-                      subtitle: _formatDistance(totalDistanceM),
-                    ),
+  icon: Icons.place,
+  title: loc.lastDestination,
+  subtitle: lastDestination ?? loc.noData,
+  onTap: () {
+    if (lastDestination != null && lastDestination != '—' && lastDestination!.trim().isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LastDestinationPage(
+            destinationName: lastDestination!,
+            themeNotifier: widget.themeNotifier,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("لا يوجد وجهة أخيرة بعد 👣"),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  },
+),
+
+                   _cardTile(
+  icon: Icons.route,
+  title: loc.totalDistance,
+  subtitle: _formatDistance(totalDistanceM),
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TotalDistancePage(
+          themeNotifier: widget.themeNotifier,
+        ),
+      ),
+    );
+  },
+),
+
+
                     _cardTile(
                       icon: Icons.timer_outlined,
                       title: loc.totalTime,
                       subtitle: _formatDuration(totalDurationS),
                     ),
-                    _cardTile(
-                      icon: Icons.location_city,
-                      title: loc.currentCity,
-                      subtitle: currentCity ?? '—',
-                    ),
+                   _cardTile(
+  icon: Icons.location_city,
+  title: loc.currentCity,
+  subtitle: (currentCity != null && currentCity!.trim().isNotEmpty)
+      ? currentCity!                // ✅ يعرض اسم المدينة
+      : 'جارِ تحديد المدينة...',   // ✅ نص مؤقت بدل الشحطة
+  onTap: () {
+    final city = (currentCity != null && currentCity!.trim().isNotEmpty)
+        ? currentCity!
+        : 'جارِ تحديد المدينة...'; // ✅ نفس النص الاحتياطي
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CurrentCityPage(
+          cityName: city,
+          themeNotifier: widget.themeNotifier,
+        ),
+      ),
+    );
+  },
+),
+
+
 
                     const SizedBox(height: 8),
                     const Divider(thickness: 1),

@@ -1,6 +1,6 @@
 /// ملف مستخرج تلقائيًا من main.dart
 /// يحتوي الكلاس: PlaceDetailsPage
-library;
+
 
 import 'package:flutter/material.dart';
 import '../theme_notifier.dart';
