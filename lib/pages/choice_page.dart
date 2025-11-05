@@ -111,7 +111,7 @@ class _ChoicePageState extends State<ChoicePage> {
                 onPressed: () async {
                   Position position = await _determinePosition();
                     if (!mounted) return;
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       // ignore: use_build_context_synchronously
                       context,
                       MaterialPageRoute(

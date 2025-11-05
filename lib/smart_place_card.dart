@@ -15,12 +15,14 @@ class SmartPlaceCardWidget extends StatelessWidget {
   final VoidCallback? onNavigate;
   final VoidCallback? onStart;
   final VoidCallback? onAR;
+  final bool isTripActive;
 
   const SmartPlaceCardWidget({
     super.key,
     required this.place,
     required this.themeNotifier,
     required this.isFavorite,
+    required this.isTripActive,
     this.onFavoriteToggle,
     this.onDetails,
     this.onNavigate,
@@ -159,19 +161,23 @@ class SmartPlaceCardWidget extends StatelessWidget {
 
                   const Spacer(),
 
-                  // بدء الرحلة
-                  ElevatedButton.icon(
-                    onPressed: (lat == null || lng == null) ? null : onStart,
-                    icon: const Icon(Icons.play_arrow),
-                    label: Text(loc.start),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
+// زر بدء/إيقاف الرحلة
+ElevatedButton.icon(
+  onPressed: (lat == null || lng == null) ? null : onStart,
+  icon: Icon(
+    isTripActive ? Icons.stop : Icons.play_arrow,
+  ),
+  label: Text(
+    isTripActive ? loc.stop : loc.start, // "إيقاف" بدلاً من "ابدأ"
+  ),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: isTripActive ? Colors.red : Colors.green,
+    foregroundColor: Colors.white,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+  ),
+),
                 ],
               ),
             ],

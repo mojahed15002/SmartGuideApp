@@ -855,4 +855,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get added => 'Added';
+
+  @override
+  String get stop => 'Stop';
+
+  @override
+  String get stopDescription => 'Stop navigation';
 }

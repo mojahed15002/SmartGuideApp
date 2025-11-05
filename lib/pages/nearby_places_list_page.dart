@@ -323,7 +323,7 @@ child: SmartPlaceCardWidget(
   },
   themeNotifier: widget.themeNotifier,
   isFavorite: _favoritePlaces.contains(it.id),
-
+  isTripActive: false,
   onFavoriteToggle: () async {
     await _toggleFavorite(it.id);
   },

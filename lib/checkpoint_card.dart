@@ -102,40 +102,59 @@ class CheckpointCard extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // الأزرار
-          Row(
-            children: [
-              // إبلاغ
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                icon: const Icon(Icons.flag),
-                label: const Text("إبلاغ"),
-                onPressed: onReportPressed,
-              ),
+// الأزرار
+Row(
+  children: [
+    Expanded(
+      child: ElevatedButton.icon(
+        onPressed: onReportPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.orange,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          elevation: 2,
+        ),
+        icon: const Icon(Icons.flag, size: 20),
+        label: const Text("إبلاغ", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+      ),
+    ),
 
-              const SizedBox(width: 8),
+    const SizedBox(width: 8),
 
-              // اقتراح اسم (اختياري)
-              if (showSuggestName && onSuggestName != null)
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  icon: const Icon(Icons.edit, size: 18),
-                  label: const Text("اقتراح اسم", style: TextStyle(fontSize: 13)),
-                  onPressed: onSuggestName,
-                ),
-
-              const SizedBox(width: 8),
-
-              // عرض على الخريطة (اختياري)
-              if (showMapButton && onShowOnMap != null)
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  icon: const Icon(Icons.map),
-                  label: const Text("عرض على الخريطة"),
-                  onPressed: onShowOnMap,
-                ),
-            ],
+    if (showSuggestName && onSuggestName != null)
+      Expanded(
+        child: ElevatedButton.icon(
+          onPressed: onSuggestName,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            elevation: 2,
           ),
+          icon: const Icon(Icons.edit, size: 20),
+          label: const Text("اقتراح اسم", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        ),
+      ),
+
+    if (showSuggestName && onSuggestName != null)
+      const SizedBox(width: 8),
+
+    Expanded(
+      child: ElevatedButton.icon(
+        onPressed: onShowOnMap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          elevation: 2,
+        ),
+        icon: const Icon(Icons.map, size: 20),
+        label: const Text("على الخريطة", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+      ),
+    ),
+  ],
+),
+       
         ],
       ),
     );

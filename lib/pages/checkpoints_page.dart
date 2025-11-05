@@ -40,8 +40,8 @@ class _CheckpointsPageState extends State<CheckpointsPage> {
 void initState() {
   super.initState();
   _initLocation();
-  // ✅ تحديث تلقائي للحالة والعداد كل 30 دقيقة
-  _autoRefreshTimer = Timer.periodic(const Duration(minutes: 30), (timer) async {
+  // ✅ تحديث تلقائي للحالة والعداد كل 5 دقائق
+  _autoRefreshTimer = Timer.periodic(const Duration(minutes: 5), (timer) async {
     if (!mounted) return;                
     await _loadFirestoreCheckpoints();   
     if (mounted) setState(() {});        
@@ -87,7 +87,7 @@ Future<void> _loadFirestoreCheckpoints() async {
       if (lastUpdate != null) {
         final diff = DateTime.now().difference(lastUpdate);
 
-        if (diff.inMinutes >= 30 && d.data()["status"] != "unknown") {
+        if (diff.inMinutes >= 5 && d.data()["status"] != "unknown") {
           await FirebaseFirestore.instance
               .collection("checkpoints")
               .doc(d.id)
@@ -245,6 +245,12 @@ Widget build(BuildContext context) {
                           final status = dbData?['status'] ?? "unknown";
                           final DateTime? updatedAt = dbData?['statusUpdatedAt'];
                           final int reportsCount = _reportsCount[osmId] ?? 0;
+final bool noNameInOSM = (tags["name"] == null && tags["name:ar"] == null);
+final bool hasNoRealName = osmName == "حاجز";
+final bool userDidSuggest = _userCheckpointNames.containsKey(osmId);
+
+final bool showNameSuggestionButton =
+    (noNameInOSM || hasNoRealName) && !userDidSuggest;
 
                           return CheckpointCard(
                             id: osmId,
@@ -255,7 +261,8 @@ Widget build(BuildContext context) {
                             reports: reportsCount,
                             statusUpdatedAt: updatedAt,
                             showMapButton: true,
-                            showSuggestName: !existsInDB,
+                            showSuggestName: showNameSuggestionButton,
+
 
                             onReportPressed: () async {
                               final result = await Navigator.push(
@@ -273,22 +280,20 @@ Widget build(BuildContext context) {
                               }
                             },
 
-                            onShowOnMap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => MapPage(
-                                    position: _position!,
-                                    themeNotifier: widget.themeNotifier,
-                                    targetLat: lat,
-                                    targetLon: lon,
-                                    checkpointName: displayName,
-                                  ),
-                                ),
-                              );
-                            },
+onShowOnMap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => MapPage(
+        position: _position!,
+        themeNotifier: widget.themeNotifier,
+        selectedCheckpointId: osmId, // ✅ نرسل id فقط
+      ),
+    ),
+  );
+},
 
-                            onSuggestName: !existsInDB
+onSuggestName: showNameSuggestionButton
                                 ? () async {
                                     final nameCtrl = TextEditingController();
 

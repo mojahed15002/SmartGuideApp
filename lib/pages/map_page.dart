@@ -28,6 +28,7 @@ class MapPage extends StatefulWidget {
     final double? targetLat;
   final double? targetLon;
   final String? checkpointName;
+final String? selectedCheckpointId;
 
   // ✅ جديد: لدعم عرض الرحلات المحفوظة من Firestore
   final latlng.LatLng? start;
@@ -46,7 +47,7 @@ class MapPage extends StatefulWidget {
         this.targetLat,
     this.targetLon,
     this.checkpointName,
-
+    this.selectedCheckpointId,
   });
 
   @override
@@ -70,7 +71,8 @@ final Map<String, int> _reportsCount = {};
 
 final double checkpointRadiusMeters = 50000; // 50 كم
 
-  final fm.MapController _mapController = fm.MapController();
+final fm.MapController _mapController = fm.MapController();
+bool _manualTripActive = false; // هل الرحلة شغّالة؟
 
 
   List<fm.Marker> _placeMarkers = [];
@@ -146,6 +148,7 @@ Future<void> loadOSMCheckpoints() async {
     debugPrint("❌ Error loading OSM checkpoints: ${response.statusCode}");
   }
 }
+
 
 
 Future<void> _loadSearchHistory() async {
@@ -256,38 +259,46 @@ Map<String, String> get transportModes => {
   void initState() {
     super.initState();
     loadOSMCheckpoints();
+    loadOSMCheckpoints().then((_) {
+  if (widget.selectedCheckpointId != null) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (osmCheckpoints.isEmpty) return;
+
+      final match = osmCheckpoints.firstWhere(
+        (c) => c["id"].toString() == widget.selectedCheckpointId,
+        orElse: () => {},
+      );
+
+      if (match.isNotEmpty) {
+        final lat = (match["lat"] as num).toDouble();
+        final lon = (match["lon"] as num).toDouble();
+        final point = latlng.LatLng(lat, lon);
+
+        _mapController.move(point, 17);
+
+        final tags = (match["tags"] ?? {}) as Map<String, dynamic>;
+
+        setState(() {
+          _destination = point;
+          _selectedPlace = {
+            "id": widget.selectedCheckpointId,
+            "name": tags["name:ar"] ?? tags["name"] ?? "حاجز",
+            "type": "checkpoint",
+            "latitude": lat,
+            "longitude": lon,
+            "status": _dbCheckpoints[widget.selectedCheckpointId]?["status"] ?? "unknown",
+            "reports": _reportsCount[widget.selectedCheckpointId] ?? 0,
+          };
+        });
+      }
+    });
+  }
+});
+
     _loadFirestoreCheckpoints();
     _destination = widget.destination;
     _selectedPlace = widget.placeInfo;
 
-        // ✅ إذا اجينا من صفحة الحواجز مع إحداثيات
-if (widget.targetLat != null && widget.targetLon != null) {
-  final point = latlng.LatLng(widget.targetLat!, widget.targetLon!);
-
-  // نحرّك الكاميرا على الحاجز
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    _mapController.move(point, 17);
-  });
-
-  // نحدد الوجهة و نعرض البطاقة
-  setState(() {
-    _destination = point;
-    _selectedPlace = {
-      "id": null, // لسة ما عندنا info محفوظة إله
-      "name": widget.checkpointName ?? "حاجز",
-      "city": "",
-      "images": [],
-      "url": "",
-      "latitude": widget.targetLat!,
-      "longitude": widget.targetLon!,
-    };
-  });
-
-  // نجيب مسار قيادة
-  Future.microtask(() async {
-    await _getRoute(point);
-  });
-}
 
     user = FirebaseAuth.instance.currentUser;
   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -782,7 +793,17 @@ Future<void> _loadFirestoreCheckpoints() async {
 
     return Scaffold(
 appBar: AppBar(
-title: Text(AppLocalizations.of(context)!.mapTitle),
+  leading: IconButton(
+icon: Icon(
+  Directionality.of(context) == TextDirection.rtl
+      ? Icons.arrow_back_ios
+      : Icons.arrow_back,
+),
+    onPressed: () {
+      Navigator.pop(context);
+    },
+  ),
+  title: Text(AppLocalizations.of(context)!.mapTitle),
 actions: [
   // 🔍 زر البحث
 if (!_isSearching)
@@ -814,8 +835,6 @@ if (!_isSearching)
   
 ),
 
-      drawer: CustomDrawer(
-          themeNotifier: widget.themeNotifier,), // ⬅️ هذا السطر المهم
 
 body: Stack(
   children: [
@@ -896,13 +915,12 @@ Column(
                   _stopLiveTracking();
                 }
               },
-onTap: widget.enableTap
+onTap: (!_manualTripActive && !_isTracking && widget.enableTap)
     ? (tapPosition, point) async {
         _destination = point;
         _error = null;
         _showTip = false;
 
-        // 🔍 حاول نلاقي المكان في Firestore
         final found = await _findPlaceByCoordinates(point, context);
 
         setState(() {
@@ -924,7 +942,18 @@ onTap: widget.enableTap
 
         _getRoute(point);
       }
-    : null,
+
+      : (tapPosition, point) {
+    if (_manualTripActive) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("🚫 أوقف الرحلة لتتمكن من تحديد موقع جديد")),
+      );
+    } else if (_isTracking) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("📍 أوقف التتبع لتتمكن من تحديد موقع جديد")),
+      );
+    }
+  },
             ),
             children: [
 fm.TileLayer(
@@ -1029,19 +1058,6 @@ onTap: () async {
           ),
         ),
       ),
-          // ✅ ماركر الحاجز القادم من صفحة CheckpointsPage
-    if (widget.targetLat != null && widget.targetLon != null)
-      fm.Marker(
-        width: 60,
-        height: 60,
-        point: latlng.LatLng(widget.targetLat!, widget.targetLon!),
-        child: const Icon(
-          Icons.shield, // رمز حاجز
-          color: Colors.red,
-          size: 40,
-        ),
-      ),
-
   ],
 ),
 
@@ -1174,6 +1190,7 @@ if (_selectedPlace != null && _selectedPlace!['name'] != null) ...[
             themeNotifier: widget.themeNotifier,
             isFavorite: _selectedPlace!["id"] != null &&
                 _favoritePlaces.contains(_selectedPlace!["id"]),
+                isTripActive: _manualTripActive,
             onFavoriteToggle: _selectedPlace!["id"] == null
                 ? null
                 : () async {
@@ -1219,28 +1236,46 @@ if (_selectedPlace != null && _selectedPlace!['name'] != null) ...[
               await _getRoute(_destination!);
               _mapController.move(_destination!, 15.5);
             },
-            onStart: () async {
-              final lat = (_selectedPlace!['latitude'] as num?)?.toDouble();
-              final lng = (_selectedPlace!['longitude'] as num?)?.toDouble();
-              if (lat == null || lng == null) return;
+onStart: () async {
+  final lat = (_selectedPlace!['latitude'] as num?)?.toDouble();
+  final lng = (_selectedPlace!['longitude'] as num?)?.toDouble();
+  if (lat == null || lng == null) return;
 
-              setState(() {
-                _destination = latlng.LatLng(lat, lng);
-                _isTracking = true;
-                _showTip = false;
-              });
+  // إذا الرحلة شغّالة = أوقفها
+  if (_manualTripActive) {
+    _stopLiveTracking();
+    setState(() {
+      _manualTripActive = false;
+      _destination = null;
+      routePoints = [];
+      _selectedPlace = null;
+    });
 
-              _startLiveTracking();
-              await _getRoute(_destination!);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("🛑 تم إيقاف الرحلة")),
+    );
+    return;
+  }
 
-              if (_currentLocation != null) {
-                _mapController.move(_currentLocation!, 17);
-              }
+  // إذا لسه بدها تبدأ
+  setState(() {
+    _destination = latlng.LatLng(lat, lng);
+    _isTracking = true;
+    _manualTripActive = true;
+  });
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(AppLocalizations.of(context)!.tripStarted)),
-              );
-            },
+  _startLiveTracking();
+  await _getRoute(_destination!);
+
+  if (_currentLocation != null) {
+    _mapController.move(_currentLocation!, 17);
+  }
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("🚶‍♂️ تم بدء الرحلة")),
+  );
+},
+          
           ),
 
         // ✅ زر الإغلاق للبطاقة
@@ -1248,7 +1283,18 @@ if (_selectedPlace != null && _selectedPlace!['name'] != null) ...[
           top: -14,
           right: -10,
           child: GestureDetector(
-            onTap: () => setState(() => _selectedPlace = null),
+           onTap: () {
+  setState(() {
+    if (_manualTripActive) {
+      _stopLiveTracking();
+      _manualTripActive = false;
+      _destination = null;
+      routePoints = [];
+    }
+    _selectedPlace = null;
+  });
+},
+
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,

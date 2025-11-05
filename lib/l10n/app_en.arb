@@ -287,6 +287,9 @@
   "closed": "Closed",
   "submit": "Submit",
 "add": "Add",
-"added": "Added"
+"added": "Added",
+"stop": "Stop",
+"stopDescription": "Stop navigation"
+
 
 }

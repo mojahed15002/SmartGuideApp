@@ -851,4 +851,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get added => 'تمت الإضافة';
+
+  @override
+  String get stop => 'إيقاف';
+
+  @override
+  String get stopDescription => 'إيقاف الرحلة';
 }

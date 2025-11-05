@@ -1765,6 +1765,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Added'**
   String get added;
+
+  /// No description provided for @stop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get stop;
+
+  /// No description provided for @stopDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop navigation'**
+  String get stopDescription;
 }
 
 class _AppLocalizationsDelegate

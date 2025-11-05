@@ -49,19 +49,27 @@ if (!doc.exists) {
 
     // 1️⃣ احفظ بلاغ المستخدم
     try {
-      // هل المستخدم بلغ من قبل؟
-      final existing = await docRef
-          .collection("reports")
-          .where("userId", isEqualTo: uid)
-          .get();
+// ✅ check if user reported within last 5 minutes
+final existing = await docRef
+    .collection("reports")
+    .where("userId", isEqualTo: uid)
+    .orderBy("time", descending: true)
+    .limit(1)
+    .get();
 
-      if (existing.docs.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("❗ لقد قمت بالإبلاغ بالفعل")),
-        );
-        setState(() => _loading = false);
-        return;
-      }
+if (existing.docs.isNotEmpty) {
+  final lastTime = (existing.docs.first["time"] as Timestamp).toDate();
+  final diff = DateTime.now().difference(lastTime);
+
+  if (diff.inMinutes < 5) {
+    final remaining = 5 - diff.inMinutes;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("⏳ يمكنك الإبلاغ مرة أخرى بعد $remaining دقيقة")),
+    );
+    setState(() => _loading = false);
+    return;
+  }
+}
 
       // إضافة البلاغ
       await docRef.collection("reports").add({
@@ -74,44 +82,11 @@ await docRef.set({
   "lastReportAt": DateTime.now(),
 }, SetOptions(merge: true));
 
-      // 2️⃣ حساب الأصوات لكل حالة
-      final reportsSnap = await docRef.collection("reports").get();
-
-      int openCount = 0;
-      int busyCount = 0;
-      int closedCount = 0;
-
-      for (var r in reportsSnap.docs) {
-        final s = r['status'];
-        if (s == "open") openCount++;
-        if (s == "busy") busyCount++;
-        if (s == "closed") closedCount++;
-      }
-
-// 3️⃣ تحديد الحالة حسب الأغلبية (بدون افتراض مسبق)
-String newStatus = "unknown";
-int highest = 0;
-
-if (openCount >= highest) {
-  highest = openCount;
-  newStatus = "open";
-}
-if (busyCount > highest) {
-  highest = busyCount;
-  newStatus = "busy";
-}
-if (closedCount > highest) {
-  highest = closedCount;
-  newStatus = "closed";
-}
-
-// شرط: إذا أقل من 3 بلاغات لنفس الحالة → لا نعتمدها
-if (highest >= 3) {
-  await docRef.set({
-    "status": newStatus,
-    "statusUpdatedAt": DateTime.now(),
-  }, SetOptions(merge: true));
-}
+// ✅ اعتماد الحالة مباشرة من أول بلاغ
+await docRef.set({
+  "status": selectedStatus,
+  "statusUpdatedAt": DateTime.now(),
+}, SetOptions(merge: true));
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("✅ تم إرسال التبليغ")),
