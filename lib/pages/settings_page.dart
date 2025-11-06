@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme_notifier.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/gen/app_localizations.dart';
-
+import 'main_navigation.dart';
 class SettingsPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
   const SettingsPage({super.key, required this.themeNotifier});
@@ -104,7 +104,21 @@ Future<void> _changeLanguage(String langCode) async {
     final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(loc.settings), centerTitle: true),
+      appBar: AppBar(title: Text(loc.settings), centerTitle: true,
+      leading: Builder(
+  builder: (context) => IconButton(
+    icon: const Icon(Icons.menu, color: Colors.black),
+    onPressed: () {
+      context
+          .findAncestorStateOfType<MainNavigationState>()
+          ?.scaffoldKey
+          .currentState
+          ?.openDrawer();
+    },
+  ),
+),
+      ),
+      
       body: ListView(
         children: [
           const SizedBox(height: 10),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme_notifier.dart';
 import 'nearby_places_list_page.dart';
-import 'custom_drawer.dart';
+import 'main_navigation.dart';
 
 // ✅ إضافة ملف الترجمة
 import '../l10n/gen/app_localizations.dart';
@@ -53,10 +53,21 @@ class NearMePage extends StatelessWidget {
     return Directionality(
       textDirection: direction,
       child: Scaffold(
-        appBar: AppBar(title: Text(AppLocalizations.of(context)!.nearMe)),
-        drawer: CustomDrawer(
-          themeNotifier: themeNotifier,
-        ), // ⬅️ هذا السطر المهم
+        appBar: AppBar(title: Text(AppLocalizations.of(context)!.nearMe),
+          leading: Builder(
+  builder: (context) => IconButton(
+    icon: const Icon(Icons.menu, color: Colors.black),
+    onPressed: () {
+      context
+          .findAncestorStateOfType<MainNavigationState>()
+          ?.scaffoldKey
+          .currentState
+          ?.openDrawer();
+    },
+  ),
+),
+        ),
+        
         body: GridView.count(
           crossAxisCount: 2,
           padding: const EdgeInsets.all(12),

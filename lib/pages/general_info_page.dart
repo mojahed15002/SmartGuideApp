@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme_notifier.dart';
 import 'city_places_page.dart';
-import 'custom_drawer.dart';
+
 import '../l10n/gen/app_localizations.dart'; // ✅ الترجمة
 
 class GeneralInfoPage extends StatelessWidget {
@@ -19,7 +19,7 @@ class GeneralInfoPage extends StatelessWidget {
       textDirection: direction,
       child: Scaffold(
         appBar: AppBar(title: Text(loc.citiesTitle)),
-        drawer: CustomDrawer(themeNotifier: themeNotifier),
+       
 
         body: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance.collection('cities').snapshots(),

@@ -10,7 +10,6 @@ import 'package:firebase_auth/firebase_auth.dart'; // ✅ جديد
 import 'dart:convert';
 import 'dart:async';
 import 'package:geocoding/geocoding.dart';
-import 'custom_drawer.dart';
 import '../l10n/gen/app_localizations.dart';
 import 'place_details_page.dart';
 import 'ar_direction_page.dart';
@@ -534,70 +533,85 @@ actions: [
       }
     }
   }
+//==============================================================================
+// ✅ حفظ الرحلة داخل Firestore (نسخة كاملة ومحدثة)
+Future<void> _saveTripLogToFirebase() async {
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || _destination == null) return;
 
-  // ✅ حفظ الرحلة داخل Firestore
-  Future<void> _saveTripLogToFirebase() async {
+    // 🔹 نحاول نحصل على اسم المكان من الإحداثيات
+    String placeName = AppLocalizations.of(context)!.unknownLocation;
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null || _destination == null) return;
-
-      // 🔹 نحاول نحصل على اسم المكان من الإحداثيات
-String placeName = AppLocalizations.of(context)!.unknownLocation;
-      try {
-        final placemarks = await placemarkFromCoordinates(
-          _destination!.latitude,
-          _destination!.longitude,
-        );
-        if (placemarks.isNotEmpty) {
-          final p = placemarks.first;
-          placeName = [
-            p.locality,
-            p.subLocality,
-            p.administrativeArea,
-            p.street
-          ].where((e) => e != null && e.isNotEmpty).join(' - ');
-        }
-      } catch (e) {
-        debugPrint("⚠️ فشل في تحديد اسم المكان: $e");
-      }
-
-      // ✅ تجهيز بيانات البداية والمسار
-      final startLatLng = _currentLocation ??
-          latlng.LatLng(widget.position.latitude, widget.position.longitude);
-
-      // نحول نقاط المسار إلى List<Map<String,double>>
-      final pathList = routePoints
-          .map((p) => {
-                'latitude': p.latitude,
-                'longitude': p.longitude,
-              })
-          .toList();
-
-      // 🔹 حفظ السجل في Firestore (إضافة start و path)
-      await FirebaseFirestore.instance.collection('travel_logs').add({
-        'user_id': user.uid,
-        'start': {
-          'latitude': startLatLng.latitude,
-          'longitude': startLatLng.longitude,
-        },
-        'destination': {
-          'latitude': _destination!.latitude,
-          'longitude': _destination!.longitude,
-        },
-        'path': pathList,
-        'place_name': placeName,
-        'time': DateTime.now().toIso8601String(),
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("✅ تم حفظ الرحلة في السجلات")),
-        );
+      final placemarks = await placemarkFromCoordinates(
+        _destination!.latitude,
+        _destination!.longitude,
+      );
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        placeName = [
+          p.locality,
+          p.subLocality,
+          p.administrativeArea,
+          p.street
+        ].where((e) => e != null && e.isNotEmpty).join(' - ');
       }
     } catch (e) {
-      debugPrint("⚠️ فشل حفظ السجل: $e");
+      debugPrint("⚠️ فشل في تحديد اسم المكان: $e");
+    }
+
+    // ✅ تجهيز بيانات البداية والمسار
+    final startLatLng = _currentLocation ??
+        latlng.LatLng(widget.position.latitude, widget.position.longitude);
+
+    // نحول نقاط المسار إلى List<Map<String,double>>
+    final pathList = routePoints
+        .map((p) => {
+              'latitude': p.latitude,
+              'longitude': p.longitude,
+            })
+        .toList();
+
+    // 🔹 حساب المسافة الكلية (إذا غير موجودة من OSRM)
+    double distanceM = _summaryDistanceMeters ??
+        distance(startLatLng, _destination!);
+
+    // 🔹 حساب الوقت الكلي (إذا غير موجود من OSRM)
+    double durationS = _summaryDurationSeconds ?? 0;
+
+    // ✅ حفظ السجل في Firestore (بصيغة تدعم الإحصائيات والوجهة الأخيرة)
+    await FirebaseFirestore.instance.collection('travel_logs').add({
+      'user_id': user.uid,
+      'place_name': placeName,
+      'distance_m': distanceM,
+      'duration_s': durationS,
+      'start': {
+        'latitude': startLatLng.latitude,
+        'longitude': startLatLng.longitude,
+      },
+      'destination': {
+        'latitude': _destination!.latitude,
+        'longitude': _destination!.longitude,
+      },
+      'path': pathList,
+      'time': FieldValue.serverTimestamp(), // ✅ هذا أدق
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("✅ تم حفظ الرحلة في السجلات")),
+      );
+    }
+  } catch (e) {
+    debugPrint("⚠️ فشل حفظ السجل: $e");
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("⚠️ فشل حفظ الرحلة: $e")),
+      );
     }
   }
+}
+//==============================================================================
 
 
   void _stopLiveTracking() {

@@ -5,8 +5,7 @@ import 'place_details_page.dart';
 import '../places_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'custom_drawer.dart';
-
+import 'main_navigation.dart';
 // ✅ إضافة ملف الترجمة
 import '../l10n/gen/app_localizations.dart';
 
@@ -110,10 +109,19 @@ class _FavoritesPageState extends State<FavoritesPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(AppLocalizations.of(context)!.favoritesTitle),
+          leading: Builder(
+  builder: (context) => IconButton(
+    icon: const Icon(Icons.menu, color: Colors.black),
+    onPressed: () {
+      context
+          .findAncestorStateOfType<MainNavigationState>()
+          ?.scaffoldKey
+          .currentState
+          ?.openDrawer();
+    },
+  ),
+),
         ),
-        drawer: CustomDrawer(
-          themeNotifier: themeNotifier,
-        ), // ⬅️ هذا السطر المهم
         body: favoritePlaces.isEmpty
             ? Center(
                 child: Text(

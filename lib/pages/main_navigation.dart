@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import '../theme_notifier.dart';
 import 'bottom_nav_bar.dart';
@@ -9,19 +10,18 @@ import 'choice_page.dart';
 import 'custom_drawer.dart';
 import 'near_me_page.dart';
 
-
 class MainNavigation extends StatefulWidget {
   final ThemeNotifier themeNotifier;
 
   const MainNavigation({super.key, required this.themeNotifier});
 
   @override
-  State<MainNavigation> createState() => _MainNavigationState();
+  State<MainNavigation> createState() => MainNavigationState();
 }
 
-class _MainNavigationState extends State<MainNavigation> {
+class MainNavigationState extends State<MainNavigation> {
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>(); // ✅ مفتاح للتحكم بالـ Drawer
   int _currentIndex = 0;
-
   Position? _initialPosition;
   String? _locError;
 
@@ -31,25 +31,24 @@ class _MainNavigationState extends State<MainNavigation> {
     _loadInitialPosition();
   }
 
-void _onDrawerItemSelected(String item) {
-  Navigator.pop(context); // لإغلاق القائمة الجانبية
+  void _onDrawerItemSelected(String item) {
+    Navigator.pop(context); // يغلق القائمة الجانبية
 
-  switch (item) {
-    case 'home':
-      setState(() => _currentIndex = 0);
-      break;
-    case 'near_me':
-      setState(() => _currentIndex = 1);
-      break;
-    case 'favorites':
-      setState(() => _currentIndex = 2);
-      break;
+    switch (item) {
+      case 'home':
+        setState(() => _currentIndex = 0);
+        break;
+      case 'near_me':
+        setState(() => _currentIndex = 1);
+        break;
+      case 'favorites':
+        setState(() => _currentIndex = 2);
+        break;
+    }
   }
-}
 
   Future<void> _loadInitialPosition() async {
     try {
-      // طلب الإذن
       LocationPermission perm = await Geolocator.checkPermission();
       if (perm == LocationPermission.denied ||
           perm == LocationPermission.deniedForever) {
@@ -77,69 +76,68 @@ void _onDrawerItemSelected(String item) {
     }
   }
 
- Widget _buildBody() {
-  switch (_currentIndex) {
-    case 0:
-      return ChoicePage(themeNotifier: widget.themeNotifier); // 🏠 الرئيسية
-
-    case 1:
-      return FavoritesPage(themeNotifier: widget.themeNotifier); // ❤️ المفضلة
-
-    case 2:
-      return NearMePage(themeNotifier: widget.themeNotifier); // 📍 القريبة مني
-
-    case 3:
-      return ProfilePage(themeNotifier: widget.themeNotifier); // 👤 الملف الشخصي
-
-    default:
-      return const SizedBox.shrink();
+  // ✅ محتوى التبويبات
+  Widget _buildBody() {
+    switch (_currentIndex) {
+      case 0:
+        return ChoicePage(themeNotifier: widget.themeNotifier);
+      case 1:
+        return FavoritesPage(themeNotifier: widget.themeNotifier);
+      case 2:
+        return NearMePage(themeNotifier: widget.themeNotifier);
+      case 3:
+        return ProfilePage(themeNotifier: widget.themeNotifier);
+      default:
+        return const SizedBox.shrink();
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: scaffoldKey, // ✅ نربط المفتاح هنا
       drawer: CustomDrawer(
-    themeNotifier: widget.themeNotifier,
-    onItemSelected: _onDrawerItemSelected, // ⬅️ استدعاء دالة عند اختيار عنصر من القائمة
-  ),
+        themeNotifier: widget.themeNotifier,
+        onTabSelected: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+      ),
       body: _buildBody(),
 
-floatingActionButton: FloatingActionButton(
-  backgroundColor: Colors.deepOrangeAccent,
-  elevation: 8,
-  shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(20),
-  ),
-  onPressed: () {
-    if (_initialPosition != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MapPage(
-            position: _initialPosition!,
-            themeNotifier: widget.themeNotifier,
-            enableLiveTracking: true,
-          ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.deepOrangeAccent,
+        elevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('لم يتم تحديد موقعك بعد!'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    }
-  },
-  child: const Icon(Icons.map, color: Colors.white, size: 28),
-),
+        onPressed: () {
+          if (_initialPosition != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MapPage(
+                  position: _initialPosition!,
+                  themeNotifier: widget.themeNotifier,
+                  enableLiveTracking: true,
+                ),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('لم يتم تحديد موقعك بعد!'),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+          }
+        },
+        child: const Icon(Icons.map, color: Colors.white, size: 28),
+      ),
 
-floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-
-      // 🔹 الشريط السفلي
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),

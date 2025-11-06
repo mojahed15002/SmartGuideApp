@@ -12,7 +12,8 @@ import 'map_page.dart';
 import 'martyrs_roundabout_page.dart';
 import 'palestine_street_page.dart';
 import 'sofian_street_page.dart';
-import 'custom_drawer.dart';
+import 'main_navigation.dart';
+
 
 // ✅ إضافة ملف الترجمة
 import '../l10n/gen/app_localizations.dart';
@@ -51,13 +52,23 @@ class _ChoicePageState extends State<ChoicePage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(AppLocalizations.of(context)!.chooseLocation),
+          leading: Builder(
+  builder: (context) => IconButton(
+    icon: const Icon(Icons.menu, color: Colors.black),
+    onPressed: () {
+      context
+          .findAncestorStateOfType<MainNavigationState>()
+          ?.scaffoldKey
+          .currentState
+          ?.openDrawer();
+    },
+  ),
+),
+
           actions: [
             // ✅ زر التبديل
           ],
         ),
-        drawer: CustomDrawer(
-          themeNotifier: widget.themeNotifier,
-        ), // ⬅️ هذا السطر المهم
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Padding(
           padding: const EdgeInsets.all(20.0),

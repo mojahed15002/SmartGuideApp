@@ -5,8 +5,7 @@ import '../theme_notifier.dart';
 import 'package:latlong2/latlong.dart' as latlng;
 import 'map_page.dart';
 import 'package:geolocator/geolocator.dart';
-import 'custom_drawer.dart';
-
+import 'main_navigation.dart';
 // ✅ إضافة ملف الترجمة
 import '../l10n/gen/app_localizations.dart';
 
@@ -342,6 +341,18 @@ class _LogsPageState extends State<LogsPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(AppLocalizations.of(context)!.travelLogsTitle),
+          leading: Builder(
+  builder: (context) => IconButton(
+    icon: const Icon(Icons.menu, color: Colors.black),
+    onPressed: () {
+      context
+          .findAncestorStateOfType<MainNavigationState>()
+          ?.scaffoldKey
+          .currentState
+          ?.openDrawer();
+    },
+  ),
+),
           actions: [
             IconButton(
               icon: const Icon(Icons.delete_forever),
@@ -350,7 +361,7 @@ class _LogsPageState extends State<LogsPage> {
             ),
           ],
         ),
-        drawer: CustomDrawer(themeNotifier: widget.themeNotifier),
+       
         body: StreamBuilder<QuerySnapshot>(
           stream: _firestore
               .collection('travel_logs')

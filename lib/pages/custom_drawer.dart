@@ -1,215 +1,293 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../theme_notifier.dart';
-import '../l10n/gen/app_localizations.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_1/pages/logs_page.dart';
+import 'package:flutter_application_1/sign_in_panel.dart';
+
+import 'profile_page.dart';
+import 'settings_page.dart';
+import '../sign_in_panel.dart';
 import 'checkpoints_page.dart';
+import '../theme_notifier.dart';
+import '../auth_service.dart';
+import 'logs_page.dart';
 
 class CustomDrawer extends StatelessWidget {
   final ThemeNotifier themeNotifier;
-  final void Function(String)? onItemSelected;
+  final Function(int) onTabSelected;
 
   const CustomDrawer({
     super.key,
     required this.themeNotifier,
-    this.onItemSelected,
+    required this.onTabSelected,
   });
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final isDark = themeNotifier.isDarkMode;
-    final loc = AppLocalizations.of(context)!;
 
-    return Drawer(
-      child: Column(
-        children: [
-            // 🟢 رأس المستخدم - صار الآن قابل للنقر لفتح صفحة البروفايل
-          GestureDetector(
-            onTap: () {
-              Navigator.pop(context); // يغلق الـ Drawer أولاً
-              if (onItemSelected != null) {
-                onItemSelected!("profile"); // يرسل إشارة إلى MainNavigation
-              } else {
-                // احتياطًا، في حال تم استخدام Drawer خارج MainNavigation
-                Navigator.pushNamed(context, '/profile');
-              }
-            },
-          
-
-          child: UserAccountsDrawerHeader(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.orange, Colors.deepOrange.shade400],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            accountName: Text(
-              user?.displayName ?? loc.defaultUser,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            accountEmail: Text(user?.email ?? loc.emailNotAvailable),
-            currentAccountPicture: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(
-                Icons.person,
-                color: Colors.orange.shade700,
-                size: 40,
-              ),
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Drawer(
+        elevation: 10,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.horizontal(left: Radius.circular(24)),
+        ),
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFFF9800), Color(0xFFFF5722)],
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
             ),
           ),
-          ),
-          // الصفحة الرئيسية
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: Text(loc.home),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/home');
-            },
-          ),
-
-          // القريبة مني
-          ListTile(
-            leading: const Icon(Icons.location_on),
-            title: Text(loc.nearMe),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/near_me');
-            },
-          ),
-
-          // المفضلة
-          ListTile(
-            leading: const Icon(Icons.favorite),
-            title: Text(loc.favorites),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/favorites');
-            },
-          ),
-
-          // السجلات
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: Text(loc.travelLogs),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/logs');
-            },
-          ),
-
-          const Divider(),
-
-          // الحواجز
-ListTile(
-  leading: Icon(Icons.shield, color: Colors.orange),
-  title: Text("الحواجز"),
-  onTap: () {
-    Navigator.push(context, MaterialPageRoute(
-      builder: (_) => CheckpointsPage(
-        themeNotifier: themeNotifier,
-      ),
-    ));
-  },
-),
-
-          // 🌙 الوضع الليلي (زر القمر)
-          SwitchListTile(
-            secondary: const Icon(Icons.dark_mode),
-            title: Text(loc.darkMode),
-            value: isDark,
-            onChanged: (val) async {
-              Navigator.pop(context); // ✅ أولاً أغلق الـ Drawer
-
-              // ✅ بعد الإغلاق، بدّل الثيم بأمان داخل Future.microtask
-              Future.microtask(() async {
-                try {
-                  themeNotifier.setTheme(val);
-
-                  // 🟢 تحديث Firestore لجميع المستخدمين (بما فيهم الضيوف)
-                  final user = FirebaseAuth.instance.currentUser;
-                  if (user != null) {
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(user.uid)
-                        .set(
-                      {'theme': val ? 'dark' : 'light'},
-                      SetOptions(merge: true),
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ====== رأس المستخدم ======
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            ProfilePage(themeNotifier: themeNotifier),
+                      ),
                     );
-                  }
-                } catch (e) {
-                  debugPrint("⚠️ خطأ أثناء تبديل الثيم من الـ Drawer: $e");
-                }
-              });
-            },
-          ),
-
-          const Spacer(),
-
-          // ⚙️ الإعدادات
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: Text(loc.settings),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/settings');
-            },
-          ),
-
-          const Divider(),
-
-          // 🔐 تسجيل الخروج
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.logout),
-              label: Text(loc.logout),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                minimumSize: const Size(double.infinity, 48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text(loc.logoutConfirmTitle,
-                        textAlign: TextAlign.right),
-                    content: Text(loc.logoutConfirmMessage,
-                        textAlign: TextAlign.right),
-                    actionsAlignment: MainAxisAlignment.spaceBetween,
-                    actions: [
-                      TextButton(
-                        child: Text(loc.cancel),
-                        onPressed: () => Navigator.pop(context, false),
-                      ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                        ),
-                        child: Text(loc.confirmLogout),
-                        onPressed: () => Navigator.pop(context, true),
-                      ),
-                    ],
+                  },
+                  child: UserAccountsDrawerHeader(
+                    decoration: const BoxDecoration(color: Colors.transparent),
+                    currentAccountPicture: CircleAvatar(
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.person,
+                          size: 40, color: Colors.orange.shade700),
+                    ),
+                    accountName: user?.displayName != null &&
+                            user!.displayName!.isNotEmpty
+                        ? Text(
+                            user.displayName!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                    accountEmail: Text(
+                      user?.email ?? "",
+                      style: const TextStyle(color: Colors.white70),
+                    ),
                   ),
-                );
+                ),
 
-                if (confirm == true) {
-                  await FirebaseAuth.instance.signOut();
-                  if (context.mounted) {
-                    Navigator.pushReplacementNamed(context, '/login');
-                  }
-                }
-              },
+                // ====== عناصر التنقل ======
+                _buildDrawerItem(
+                  icon: Icons.home,
+                  text: 'الصفحة الرئيسية',
+                  onTap: () {
+                    Navigator.pop(context);
+                    onTabSelected(0);
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.place,
+                  text: 'القريبة مني',
+                  onTap: () {
+                    Navigator.pop(context);
+                    onTabSelected(1);
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.favorite,
+                  text: 'المفضلة',
+                  onTap: () {
+                    Navigator.pop(context);
+                    onTabSelected(2);
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.history,
+                  text: 'سجل الرحلات',
+                  onTap: () {
+                    Navigator.pop(context);
+                   Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            LogsPage(themeNotifier: themeNotifier),
+                      ),
+                    ); 
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: Icons.shield,
+                  text: 'الحواجز',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            CheckpointsPage(themeNotifier: themeNotifier),
+                      ),
+                    );
+                  },
+                ),
+
+                const Divider(color: Colors.white70, thickness: 1, height: 25),
+
+                // ====== الوضع الداكن ======
+                SwitchListTile(
+                  title: const Text(
+                    'الوضع الداكن',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                  secondary: const Icon(Icons.dark_mode, color: Colors.white),
+                  value: themeNotifier.isDarkMode,
+                  onChanged: (val) => themeNotifier.toggleTheme(),
+                ),
+
+                // ====== الإعدادات ======
+                _buildDrawerItem(
+                  icon: Icons.settings,
+                  text: 'الإعدادات',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            SettingsPage(themeNotifier: themeNotifier),
+                      ),
+                    );
+                  },
+                ),
+
+                const Spacer(),
+
+                // ====== زر تسجيل الخروج ======
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      minimumSize: const Size.fromHeight(45),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.logout, color: Colors.white),
+                    label: const Text(
+                      'تسجيل الخروج',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    onPressed: () async {
+                      final confirm = await showGeneralDialog<bool>(
+                        context: context,
+                        barrierDismissible: true,
+                        barrierLabel: '',
+                        barrierColor: Colors.black54,
+                        transitionDuration:
+                            const Duration(milliseconds: 250), // مدة الأنيميشن
+                        pageBuilder: (context, _, __) => const SizedBox.shrink(),
+                        transitionBuilder:
+                            (context, animation, secondaryAnimation, child) {
+                          return ScaleTransition(
+                            scale: CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOutBack,
+                            ),
+                            child: FadeTransition(
+                              opacity: animation,
+                              child: AlertDialog(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(16),
+                                  ),
+                                ),
+                                title: Row(
+                                  children: [
+                                    Icon(Icons.warning_amber_rounded,
+                                        color: Colors.orange, size: 30),
+                                    SizedBox(width: 8),
+                                    Text('تأكيد تسجيل الخروج'),
+                                  ],
+                                ),
+                                content: Text(
+                                  'هل أنت متأكد من تسجيل الخروج؟\n'
+                                  'في حال تسجيل الخروج ستبقى بياناتك محفوظة.',
+                                  textAlign: TextAlign.center,
+                                ),
+                                actionsAlignment: MainAxisAlignment.center,
+                                actions: [
+                                  TextButton(
+                                    child: Text(
+                                      'إلغاء',
+                                      style:
+                                          TextStyle(color: Colors.grey.shade700),
+                                    ),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(false),
+                                  ),
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.redAccent,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 18, vertical: 10),
+                                    ),
+                                    icon: const Icon(Icons.logout, size: 18),
+                                    label: const Text('تأكيد'),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(true),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+
+                      if (confirm == true) {
+                        await AuthService().signOut();
+                        if (context.mounted) {
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  SignInPanel(themeNotifier: themeNotifier),
+                            ),
+                            (route) => false,
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
-          const Spacer(),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String text,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white),
+      title: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      onTap: onTap,
     );
   }
 }

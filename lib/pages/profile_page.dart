@@ -6,14 +6,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import '../theme_notifier.dart';
 import '../l10n/gen/app_localizations.dart';
-import 'custom_drawer.dart';
 // صفحات مساعدة اختيارية (بدّل المسارات إذا لزم)
 import 'forgot_password_page.dart'; // لتغيير/استعادة كلمة المرور
 import '../sign_in_panel.dart';        // للعودة بعد تسجيل الخروج
 import 'edit_profile_page.dart';
-import 'current_city_page.dart';    // لعرض معلومات عن المدينة الحالية
-import 'last_destination_page.dart';
-import 'total_distance_page.dart';
+import 'main_navigation.dart';
 
 class ProfilePage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -579,6 +576,78 @@ Future<void> _signOut() async {
     );
   }
 
+void _showInfoDialog({
+  required String title,
+  required String message,
+  required IconData icon,
+}) {
+  final isDark = widget.themeNotifier.isDarkMode;
+
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: '',
+    transitionDuration: const Duration(milliseconds: 250), // مدة التأثير
+    pageBuilder: (context, anim1, anim2) {
+      return const SizedBox.shrink(); // ضروري حتى يشتغل الـtransitionBuilder
+    },
+    transitionBuilder: (context, animation, _, __) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutBack, // منحنى الحركة
+      );
+
+      return Opacity(
+        opacity: animation.value,
+        child: Transform.scale(
+          scale: 0.9 + (0.1 * curved.value), // يبدأ صغير شوي ويكبر
+          child: AlertDialog(
+            backgroundColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Icon(icon, color: Colors.orange, size: 28),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.orangeAccent : Colors.deepOrange,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              message,
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black87,
+                height: 1.5,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  "إغلاق",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -590,9 +659,20 @@ Future<void> _signOut() async {
       child: Scaffold(
         appBar: AppBar(
           title: Text(loc.profile),
-          
+        leading: Builder(
+  builder: (context) => IconButton(
+    icon: const Icon(Icons.menu, color: Colors.black),
+    onPressed: () {
+      context
+          .findAncestorStateOfType<MainNavigationState>()
+          ?.scaffoldKey
+          .currentState
+          ?.openDrawer();
+    },
+  ),
+),
         ),
-        drawer: CustomDrawer(themeNotifier: widget.themeNotifier),
+       
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
@@ -685,92 +765,105 @@ Future<void> _signOut() async {
                     const Divider(thickness: 1),
 
                     // ————— إحصائيات التطبيق
-                    _sectionTitle(loc.tripStats),
-                    _cardTile(
-                      icon: Icons.favorite,
-                      title: loc.favoritesTitle,
-                      subtitle: '$favoritesCount ${loc.places}',
-                    ),
-                    _cardTile(
-                      icon: Icons.map_outlined,
-                      title: loc.tripsCount,
-                      subtitle: '$travelCount ${loc.tripsDone}',
-                    ),
-                    _cardTile(
+                    // ————— إحصائيات التطبيق
+_sectionTitle(loc.tripStats),
+
+_cardTile(
+  icon: Icons.favorite,
+  title: loc.favoritesTitle,
+  subtitle: '$favoritesCount ${loc.places}',
+  onTap: () {
+    _showInfoDialog(
+      title: loc.favoritesTitle,
+      message: favoritesCount > 0
+          ? "لقد أضفت $favoritesCount ${loc.places} إلى المفضلة ❤️"
+          : "لم تضف أي أماكن إلى المفضلة بعد.",
+      icon: Icons.favorite,
+    );
+  },
+),
+
+_cardTile(
+  icon: Icons.map_outlined,
+  title: loc.tripsCount,
+  subtitle: '$travelCount ${loc.tripsDone}',
+  onTap: () {
+    _showInfoDialog(
+      title: loc.tripsCount,
+      message: travelCount > 0
+          ? "لقد قمت بـ $travelCount رحلة مسجلة 🚗"
+          : "لم تقم بأي رحلات بعد.",
+      icon: Icons.map_outlined,
+    );
+  },
+),
+
+_cardTile(
   icon: Icons.place,
   title: loc.lastDestination,
   subtitle: lastDestination ?? loc.noData,
   onTap: () {
-    if (lastDestination != null && lastDestination != '—' && lastDestination!.trim().isNotEmpty) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => LastDestinationPage(
-            destinationName: lastDestination!,
-            themeNotifier: widget.themeNotifier,
-          ),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("لا يوجد وجهة أخيرة بعد 👣"),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
+    final msg = (lastDestination != null &&
+            lastDestination!.trim().isNotEmpty &&
+            lastDestination != '—')
+        ? "وجهتك الأخيرة كانت: $lastDestination 🏙️"
+        : "لا توجد وجهة أخيرة بعد 👣";
+    _showInfoDialog(
+      title: loc.lastDestination,
+      message: msg,
+      icon: Icons.place,
+    );
   },
 ),
 
-                   _cardTile(
+_cardTile(
   icon: Icons.route,
   title: loc.totalDistance,
   subtitle: _formatDistance(totalDistanceM),
   onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => TotalDistancePage(
-          themeNotifier: widget.themeNotifier,
-        ),
-      ),
+    _showInfoDialog(
+      title: loc.totalDistance,
+      message: totalDistanceM > 0
+          ? "إجمالي المسافة التي قطعتها: ${_formatDistance(totalDistanceM)} 🛣️"
+          : "لم يتم تسجيل أي مسافة بعد.",
+      icon: Icons.route,
     );
   },
 ),
 
+_cardTile(
+  icon: Icons.timer_outlined,
+  title: loc.totalTime,
+  subtitle: _formatDuration(totalDurationS),
+  onTap: () {
+    _showInfoDialog(
+      title: loc.totalTime,
+      message: totalDurationS > 0
+          ? "المدة الإجمالية لجميع رحلاتك: ${_formatDuration(totalDurationS)} ⏱️"
+          : "لم يتم تسجيل أي وقت بعد.",
+      icon: Icons.timer_outlined,
+    );
+  },
+),
 
-                    _cardTile(
-                      icon: Icons.timer_outlined,
-                      title: loc.totalTime,
-                      subtitle: _formatDuration(totalDurationS),
-                    ),
-                   _cardTile(
+_cardTile(
   icon: Icons.location_city,
   title: loc.currentCity,
   subtitle: (currentCity != null && currentCity!.trim().isNotEmpty)
-      ? currentCity!                // ✅ يعرض اسم المدينة
-      : 'جارِ تحديد المدينة...',   // ✅ نص مؤقت بدل الشحطة
+      ? currentCity!
+      : "جارِ تحديد المدينة...",
   onTap: () {
     final city = (currentCity != null && currentCity!.trim().isNotEmpty)
         ? currentCity!
-        : 'جارِ تحديد المدينة...'; // ✅ نفس النص الاحتياطي
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CurrentCityPage(
-          cityName: city,
-          themeNotifier: widget.themeNotifier,
-        ),
-      ),
+        : "جارِ تحديد المدينة...";
+    _showInfoDialog(
+      title: loc.currentCity,
+      message: "موقعك الحالي: $city 🌆",
+      icon: Icons.location_city,
     );
   },
 ),
 
-
-
-                    const SizedBox(height: 8),
-                    const Divider(thickness: 1),
 
                     // ————— تحكم المستخدم
                     _sectionTitle(loc.settings),

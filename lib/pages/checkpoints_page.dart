@@ -10,6 +10,7 @@ import 'map_page.dart';
 import '../theme_notifier.dart';
 import 'dart:async';
 import '../checkpoint_card.dart';
+import 'main_navigation.dart';
 
 class CheckpointsPage extends StatefulWidget {
   final ThemeNotifier themeNotifier;
@@ -182,6 +183,18 @@ Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
       title: Text("🚧 ${loc.checkpoints}"),
+      leading: Builder(
+  builder: (context) => IconButton(
+    icon: const Icon(Icons.menu, color: Colors.black),
+    onPressed: () {
+      context
+          .findAncestorStateOfType<MainNavigationState>()
+          ?.scaffoldKey
+          .currentState
+          ?.openDrawer();
+    },
+  ),
+),
     ),
 
     body: _loading
