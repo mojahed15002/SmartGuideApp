@@ -95,7 +95,7 @@ class CustomDrawer extends StatelessWidget {
                   text: 'القريبة مني',
                   onTap: () {
                     Navigator.pop(context);
-                    onTabSelected(1);
+                    onTabSelected(2);
                   },
                 ),
                 _buildDrawerItem(
@@ -103,7 +103,7 @@ class CustomDrawer extends StatelessWidget {
                   text: 'المفضلة',
                   onTap: () {
                     Navigator.pop(context);
-                    onTabSelected(2);
+                    onTabSelected(1);
                   },
                 ),
                 _buildDrawerItem(
